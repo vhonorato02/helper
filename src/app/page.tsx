@@ -42,26 +42,39 @@ function StatCard({ label, value, icon, href, accent = 'default', empty }: StatC
   const accentClass = {
     default: 'bg-primary/10 text-primary ring-primary/15',
     destructive: 'bg-destructive/10 text-destructive ring-destructive/15',
-    warning: 'bg-amber-500/15 text-amber-700 dark:text-amber-400 ring-amber-500/20',
-    success: 'bg-green-500/10 text-green-700 dark:text-green-400 ring-green-500/20',
+    warning: 'bg-amber-500/12 text-amber-700 dark:text-amber-400 ring-amber-500/18',
+    success: 'bg-green-500/10 text-green-700 dark:text-green-400 ring-green-500/18',
+  }[accent];
+
+  const borderAccent = {
+    default: '',
+    destructive: 'hover:border-destructive/20',
+    warning: 'hover:border-amber-500/20',
+    success: 'hover:border-green-500/20',
   }[accent];
 
   return (
     <Link
       href={href}
-      className="group surface-panel rounded-lg p-4 transition-all hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-lg sm:p-5"
+      className={cn(
+        'group surface-panel rounded-xl p-4 transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-5',
+        borderAccent,
+        accent === 'default' && 'hover:border-foreground/18',
+      )}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            {label}
+          <p className="section-label line-clamp-1">{label}</p>
+          <p className="mt-2 text-[2rem] font-bold tabular-nums tracking-tight leading-none">
+            {value}
           </p>
-          <p className="text-3xl font-semibold mt-1.5 tabular-nums tracking-tight">{value}</p>
-          {value === 0 && empty && <p className="text-xs text-muted-foreground mt-1">{empty}</p>}
+          {value === 0 && empty && (
+            <p className="text-xs text-muted-foreground mt-1.5 line-clamp-1">{empty}</p>
+          )}
         </div>
         <div
           className={cn(
-            'flex size-9 shrink-0 items-center justify-center rounded-md ring-1 ring-inset transition-transform group-hover:scale-110',
+            'flex size-9 shrink-0 items-center justify-center rounded-lg ring-1 ring-inset transition-all group-hover:scale-105',
             accentClass,
           )}
         >
@@ -96,7 +109,7 @@ function AttentionQueue({ tickets }: { tickets: AttentionTicket[] }) {
     <section className="xl:sticky xl:top-20 xl:self-start">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold tracking-tight flex items-center gap-2">
+          <h2 className="text-base font-bold tracking-tight flex items-center gap-2">
             <AlertTriangle className="size-4 text-amber-600 dark:text-amber-400" />
             {copy.dashboard.attention.title}
           </h2>
@@ -114,22 +127,22 @@ function AttentionQueue({ tickets }: { tickets: AttentionTicket[] }) {
       </div>
 
       {tickets.length === 0 ? (
-        <div className="surface-panel rounded-lg px-5 py-12 text-center">
-          <div className="mx-auto mb-4 flex size-11 items-center justify-center rounded-md bg-green-500/10">
+        <div className="surface-elevated rounded-xl px-5 py-12 text-center">
+          <div className="mx-auto mb-4 flex size-11 items-center justify-center rounded-xl bg-green-500/10 ring-1 ring-inset ring-green-500/15">
             <CheckCircle2 className="size-5 text-green-600 dark:text-green-400" />
           </div>
-          <p className="font-medium">{copy.dashboard.attention.emptyTitle}</p>
+          <p className="font-semibold">{copy.dashboard.attention.emptyTitle}</p>
           <p className="text-sm text-muted-foreground mt-1.5">
             {copy.dashboard.attention.emptyHint}
           </p>
         </div>
       ) : (
-        <div className="surface-panel overflow-hidden rounded-lg divide-y">
+        <div className="surface-elevated overflow-hidden rounded-xl divide-y divide-border/60">
           {tickets.map((ticket) => (
             <Link
               key={ticket.id}
               href={`/tickets/${ticket.code}`}
-              className="block p-3.5 transition-colors hover:bg-muted/45"
+              className="block p-3.5 transition-all hover:bg-muted/35"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -176,7 +189,7 @@ function MyQueue({ tickets, href }: { tickets: TicketRow[]; href: string }) {
     <section>
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold tracking-tight flex items-center gap-2">
+          <h2 className="text-base font-bold tracking-tight flex items-center gap-2">
             <UserCheck className="size-4 text-primary" />
             {copy.dashboard.myQueue.title}
           </h2>
@@ -194,8 +207,8 @@ function MyQueue({ tickets, href }: { tickets: TicketRow[]; href: string }) {
       </div>
 
       {tickets.length === 0 ? (
-        <div className="surface-panel rounded-lg px-5 py-6">
-          <p className="font-medium">{copy.dashboard.myQueue.emptyTitle}</p>
+        <div className="surface-elevated rounded-xl px-5 py-6">
+          <p className="font-semibold">{copy.dashboard.myQueue.emptyTitle}</p>
           <p className="text-sm text-muted-foreground mt-1">
             {copy.dashboard.myQueue.emptyHint}
           </p>
@@ -209,7 +222,7 @@ function MyQueue({ tickets, href }: { tickets: TicketRow[]; href: string }) {
               <Link
                 key={ticket.id}
                 href={`/tickets/${ticket.code}`}
-                className="surface-panel rounded-lg p-3 transition-colors hover:bg-muted/35 hover:border-foreground/20"
+                className="surface-elevated rounded-xl p-3.5 transition-all hover:shadow-md hover:border-foreground/15 hover:-translate-y-0.5"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -268,16 +281,18 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-7">
-      <div className="flex flex-col gap-4 rounded-lg border bg-card/75 p-5 shadow-xs sm:flex-row sm:items-end sm:justify-between">
+      <div className="page-hero flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-medium text-muted-foreground">{today}</p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/70">
+            {today}
+          </p>
+          <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-[1.75rem]">
             {getGreeting(userName)}
           </h1>
         </div>
         <Link
           href="/tickets?attention=true"
-          className="inline-flex w-fit items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm font-semibold text-muted-foreground shadow-xs transition-colors hover:bg-accent hover:text-foreground"
+          className="inline-flex w-fit items-center gap-2 rounded-md border bg-card px-3.5 py-2 text-sm font-semibold text-muted-foreground shadow-xs transition-all hover:bg-accent hover:text-foreground hover:border-foreground/20"
         >
           <AlertTriangle className="size-4 text-amber-600 dark:text-amber-400" />
           {copy.dashboard.attention.title}
@@ -339,7 +354,7 @@ export default async function DashboardPage() {
           <section>
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold tracking-tight">
+                <h2 className="text-base font-bold tracking-tight">
                   {copy.dashboard.recent.title}
                 </h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -355,17 +370,17 @@ export default async function DashboardPage() {
             </div>
 
             {recent.length === 0 ? (
-              <div className="surface-panel rounded-lg py-16 text-center">
-                <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-md bg-muted/60">
+              <div className="surface-elevated rounded-xl py-16 text-center">
+                <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-muted/60">
                   <Inbox className="size-5 text-muted-foreground" />
                 </div>
-                <p className="font-medium">{copy.dashboard.recent.emptyTitle}</p>
+                <p className="font-semibold">{copy.dashboard.recent.emptyTitle}</p>
                 <p className="text-sm text-muted-foreground mt-1.5">
                   <EmptyHint text={copy.dashboard.recent.emptyHint} />
                 </p>
               </div>
             ) : (
-              <div className="surface-panel overflow-hidden rounded-lg">
+              <div className="surface-elevated overflow-hidden rounded-xl">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>

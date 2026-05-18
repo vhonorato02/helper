@@ -64,12 +64,12 @@ export default async function TicketsPage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2">
-        <p className="text-sm font-medium text-muted-foreground">{copy.nav.links.tickets}</p>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+      <div className="page-hero">
+        <p className="section-label">{copy.nav.links.tickets}</p>
+        <h1 className="mt-1.5 text-2xl font-bold tracking-tight sm:text-[1.75rem]">
           {copy.tickets.page.title}
         </h1>
-        <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+        <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
           {copy.tickets.page.description}
         </p>
       </div>

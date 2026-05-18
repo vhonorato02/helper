@@ -195,8 +195,8 @@ export function TicketActions({
   return (
     <>
       <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
-        <div className="surface-panel rounded-lg p-4 space-y-5">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+        <div className="surface-elevated rounded-xl p-4 space-y-4">
+          <h3 className="section-label flex items-center gap-1.5">
             <Settings2 className="size-3.5" />
             {copy.tickets.detail.actionsTitle}
           </h3>
@@ -254,7 +254,7 @@ export function TicketActions({
             </div>
           </div>
 
-          <div className="h-px bg-border" />
+          <div className="h-px bg-border/60" />
 
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground">
@@ -292,7 +292,7 @@ export function TicketActions({
             )}
           </div>
 
-          <div className="h-px bg-border" />
+          <div className="h-px bg-border/60" />
 
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground">
@@ -318,7 +318,7 @@ export function TicketActions({
 
           {currentUserIsAdmin && (
             <>
-              <div className="h-px bg-border" />
+              <div className="h-px bg-border/60" />
               <Button
                 variant="ghost"
                 size="sm"
@@ -333,8 +333,8 @@ export function TicketActions({
           )}
         </div>
 
-        <div className="surface-panel rounded-lg p-4 space-y-2.5 text-xs">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+        <div className="surface-elevated rounded-xl p-4 space-y-2.5 text-xs">
+          <h3 className="section-label mb-3">
             {copy.tickets.detail.metaTitle}
           </h3>
           <div className="flex justify-between gap-4">

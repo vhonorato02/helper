@@ -114,7 +114,7 @@ export function CommentThread({
 
   return (
     <section className="space-y-4">
-      <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+      <h2 className="section-label flex items-center gap-1.5">
         <MessageSquare className="size-3.5" />
         {comments.length === 0
           ? copy.tickets.comments.title
@@ -130,8 +130,8 @@ export function CommentThread({
 
             return (
               <article key={comment.id} className="flex gap-3">
-                <Avatar className="size-8 shrink-0">
-                  <AvatarFallback className="text-xs font-semibold bg-primary/10 text-primary">
+                <Avatar className="size-8 shrink-0 ring-2 ring-background">
+                  <AvatarFallback className="text-[11px] font-bold bg-primary/10 text-primary">
                     {initials(authorName)}
                   </AvatarFallback>
                 </Avatar>
@@ -210,7 +210,7 @@ export function CommentThread({
                       </div>
                     </div>
                   ) : (
-                    <div className="rounded-lg border border-border/70 bg-card px-3.5 py-2.5 text-sm leading-relaxed shadow-xs whitespace-pre-wrap">
+                    <div className="rounded-xl border border-border/60 bg-card px-3.5 py-3 text-sm leading-relaxed shadow-xs whitespace-pre-wrap">
                       {comment.body}
                     </div>
                   )}

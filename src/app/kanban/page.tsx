@@ -33,13 +33,13 @@ export default async function KanbanPage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-4 rounded-lg border bg-card/75 p-4 shadow-xs lg:flex-row lg:items-end lg:justify-between">
+      <div className="page-hero flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-sm font-medium text-muted-foreground">{copy.nav.links.kanban}</p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
+          <p className="section-label">{copy.nav.links.kanban}</p>
+          <h1 className="mt-1.5 text-2xl font-bold tracking-tight sm:text-[1.75rem]">
             {copy.kanban.page.title}
           </h1>
-          <p className="mt-1.5 max-w-2xl text-sm leading-6 text-muted-foreground">
+          <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
             {copy.kanban.page.description}
           </p>
         </div>

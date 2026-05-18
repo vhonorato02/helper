@@ -213,7 +213,7 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
 
   return (
     <div className="space-y-4">
-      <div className="surface-panel rounded-lg p-3">
+      <div className="surface-elevated rounded-xl p-3">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -359,8 +359,8 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
       </div>
 
       {tickets.length === 0 ? (
-        <div className="surface-panel rounded-lg px-5 py-16 text-center">
-          <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-md bg-muted/60">
+        <div className="surface-elevated rounded-xl px-5 py-16 text-center">
+          <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-muted/60">
             <Inbox className="size-5 text-muted-foreground" />
           </div>
           <p className="font-medium">
@@ -392,7 +392,7 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
                 <button
                   key={ticket.id}
                   type="button"
-                  className="surface-panel rounded-lg p-4 text-left transition-all hover:border-foreground/20 hover:bg-muted/30"
+                  className="surface-elevated rounded-xl p-4 text-left transition-all hover:border-foreground/15 hover:shadow-md"
                   onClick={() => router.push(`/tickets/${ticket.code}`)}
                 >
                   <div className="mb-3 flex items-start justify-between gap-3">
@@ -430,7 +430,7 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
             })}
           </div>
 
-          <div className="surface-panel hidden overflow-hidden rounded-lg md:block">
+          <div className="surface-elevated hidden overflow-hidden rounded-xl md:block">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

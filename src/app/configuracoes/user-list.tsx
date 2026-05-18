@@ -142,18 +142,18 @@ export function UserList({ users, currentUserId }: UserListProps) {
 
   return (
     <>
-      <div className="surface-panel overflow-hidden rounded-lg divide-y">
+      <div className="surface-elevated overflow-hidden rounded-xl divide-y divide-border/60">
         {users.map((user) => {
           const isSelf = user.id === currentUserId;
           return (
             <div
               key={user.id}
-              className={`flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/35 ${
-                !user.isActive ? 'bg-muted/30' : ''
+              className={`flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-muted/30 ${
+                !user.isActive ? 'opacity-60' : ''
               }`}
             >
               <Avatar className="size-9 shrink-0">
-                <AvatarFallback className="text-xs font-semibold bg-primary/10 text-primary">
+                <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">
                   {initials(user.displayName)}
                 </AvatarFallback>
               </Avatar>

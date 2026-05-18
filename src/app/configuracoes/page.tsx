@@ -23,12 +23,12 @@ export default async function ConfiguracoesPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <header>
-        <p className="text-sm font-medium text-muted-foreground">{copy.nav.links.settings}</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
+      <header className="page-hero">
+        <p className="section-label">{copy.nav.links.settings}</p>
+        <h1 className="mt-1.5 text-2xl font-bold tracking-tight sm:text-[1.75rem]">
           {copy.users.page.title}
         </h1>
-        <p className="mt-1.5 max-w-2xl text-sm leading-6 text-muted-foreground">
+        <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
           {copy.users.page.description}
         </p>
       </header>

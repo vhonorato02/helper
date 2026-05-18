@@ -46,12 +46,12 @@ function CommentValue({ value }: { value: string | null }) {
 export function HistoryLog({ history }: { history: HistoryEntry[] }) {
   return (
     <section className="space-y-3">
-      <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+      <h2 className="section-label flex items-center gap-1.5">
         <History className="size-3.5" />
         {copy.tickets.history.title}
       </h2>
 
-      <ol className="relative ml-1.5 space-y-3 border-l border-border/70 pl-5">
+      <ol className="relative ml-1.5 space-y-3.5 border-l border-border/60 pl-5">
         {history.map((entry) => {
           const commentAction = COMMENT_ACTIONS[entry.field as keyof typeof COMMENT_ACTIONS];
           const authorName = entry.authorName ?? copy.common.removedUser;

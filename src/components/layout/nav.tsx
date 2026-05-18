@@ -85,24 +85,24 @@ export function Nav({ user, users }: NavProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b border-border/70 bg-background/88 backdrop-blur-xl supports-[backdrop-filter]:bg-background/75">
-        <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6">
+      <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/90 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80">
+        <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:px-6">
           <Link
             href="/"
-            className="group flex min-w-0 shrink-0 items-center gap-2.5 rounded-md pr-1 font-semibold"
+            className="group flex min-w-0 shrink-0 items-center gap-2.5 rounded-lg pr-1 font-semibold"
           >
-            <div className="flex size-9 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground shadow-sm shadow-primary/25 transition-transform group-hover:scale-105">
+            <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground shadow-md shadow-primary/30 transition-all group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-primary/25">
               {copy.brand.initials}
             </div>
             <div className="hidden min-w-0 sm:block">
-              <span className="block leading-tight tracking-tight">{copy.brand.name}</span>
-              <span className="block truncate text-[11px] font-medium text-muted-foreground">
+              <span className="block text-sm leading-tight tracking-tight font-bold">{copy.brand.name}</span>
+              <span className="block truncate text-[10.5px] font-medium text-muted-foreground leading-tight">
                 {copy.brand.institution}
               </span>
             </div>
           </Link>
 
-          <nav className="ml-3 hidden items-center gap-1 rounded-lg border bg-card/75 p-1 shadow-xs md:flex">
+          <nav className="ml-3 hidden items-center gap-0.5 rounded-lg border border-border/70 bg-card/80 p-1 shadow-xs md:flex">
             {NAV_LINKS.map(({ href, label, icon: Icon }) => {
               const active = isActiveLink(href);
               return (
@@ -110,13 +110,13 @@ export function Nav({ user, users }: NavProps) {
                   key={href}
                   href={href}
                   className={cn(
-                    'flex h-9 items-center gap-1.5 rounded-md px-3 text-sm font-medium transition-all',
+                    'flex h-8 items-center gap-1.5 rounded-md px-3 text-sm font-medium transition-all',
                     active
-                      ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/15'
+                      ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
                       : 'text-muted-foreground hover:bg-accent hover:text-foreground',
                   )}
                 >
-                  <Icon className="size-4" />
+                  <Icon className="size-3.5" />
                   {label}
                 </Link>
               );
@@ -126,7 +126,7 @@ export function Nav({ user, users }: NavProps) {
           <div className="ml-auto flex items-center gap-1.5">
             <button
               onClick={() => setPaletteOpen(true)}
-              className="hidden h-9 items-center gap-2 rounded-md border border-border/90 bg-card px-3 text-xs font-medium text-muted-foreground shadow-xs transition-all hover:border-foreground/20 hover:bg-accent hover:text-foreground lg:inline-flex"
+              className="hidden h-8 items-center gap-2 rounded-md border border-border/80 bg-card/90 px-3 text-xs font-medium text-muted-foreground shadow-xs transition-all hover:border-foreground/20 hover:bg-accent hover:text-foreground lg:inline-flex"
               aria-label={copy.commandPalette.title}
             >
               <Search className="size-3.5" />
@@ -137,7 +137,7 @@ export function Nav({ user, users }: NavProps) {
             <Button
               size="sm"
               onClick={() => setFormOpen(true)}
-              className="gap-1.5"
+              className="gap-1.5 h-8 shadow-sm shadow-primary/20"
             >
               <Plus className="size-4" />
               <span className="hidden sm:inline">{copy.nav.newTicket}</span>

@@ -6,17 +6,7 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '2mb',
     },
   },
-  webpack(config) {
-    config.ignoreWarnings = [
-      ...(config.ignoreWarnings ?? []),
-      {
-        module: /node_modules[\\/]jose[\\/]dist[\\/]webapi[\\/]lib[\\/]deflate\.js/,
-        message:
-          /A Node\.js API is used \((CompressionStream|DecompressionStream) at line: \d+\)/,
-      },
-    ];
-    return config;
-  },
+  turbopack: {},
 };
 
 export default nextConfig;
