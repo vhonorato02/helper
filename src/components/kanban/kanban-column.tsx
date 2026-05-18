@@ -19,6 +19,7 @@ interface KanbanColumnProps {
     subcategory: string;
     priority: Ticket['priority'];
     status: Status;
+    updatedAt: Date;
     assigneeName?: string | null;
   }[];
 }

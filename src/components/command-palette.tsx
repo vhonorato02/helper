@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
+  AlertTriangle,
   ArrowDown,
   ArrowUp,
   CornerDownLeft,
@@ -12,6 +13,7 @@ import {
   Plus,
   Search,
   Settings,
+  UserRound,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
@@ -22,6 +24,7 @@ interface CommandPaletteProps {
   onClose: () => void;
   onNewTicket: () => void;
   isAdmin?: boolean;
+  currentUserId?: string;
 }
 
 const NAV_ITEMS = [
@@ -36,6 +39,7 @@ export function CommandPalette({
   onClose,
   onNewTicket,
   isAdmin = false,
+  currentUserId = '',
 }: CommandPaletteProps) {
   const router = useRouter();
   const [query, setQuery] = useState('');
@@ -53,6 +57,30 @@ export function CommandPalette({
         keywords: copy.commandPalette.keywords.newTicket,
         group: copy.commandPalette.groups.actions,
       },
+      ...(currentUserId
+        ? [
+            {
+              label: copy.commandPalette.actions.myTickets,
+              icon: UserRound,
+              action: () => {
+                router.push(`/tickets?assigneeId=${currentUserId}&status=ativas`);
+                onClose();
+              },
+              keywords: copy.commandPalette.keywords.myTickets,
+              group: copy.commandPalette.groups.actions,
+            },
+          ]
+        : []),
+      {
+        label: copy.commandPalette.actions.attentionQueue,
+        icon: AlertTriangle,
+        action: () => {
+          router.push('/tickets?attention=true');
+          onClose();
+        },
+        keywords: copy.commandPalette.keywords.attentionQueue,
+        group: copy.commandPalette.groups.actions,
+      },
       ...NAV_ITEMS.filter((item) => !item.admin || isAdmin).map((item) => ({
         label: item.label,
         icon: item.icon,
@@ -64,7 +92,7 @@ export function CommandPalette({
         group: copy.commandPalette.groups.navigation,
       })),
     ],
-    [isAdmin, onClose, onNewTicket, router],
+    [currentUserId, isAdmin, onClose, onNewTicket, router],
   );
 
   const filtered = query

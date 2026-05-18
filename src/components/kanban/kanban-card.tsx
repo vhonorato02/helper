@@ -2,9 +2,14 @@
 
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Clock3, UserRound } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { PriorityBadge, AreaBadge } from '@/components/tickets/ticket-badge';
+import { copy } from '@/lib/copy';
+import { daysSince } from '@/lib/format';
 import type { Ticket } from '@/db/schema';
 
 interface KanbanCardProps {
@@ -16,6 +21,7 @@ interface KanbanCardProps {
     subcategory: string;
     priority: Ticket['priority'];
     status: Ticket['status'];
+    updatedAt: Date;
     assigneeName?: string | null;
   };
   dragging?: boolean;
@@ -27,6 +33,12 @@ export function KanbanCard({ ticket, dragging = false }: KanbanCardProps) {
   });
 
   const style = transform ? { transform: CSS.Translate.toString(transform) } : undefined;
+  const updatedAgo = formatDistanceToNow(new Date(ticket.updatedAt), {
+    addSuffix: true,
+    locale: ptBR,
+  });
+  const staleDays = daysSince(ticket.updatedAt);
+  const isStale = staleDays >= 3 && !['resolvido', 'arquivado'].includes(ticket.status);
 
   return (
     <div
@@ -60,11 +72,30 @@ export function KanbanCard({ ticket, dragging = false }: KanbanCardProps) {
           <AreaBadge area={ticket.area} />
           <span className="truncate">{ticket.subcategory}</span>
         </div>
-        {ticket.assigneeName && (
-          <span className="shrink-0 truncate max-w-[80px]" title={ticket.assigneeName}>
-            {ticket.assigneeName.split(' ')[0]}
+      </div>
+
+      <div className="mt-2.5 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+        <span className="flex items-center gap-1 min-w-0">
+          <UserRound className="size-3 shrink-0" />
+          <span
+            className={cn('truncate', !ticket.assigneeName && 'text-muted-foreground/70')}
+            title={ticket.assigneeName ?? copy.tickets.table.unassigned}
+          >
+            {ticket.assigneeName?.split(' ')[0] ?? copy.tickets.table.unassigned}
           </span>
-        )}
+        </span>
+        <span
+          className={cn(
+            'flex items-center gap-1 shrink-0 tabular-nums max-w-[120px]',
+            isStale && 'text-amber-600 dark:text-amber-400',
+          )}
+          title={isStale ? copy.kanban.staleFor(staleDays) : updatedAgo}
+        >
+          <Clock3 className="size-3 shrink-0" />
+          <span className="truncate">
+            {isStale ? copy.kanban.staleFor(staleDays) : updatedAgo}
+          </span>
+        </span>
       </div>
     </div>
   );

@@ -11,6 +11,7 @@ import {
   Pencil,
   PlayCircle,
   RotateCcw,
+  Rocket,
   Settings2,
   Trash2,
   UserCheck,
@@ -140,6 +141,27 @@ export function TicketActions({
     });
   };
 
+  const handleTakeAndStart = () => {
+    if (!currentUserId) return;
+
+    startTransition(async () => {
+      const assignResult = await updateTicketField(ticket.code, 'assigneeId', currentUserId);
+      if (assignResult && 'error' in assignResult) {
+        toast.error(assignResult.error);
+        return;
+      }
+
+      const statusResult = await updateTicketStatus(ticket.code, 'em_andamento');
+      if (statusResult && 'error' in statusResult) {
+        toast.error(statusResult.error);
+        return;
+      }
+
+      toast.success(copy.tickets.detail.takeAndStartDone);
+      router.refresh();
+    });
+  };
+
   const handlePriorityChange = (priority: string) => {
     startTransition(async () => {
       const result = await updateTicketField(ticket.code, 'priority', priority);
@@ -189,6 +211,19 @@ export function TicketActions({
             <Pencil className="size-3.5" />
             {copy.tickets.detail.editDetails}
           </Button>
+
+          {ticket.status === 'aberto' && ticket.assigneeId !== currentUserId && (
+            <Button
+              variant="default"
+              size="sm"
+              className="w-full justify-start text-xs h-8"
+              disabled={isPending || !currentUserId}
+              onClick={handleTakeAndStart}
+            >
+              <Rocket className="size-3.5" />
+              {copy.tickets.detail.takeAndStart}
+            </Button>
+          )}
 
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground">

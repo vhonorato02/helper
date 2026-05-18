@@ -1,8 +1,20 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useTransition } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Download, FilterX, Inbox, Search, X } from 'lucide-react';
+import {
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  FilterX,
+  Inbox,
+  Loader2,
+  Search,
+  UserRound,
+  X,
+} from 'lucide-react';
+import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { AreaBadge, PriorityBadge, StatusBadge } from './ticket-badge';
@@ -13,7 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { TicketRow } from '@/actions/tickets';
 import {
   AREA_OPTIONS,
   PRIORITY_LABELS,
@@ -22,7 +33,10 @@ import {
   STATUS_ORDER,
 } from '@/lib/constants';
 import { copy } from '@/lib/copy';
-import { DATE_FORMATS, formatPtBrDate } from '@/lib/format';
+import { DATE_FORMATS, daysSince, formatPtBrDate } from '@/lib/format';
+import { exportTicketRows, type TicketRow } from '@/actions/tickets';
+
+type ExportTicketRow = Awaited<ReturnType<typeof exportTicketRows>>['rows'][number];
 
 interface Props {
   tickets: TicketRow[];
@@ -30,13 +44,14 @@ interface Props {
   total: number;
   page: number;
   pageSize: number;
+  currentUserId?: string;
 }
 
 function csvCell(value: string | number | null | undefined) {
   return `"${String(value ?? '').replace(/"/g, '""')}"`;
 }
 
-function exportCSV(tickets: TicketRow[]) {
+function downloadCSV(tickets: ExportTicketRow[]) {
   const headers = [
     copy.tickets.table.headers.code,
     copy.tickets.table.headers.area,
@@ -47,8 +62,10 @@ function exportCSV(tickets: TicketRow[]) {
     copy.tickets.table.headers.assignee,
     copy.tickets.table.headers.author,
     copy.tickets.table.headers.origin,
+    copy.tickets.form.fields.description,
     copy.tickets.table.headers.createdAt,
     copy.tickets.table.headers.updatedAt,
+    copy.tickets.detail.resolvedAt,
   ];
 
   const rows = tickets.map((ticket) => [
@@ -61,8 +78,10 @@ function exportCSV(tickets: TicketRow[]) {
     ticket.assigneeName ?? copy.tickets.table.unassigned,
     ticket.authorName ?? copy.common.removedUser,
     ticket.origin,
+    ticket.description,
     formatPtBrDate(ticket.createdAt, DATE_FORMATS.csvDateTime),
     formatPtBrDate(ticket.updatedAt, DATE_FORMATS.csvDateTime),
+    ticket.resolvedAt ? formatPtBrDate(ticket.resolvedAt, DATE_FORMATS.csvDateTime) : '',
   ]);
 
   const csv = [headers, ...rows].map((row) => row.map(csvCell).join(';')).join('\n');
@@ -78,12 +97,13 @@ function exportCSV(tickets: TicketRow[]) {
   URL.revokeObjectURL(url);
 }
 
-export function TicketTable({ tickets, users, total, page, pageSize }: Props) {
+export function TicketTable({ tickets, users, total, page, pageSize, currentUserId = '' }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentSearch = searchParams.get('search') ?? '';
   const [search, setSearch] = useState(currentSearch);
+  const [isExporting, startExportTransition] = useTransition();
 
   useEffect(() => {
     setSearch(currentSearch);
@@ -118,7 +138,9 @@ export function TicketTable({ tickets, users, total, page, pageSize }: Props) {
   const updateParam = useCallback(
     (key: string, value: string) => {
       const params = new URLSearchParams(searchParams.toString());
-      if (value && value !== 'all') {
+      if (key === 'sort' && value === 'created_desc') {
+        params.delete(key);
+      } else if (value && value !== 'all') {
         params.set(key, value);
       } else {
         params.delete(key);
@@ -139,11 +161,16 @@ export function TicketTable({ tickets, users, total, page, pageSize }: Props) {
   const activeStatus = searchParams.get('status') ?? 'all';
   const activePriority = searchParams.get('priority') ?? 'all';
   const activeAssignee = searchParams.get('assigneeId') ?? 'all';
+  const activeAttention = searchParams.get('attention') === 'true';
+  const activeSort = searchParams.get('sort') ?? 'created_desc';
+  const showingMine = !!currentUserId && activeAssignee === currentUserId;
   const hasActiveFilters =
     activeArea !== 'all' ||
     activeStatus !== 'all' ||
     activePriority !== 'all' ||
     activeAssignee !== 'all' ||
+    activeAttention ||
+    activeSort !== 'created_desc' ||
     !!search;
 
   const clearFilters = () => router.push(pathname);
@@ -160,6 +187,28 @@ export function TicketTable({ tickets, users, total, page, pageSize }: Props) {
     }
     const qs = params.toString();
     router.push(qs ? `${pathname}?${qs}` : pathname);
+  };
+
+  const handleExport = () => {
+    startExportTransition(async () => {
+      try {
+        const result = await exportTicketRows({
+          area: activeArea,
+          status: activeStatus,
+          priority: activePriority,
+          assigneeId: activeAssignee,
+          search: search.trim(),
+          attention: activeAttention ? 'true' : undefined,
+          sort: activeSort,
+        });
+
+        downloadCSV(result.rows);
+        toast.success(copy.tickets.table.exportedCsv(result.rows.length));
+        if (result.truncated) toast.warning(copy.tickets.table.exportLimited(result.limit));
+      } catch {
+        toast.error(copy.tickets.table.exportFailed);
+      }
+    });
   };
 
   return (
@@ -205,6 +254,7 @@ export function TicketTable({ tickets, users, total, page, pageSize }: Props) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{copy.tickets.table.allStatuses}</SelectItem>
+            <SelectItem value="ativas">{copy.tickets.table.activeStatuses}</SelectItem>
             {STATUS_ORDER.map((status) => (
               <SelectItem key={status} value={status}>
                 {STATUS_LABELS[status]}
@@ -242,6 +292,39 @@ export function TicketTable({ tickets, users, total, page, pageSize }: Props) {
           </SelectContent>
         </Select>
 
+        {currentUserId && (
+          <Button
+            variant={showingMine ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => updateParam('assigneeId', showingMine ? 'all' : currentUserId)}
+            className="gap-1.5"
+          >
+            <UserRound className="size-3.5" />
+            {copy.tickets.table.myTickets}
+          </Button>
+        )}
+
+        <Button
+          variant={activeAttention ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => updateParam('attention', activeAttention ? 'all' : 'true')}
+          className="gap-1.5"
+        >
+          <AlertTriangle className="size-3.5" />
+          {copy.tickets.table.attentionOnly}
+        </Button>
+
+        <Select value={activeSort} onValueChange={(value) => updateParam('sort', value)}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder={copy.tickets.table.sort.label} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="created_desc">{copy.tickets.table.sort.createdDesc}</SelectItem>
+            <SelectItem value="updated_desc">{copy.tickets.table.sort.updatedDesc}</SelectItem>
+            <SelectItem value="priority">{copy.tickets.table.sort.priority}</SelectItem>
+          </SelectContent>
+        </Select>
+
         {hasActiveFilters && (
           <Button
             variant="ghost"
@@ -261,12 +344,12 @@ export function TicketTable({ tickets, users, total, page, pageSize }: Props) {
           <Button
             variant="outline"
             size="icon"
-            onClick={() => exportCSV(tickets)}
+            onClick={handleExport}
             title={copy.tickets.table.exportCsv}
             aria-label={copy.tickets.table.exportCsv}
-            disabled={tickets.length === 0}
+            disabled={total === 0 || isExporting}
           >
-            <Download />
+            {isExporting ? <Loader2 className="animate-spin" /> : <Download />}
           </Button>
         </div>
       </div>
@@ -323,47 +406,67 @@ export function TicketTable({ tickets, users, total, page, pageSize }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {tickets.map((ticket) => (
-                  <tr
-                    key={ticket.id}
-                    className="border-b last:border-0 hover:bg-muted/40 transition-colors cursor-pointer focus-within:bg-muted/40"
-                    onClick={() => router.push(`/tickets/${ticket.code}`)}
-                  >
-                    <td className="px-4 py-3">
-                      <span className="font-mono text-xs text-primary font-medium">
-                        {ticket.code}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 max-w-[280px]">
-                      <p className="line-clamp-1 font-medium">{ticket.title}</p>
-                      <p className="text-xs text-muted-foreground line-clamp-1">
-                        {ticket.subcategory}
-                        {ticket.authorName && (
-                          <> · {copy.tickets.table.byAuthor(ticket.authorName.split(' ')[0])}</>
-                        )}
-                      </p>
-                    </td>
-                    <td className="px-4 py-3 hidden sm:table-cell">
-                      <AreaBadge area={ticket.area} />
-                    </td>
-                    <td className="px-4 py-3 hidden md:table-cell">
-                      <PriorityBadge priority={ticket.priority} />
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusBadge status={ticket.status} />
-                    </td>
-                    <td className="px-4 py-3 hidden xl:table-cell">
-                      <span
-                        className={ticket.assigneeName ? 'font-medium' : 'text-muted-foreground'}
-                      >
-                        {ticket.assigneeName ?? copy.tickets.table.unassigned}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground text-xs hidden lg:table-cell whitespace-nowrap">
-                      {formatPtBrDate(ticket.createdAt, DATE_FORMATS.tableCreated)}
-                    </td>
-                  </tr>
-                ))}
+                {tickets.map((ticket) => {
+                  const staleDays = daysSince(ticket.updatedAt);
+                  const isStale =
+                    staleDays >= 3 && !['resolvido', 'arquivado'].includes(ticket.status);
+
+                  return (
+                    <tr
+                      key={ticket.id}
+                      role="link"
+                      tabIndex={0}
+                      className="border-b last:border-0 hover:bg-muted/40 transition-colors cursor-pointer focus-within:bg-muted/40 focus:bg-muted/40 outline-none"
+                      onClick={() => router.push(`/tickets/${ticket.code}`)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          router.push(`/tickets/${ticket.code}`);
+                        }
+                      }}
+                    >
+                      <td className="px-4 py-3">
+                        <span className="font-mono text-xs text-primary font-medium">
+                          {ticket.code}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 max-w-[280px]">
+                        <p className="line-clamp-1 font-medium">{ticket.title}</p>
+                        <p className="text-xs text-muted-foreground line-clamp-1">
+                          {ticket.subcategory}
+                          {ticket.authorName && (
+                            <> · {copy.tickets.table.byAuthor(ticket.authorName.split(' ')[0])}</>
+                          )}
+                          {isStale && (
+                            <span className="text-amber-600 dark:text-amber-400">
+                              {' '}
+                              · {copy.tickets.table.staleFor(staleDays)}
+                            </span>
+                          )}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3 hidden sm:table-cell">
+                        <AreaBadge area={ticket.area} />
+                      </td>
+                      <td className="px-4 py-3 hidden md:table-cell">
+                        <PriorityBadge priority={ticket.priority} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusBadge status={ticket.status} />
+                      </td>
+                      <td className="px-4 py-3 hidden xl:table-cell">
+                        <span
+                          className={ticket.assigneeName ? 'font-medium' : 'text-muted-foreground'}
+                        >
+                          {ticket.assigneeName ?? copy.tickets.table.unassigned}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground text-xs hidden lg:table-cell whitespace-nowrap">
+                        {formatPtBrDate(ticket.createdAt, DATE_FORMATS.tableCreated)}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

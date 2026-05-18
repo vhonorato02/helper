@@ -28,8 +28,20 @@ import { isValidSubcategory, type Area, type Priority, type Status } from '@/lib
 const areaSchema = z.enum(['TI', 'MKT']);
 const prioritySchema = z.enum(['baixa', 'media', 'alta', 'urgente']);
 const statusSchema = z.enum(['aberto', 'em_andamento', 'aguardando', 'resolvido', 'arquivado']);
+const sortSchema = z.enum(['created_desc', 'updated_desc', 'priority']);
 const ticketAssignee = alias(users, 'ticket_assignee');
 const ATTENTION_STALE_DAYS = 3;
+const EXPORT_TICKET_LIMIT = 2000;
+
+type TicketFilters = {
+  area?: string;
+  status?: string;
+  priority?: string;
+  assigneeId?: string;
+  search?: string;
+  attention?: string;
+  sort?: string;
+};
 
 async function requireAuth() {
   const session = await auth();
@@ -372,20 +384,33 @@ export async function deleteTicket(code: string) {
   return { ok: true };
 }
 
-function buildTicketConditions(filters?: {
-  area?: string;
-  status?: string;
-  priority?: string;
-  assigneeId?: string;
-  search?: string;
-}) {
-  const { area, status, priority, assigneeId, search } = filters ?? {};
+function buildAttentionCondition(now = new Date()) {
+  const staleDate = new Date(now.getTime() - ATTENTION_STALE_DAYS * 24 * 60 * 60 * 1000);
+
+  return and(
+    inArray(tickets.status, ['aberto', 'em_andamento', 'aguardando']),
+    or(
+      eq(tickets.priority, 'urgente'),
+      eq(tickets.status, 'aguardando'),
+      isNull(tickets.assigneeId),
+      lte(tickets.updatedAt, staleDate),
+    ),
+  );
+}
+
+function buildTicketConditions(filters?: TicketFilters) {
+  const { area, status, priority, assigneeId, search, attention } = filters ?? {};
   const conditions = [];
+  const normalizedSearch = search?.trim();
 
   const parsedArea = area && area !== 'all' ? areaSchema.safeParse(area) : null;
   if (parsedArea?.success) conditions.push(eq(tickets.area, parsedArea.data));
 
-  if (status && status !== 'all') {
+  if (attention === 'true') conditions.push(buildAttentionCondition());
+
+  if (status === 'ativas') {
+    conditions.push(inArray(tickets.status, ['aberto', 'em_andamento', 'aguardando']));
+  } else if (status && status !== 'all') {
     const parsedStatus = statusSchema.safeParse(status);
     if (parsedStatus.success) {
       conditions.push(eq(tickets.status, parsedStatus.data));
@@ -407,14 +432,14 @@ function buildTicketConditions(filters?: {
       if (parsedAssigneeId.success) conditions.push(eq(tickets.assigneeId, parsedAssigneeId.data));
     }
   }
-  if (search) {
+  if (normalizedSearch) {
     conditions.push(
       or(
-        ilike(tickets.title, `%${search}%`),
-        ilike(tickets.code, `%${search}%`),
-        ilike(tickets.subcategory, `%${search}%`),
-        ilike(sql`COALESCE(${tickets.origin}, '')`, `%${search}%`),
-        ilike(sql`COALESCE(${tickets.description}, '')`, `%${search}%`),
+        ilike(tickets.title, `%${normalizedSearch}%`),
+        ilike(tickets.code, `%${normalizedSearch}%`),
+        ilike(tickets.subcategory, `%${normalizedSearch}%`),
+        ilike(sql`COALESCE(${tickets.origin}, '')`, `%${normalizedSearch}%`),
+        ilike(sql`COALESCE(${tickets.description}, '')`, `%${normalizedSearch}%`),
       ),
     );
   }
@@ -422,16 +447,34 @@ function buildTicketConditions(filters?: {
   return conditions.length > 0 ? and(...conditions) : undefined;
 }
 
+function priorityOrderExpression() {
+  return sql`
+    case ${tickets.priority}
+      when 'urgente' then 0
+      when 'alta' then 1
+      when 'media' then 2
+      else 3
+    end
+  `;
+}
+
+function getTicketOrder(sort?: string) {
+  const parsedSort = sortSchema.safeParse(sort);
+
+  if (parsedSort.success && parsedSort.data === 'updated_desc') {
+    return [desc(tickets.updatedAt), desc(tickets.createdAt)];
+  }
+
+  if (parsedSort.success && parsedSort.data === 'priority') {
+    return [priorityOrderExpression(), desc(tickets.updatedAt), desc(tickets.createdAt)];
+  }
+
+  return [desc(tickets.createdAt)];
+}
+
 export type TicketRow = Awaited<ReturnType<typeof getTickets>>[number];
 
-export async function getTickets(filters?: {
-  area?: string;
-  status?: string;
-  priority?: string;
-  assigneeId?: string;
-  search?: string;
-  page?: number;
-}) {
+export async function getTickets(filters?: TicketFilters & { page?: number }) {
   const { page = 1 } = filters ?? {};
   const limit = 50;
   const offset = (page - 1) * limit;
@@ -460,24 +503,56 @@ export async function getTickets(filters?: {
     .leftJoin(users, eq(tickets.authorId, users.id))
     .leftJoin(ticketAssignee, eq(tickets.assigneeId, ticketAssignee.id))
     .where(where)
-    .orderBy(desc(tickets.createdAt))
+    .orderBy(...getTicketOrder(filters?.sort))
     .limit(limit)
     .offset(offset);
 }
 
-export async function getTicketCount(filters?: {
-  area?: string;
-  status?: string;
-  priority?: string;
-  assigneeId?: string;
-  search?: string;
-}) {
+export async function getTicketCount(filters?: TicketFilters) {
   const [result] = await db
     .select({ total: count() })
     .from(tickets)
     .where(buildTicketConditions(filters));
 
   return Number(result?.total ?? 0);
+}
+
+export async function exportTicketRows(filters?: TicketFilters) {
+  await requireAuth();
+
+  const rows = await db
+    .select({
+      code: tickets.code,
+      area: tickets.area,
+      title: tickets.title,
+      subcategory: tickets.subcategory,
+      priority: tickets.priority,
+      status: tickets.status,
+      origin: tickets.origin,
+      description: tickets.description,
+      createdAt: tickets.createdAt,
+      updatedAt: tickets.updatedAt,
+      resolvedAt: tickets.resolvedAt,
+      authorName: users.displayName,
+      assigneeName: ticketAssignee.displayName,
+    })
+    .from(tickets)
+    .leftJoin(users, eq(tickets.authorId, users.id))
+    .leftJoin(ticketAssignee, eq(tickets.assigneeId, ticketAssignee.id))
+    .where(buildTicketConditions(filters))
+    .orderBy(...getTicketOrder(filters?.sort))
+    .limit(EXPORT_TICKET_LIMIT + 1);
+
+  return {
+    rows: rows.slice(0, EXPORT_TICKET_LIMIT).map((ticket) => ({
+      ...ticket,
+      createdAt: ticket.createdAt.toISOString(),
+      updatedAt: ticket.updatedAt.toISOString(),
+      resolvedAt: ticket.resolvedAt?.toISOString() ?? null,
+    })),
+    truncated: rows.length > EXPORT_TICKET_LIMIT,
+    limit: EXPORT_TICKET_LIMIT,
+  };
 }
 
 export async function getTicket(code: string) {
@@ -553,7 +628,6 @@ function priorityRank(priority: Priority) {
 
 export async function getAttentionTickets() {
   const now = new Date();
-  const staleDate = new Date(now.getTime() - ATTENTION_STALE_DAYS * 24 * 60 * 60 * 1000);
 
   const rows = await db
     .select({
@@ -571,17 +645,7 @@ export async function getAttentionTickets() {
     })
     .from(tickets)
     .leftJoin(ticketAssignee, eq(tickets.assigneeId, ticketAssignee.id))
-    .where(
-      and(
-        inArray(tickets.status, ['aberto', 'em_andamento', 'aguardando']),
-        or(
-          eq(tickets.priority, 'urgente'),
-          eq(tickets.status, 'aguardando'),
-          isNull(tickets.assigneeId),
-          lte(tickets.updatedAt, staleDate),
-        ),
-      ),
-    )
+    .where(buildAttentionCondition(now))
     .orderBy(desc(tickets.updatedAt))
     .limit(60);
 
@@ -622,11 +686,19 @@ export async function getAttentionTickets() {
     .slice(0, 6);
 }
 
-export async function getKanbanTickets(filters?: { area?: string; assigneeId?: string }) {
-  const { area, assigneeId } = filters ?? {};
+export async function getKanbanTickets(filters?: {
+  area?: string;
+  assigneeId?: string;
+  priority?: string;
+  search?: string;
+}) {
+  const { area, assigneeId, priority, search } = filters ?? {};
   const conditions = [];
+  const normalizedSearch = search?.trim();
   const parsedArea = area && area !== 'all' ? areaSchema.safeParse(area) : null;
   if (parsedArea?.success) conditions.push(eq(tickets.area, parsedArea.data));
+  const parsedPriority = priority && priority !== 'all' ? prioritySchema.safeParse(priority) : null;
+  if (parsedPriority?.success) conditions.push(eq(tickets.priority, parsedPriority.data));
   if (assigneeId && assigneeId !== 'all') {
     if (assigneeId === 'unassigned') {
       conditions.push(sql`${tickets.assigneeId} IS NULL`);
@@ -634,6 +706,18 @@ export async function getKanbanTickets(filters?: { area?: string; assigneeId?: s
       const parsedAssigneeId = z.string().uuid().safeParse(assigneeId);
       if (parsedAssigneeId.success) conditions.push(eq(tickets.assigneeId, parsedAssigneeId.data));
     }
+  }
+  if (normalizedSearch) {
+    conditions.push(
+      or(
+        ilike(tickets.title, `%${normalizedSearch}%`),
+        ilike(tickets.code, `%${normalizedSearch}%`),
+        ilike(tickets.subcategory, `%${normalizedSearch}%`),
+        ilike(sql`COALESCE(${tickets.origin}, '')`, `%${normalizedSearch}%`),
+        ilike(sql`COALESCE(${tickets.description}, '')`, `%${normalizedSearch}%`),
+        ilike(sql`COALESCE(${users.displayName}, '')`, `%${normalizedSearch}%`),
+      ),
+    );
   }
   conditions.push(
     or(
@@ -656,11 +740,12 @@ export async function getKanbanTickets(filters?: { area?: string; assigneeId?: s
       priority: tickets.priority,
       status: tickets.status,
       createdAt: tickets.createdAt,
+      updatedAt: tickets.updatedAt,
       assigneeId: tickets.assigneeId,
       assigneeName: users.displayName,
     })
     .from(tickets)
     .leftJoin(users, eq(tickets.assigneeId, users.id))
     .where(where)
-    .orderBy(desc(tickets.createdAt));
+    .orderBy(priorityOrderExpression(), desc(tickets.updatedAt));
 }

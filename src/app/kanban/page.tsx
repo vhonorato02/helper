@@ -9,13 +9,23 @@ export const dynamic = 'force-dynamic';
 export const metadata = { title: copy.metadata.kanban };
 
 interface PageProps {
-  searchParams: Promise<{ area?: string; assigneeId?: string }>;
+  searchParams: Promise<{
+    area?: string;
+    assigneeId?: string;
+    priority?: string;
+    search?: string;
+  }>;
 }
 
 export default async function KanbanPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const [tickets, users] = await Promise.all([
-    getKanbanTickets({ area: params.area, assigneeId: params.assigneeId }),
+    getKanbanTickets({
+      area: params.area,
+      assigneeId: params.assigneeId,
+      priority: params.priority,
+      search: params.search,
+    }),
     getUsers(),
   ]);
 

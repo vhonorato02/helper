@@ -11,6 +11,7 @@ import { DATE_FORMATS, formatPtBrDate } from '@/lib/format';
 import { CommentThread } from './comment-thread';
 import { HistoryLog } from './history-log';
 import { TicketActions } from './actions';
+import { TicketHeaderActions } from './ticket-header-actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,9 +61,12 @@ export default async function TicketDetailPage({ params }: PageProps) {
           <PriorityBadge priority={ticket.priority} />
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-semibold leading-tight tracking-tight">
-          {ticket.title}
-        </h1>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+          <h1 className="min-w-0 text-2xl sm:text-3xl font-semibold leading-tight tracking-tight">
+            {ticket.title}
+          </h1>
+          <TicketHeaderActions code={ticket.code} />
+        </div>
 
         <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
           <span className="flex items-center gap-1.5">

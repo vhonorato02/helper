@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { auth } from '@/auth';
 import { getTicketCount, getTickets } from '@/actions/tickets';
 import { getUsers } from '@/actions/users';
 import { TicketTable } from '@/components/tickets/ticket-table';
@@ -16,6 +17,8 @@ interface PageProps {
     priority?: string;
     assigneeId?: string;
     search?: string;
+    attention?: string;
+    sort?: string;
     page?: string;
   }>;
 }
@@ -29,11 +32,14 @@ async function TicketList({ searchParams }: { searchParams: Awaited<PageProps['s
     priority: searchParams.priority,
     assigneeId: searchParams.assigneeId,
     search: searchParams.search,
+    attention: searchParams.attention,
+    sort: searchParams.sort,
   };
 
-  const [total, users] = await Promise.all([
+  const [total, users, session] = await Promise.all([
     getTicketCount(filters),
     getUsers(),
+    auth(),
   ]);
   const safePage = Math.min(page, Math.max(Math.ceil(total / 50), 1));
   const tickets = await getTickets({
@@ -48,6 +54,7 @@ async function TicketList({ searchParams }: { searchParams: Awaited<PageProps['s
       total={total}
       page={safePage}
       pageSize={50}
+      currentUserId={session?.user?.id ?? ''}
     />
   );
 }

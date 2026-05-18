@@ -30,6 +30,7 @@ type KanbanTicket = {
   subcategory: string;
   priority: Ticket['priority'];
   status: Status;
+  updatedAt: Date;
   assigneeName?: string | null;
 };
 

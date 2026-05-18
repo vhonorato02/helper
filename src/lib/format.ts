@@ -19,6 +19,13 @@ export function capitalizeFirst(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
+export function daysSince(date: Date | string, now = new Date()) {
+  return Math.max(
+    0,
+    Math.floor((now.getTime() - new Date(date).getTime()) / (24 * 60 * 60 * 1000)),
+  );
+}
+
 export function initials(name: string) {
   return (
     name

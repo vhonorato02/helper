@@ -134,6 +134,9 @@ export const HISTORY_FIELD_LABELS = {
   description: 'descrição',
   origin: 'origem',
   subcategory: 'subcategoria',
+  comment_added: 'comentário',
+  comment_edited: 'comentário',
+  comment_deleted: 'comentário',
 } as const;
 
 export const HISTORY_VALUE_LABELS = {

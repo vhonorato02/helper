@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import { db } from '@/db';
-import { comments, tickets, users } from '@/db/schema';
+import { comments, ticketHistory, tickets, users } from '@/db/schema';
 import { and, eq, asc } from 'drizzle-orm';
 import { z } from 'zod';
 import { copy } from '@/lib/copy';
@@ -18,6 +18,21 @@ async function requireAuth() {
 const commentSchema = z.object({
   body: z.string().trim().min(1).max(4000),
 });
+
+const COMMENT_HISTORY_LIMIT = 220;
+
+function commentHistorySnippet(body: string) {
+  const normalized = body.replace(/\s+/g, ' ').trim();
+  if (normalized.length <= COMMENT_HISTORY_LIMIT) return normalized;
+  return `${normalized.slice(0, COMMENT_HISTORY_LIMIT - 1).trimEnd()}…`;
+}
+
+function revalidateCommentSurfaces(ticketCode: string) {
+  revalidatePath('/');
+  revalidatePath('/tickets');
+  revalidatePath('/kanban');
+  revalidatePath(`/tickets/${ticketCode}`);
+}
 
 export async function addComment(ticketCode: string, formData: FormData) {
   const user = await requireAuth();
@@ -33,15 +48,23 @@ export async function addComment(ticketCode: string, formData: FormData) {
 
   if (!ticket) return { error: copy.validation.invalidTicket };
 
-  await db.insert(comments).values({
-    ticketId: ticket.id,
-    authorId: user.id,
-    body: parsed.data.body,
+  await db.transaction(async (tx) => {
+    await tx.insert(comments).values({
+      ticketId: ticket.id,
+      authorId: user.id,
+      body: parsed.data.body,
+    });
+    await tx.insert(ticketHistory).values({
+      ticketId: ticket.id,
+      authorId: user.id,
+      field: 'comment_added',
+      oldValue: null,
+      newValue: commentHistorySnippet(parsed.data.body),
+    });
+    await tx.update(tickets).set({ updatedAt: new Date() }).where(eq(tickets.code, ticketCode));
   });
 
-  await db.update(tickets).set({ updatedAt: new Date() }).where(eq(tickets.code, ticketCode));
-
-  revalidatePath(`/tickets/${ticketCode}`);
+  revalidateCommentSurfaces(ticketCode);
   return { ok: true };
 }
 
@@ -50,6 +73,7 @@ async function getCommentWithTicket(commentId: string, ticketCode: string) {
     .select({
       id: comments.id,
       authorId: comments.authorId,
+      body: comments.body,
       ticketId: comments.ticketId,
       ticketCode: tickets.code,
     })
@@ -78,11 +102,24 @@ export async function updateComment(ticketCode: string, commentId: string, formD
   const comment = await getCommentWithTicket(parsedId.data, ticketCode);
   if (!comment) return { error: copy.validation.invalidComment };
   if (!canManageComment(user, comment)) return { error: copy.auth.errors.permissionDenied };
+  if (comment.body === parsedBody.data.body) return { ok: true };
 
-  await db.update(comments).set({ body: parsedBody.data.body }).where(eq(comments.id, parsedId.data));
-  await db.update(tickets).set({ updatedAt: new Date() }).where(eq(tickets.code, ticketCode));
+  await db.transaction(async (tx) => {
+    await tx
+      .update(comments)
+      .set({ body: parsedBody.data.body })
+      .where(eq(comments.id, parsedId.data));
+    await tx.insert(ticketHistory).values({
+      ticketId: comment.ticketId,
+      authorId: user.id,
+      field: 'comment_edited',
+      oldValue: commentHistorySnippet(comment.body),
+      newValue: commentHistorySnippet(parsedBody.data.body),
+    });
+    await tx.update(tickets).set({ updatedAt: new Date() }).where(eq(tickets.code, ticketCode));
+  });
 
-  revalidatePath(`/tickets/${ticketCode}`);
+  revalidateCommentSurfaces(ticketCode);
   return { ok: true };
 }
 
@@ -95,10 +132,19 @@ export async function deleteComment(ticketCode: string, commentId: string) {
   if (!comment) return { error: copy.validation.invalidComment };
   if (!canManageComment(user, comment)) return { error: copy.auth.errors.permissionDenied };
 
-  await db.delete(comments).where(eq(comments.id, parsedId.data));
-  await db.update(tickets).set({ updatedAt: new Date() }).where(eq(tickets.code, ticketCode));
+  await db.transaction(async (tx) => {
+    await tx.insert(ticketHistory).values({
+      ticketId: comment.ticketId,
+      authorId: user.id,
+      field: 'comment_deleted',
+      oldValue: commentHistorySnippet(comment.body),
+      newValue: null,
+    });
+    await tx.delete(comments).where(eq(comments.id, parsedId.data));
+    await tx.update(tickets).set({ updatedAt: new Date() }).where(eq(tickets.code, ticketCode));
+  });
 
-  revalidatePath(`/tickets/${ticketCode}`);
+  revalidateCommentSurfaces(ticketCode);
   return { ok: true };
 }
 

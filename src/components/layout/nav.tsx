@@ -247,6 +247,7 @@ export function Nav({ user, users }: NavProps) {
         onClose={() => setPaletteOpen(false)}
         onNewTicket={() => setFormOpen(true)}
         isAdmin={user.isAdmin}
+        currentUserId={user.id}
       />
       {user.id && (
         <ChangePasswordDialog
