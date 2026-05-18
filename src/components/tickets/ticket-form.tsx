@@ -201,23 +201,45 @@ export function TicketForm({ open, onClose, users }: TicketFormProps) {
             {errors.title && <p className="text-xs text-destructive">{errors.title.message}</p>}
           </div>
 
-          <div className="space-y-1.5">
-            <Label>{copy.tickets.form.fields.priority}</Label>
-            <Select
-              value={watch('priority')}
-              onValueChange={(value) => setValue('priority', value as FormData['priority'])}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PRIORITY_ORDER.map((priority) => (
-                  <SelectItem key={priority} value={priority}>
-                    {PRIORITY_LABELS[priority]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>{copy.tickets.form.fields.priority}</Label>
+              <Select
+                value={watch('priority')}
+                onValueChange={(value) => setValue('priority', value as FormData['priority'])}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRIORITY_ORDER.map((priority) => (
+                    <SelectItem key={priority} value={priority}>
+                      {PRIORITY_LABELS[priority]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>{copy.tickets.form.fields.assignee}</Label>
+              <Select
+                value={watch('assigneeId') ?? 'none'}
+                onValueChange={(value) => setValue('assigneeId', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={copy.tickets.form.placeholders.assignee} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{copy.tickets.form.placeholders.assignee}</SelectItem>
+                  {users.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.displayName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <button
@@ -239,26 +261,6 @@ export function TicketForm({ open, onClose, users }: TicketFormProps) {
                   {...register('origin')}
                 />
                 <p className="text-xs text-muted-foreground">{copy.tickets.form.helper.origin}</p>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label>{copy.tickets.form.fields.assignee}</Label>
-                <Select
-                  value={watch('assigneeId') ?? 'none'}
-                  onValueChange={(value) => setValue('assigneeId', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={copy.tickets.form.placeholders.assignee} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">{copy.tickets.form.placeholders.assignee}</SelectItem>
-                    {users.map((user) => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {user.displayName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
 
               <div className="space-y-1.5">

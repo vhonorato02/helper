@@ -218,16 +218,18 @@ export async function deleteUser(userId: string) {
     if (activeAdmins <= 1) return { error: copy.users.errors.cannotRemoveLastAdmin };
   }
 
-  await db.transaction(async (tx) => {
-    await tx.update(tickets).set({ assigneeId: null }).where(eq(tickets.assigneeId, parsed.data));
-    await tx.update(tickets).set({ authorId: null }).where(eq(tickets.authorId, parsed.data));
-    await tx.update(comments).set({ authorId: null }).where(eq(comments.authorId, parsed.data));
-    await tx
-      .update(ticketHistory)
-      .set({ authorId: null })
-      .where(eq(ticketHistory.authorId, parsed.data));
-    await tx.delete(users).where(eq(users.id, parsed.data));
-  });
+  // Neon HTTP driver does not support transactions — use sequential queries.
+  // FK constraints (onDelete: 'set null' / 'cascade') would handle cleanup
+  // automatically, but we do it explicitly for environments where migrations
+  // were applied manually without FK clauses.
+  await db.update(tickets).set({ assigneeId: null }).where(eq(tickets.assigneeId, parsed.data));
+  await db.update(tickets).set({ authorId: null }).where(eq(tickets.authorId, parsed.data));
+  await db.update(comments).set({ authorId: null }).where(eq(comments.authorId, parsed.data));
+  await db
+    .update(ticketHistory)
+    .set({ authorId: null })
+    .where(eq(ticketHistory.authorId, parsed.data));
+  await db.delete(users).where(eq(users.id, parsed.data));
 
   revalidateUserSurfaces();
   return { ok: true };

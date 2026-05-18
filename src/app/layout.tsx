@@ -13,8 +13,18 @@ const inter = Inter({
   display: 'swap',
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL
-  ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+function buildSiteUrl() {
+  const raw = process.env.NEXT_PUBLIC_SITE_URL;
+  if (raw) {
+    // Vercel env vars are often set without protocol (e.g. "ticketanglo.vercel.app").
+    // new URL() throws on bare hostnames — always ensure a scheme is present.
+    if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+    return `https://${raw}`;
+  }
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return 'http://localhost:3000';
+}
+const SITE_URL = buildSiteUrl();
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
