@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -40,6 +41,7 @@ export function CommentThread({
   currentUserId,
   currentUserIsAdmin,
 }: CommentThreadProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingBody, setEditingBody] = useState('');
@@ -60,6 +62,7 @@ export function CommentThread({
       }
 
       formRef.current?.reset();
+      router.refresh();
     });
   };
 
@@ -89,6 +92,7 @@ export function CommentThread({
 
       toast.success(copy.tickets.comments.edited);
       cancelEdit();
+      router.refresh();
     });
   };
 
@@ -104,6 +108,7 @@ export function CommentThread({
 
       toast.success(copy.tickets.comments.deleted);
       setDeleteTarget(null);
+      router.refresh();
     });
   };
 

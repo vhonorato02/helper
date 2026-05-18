@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import {
   KeyRound,
@@ -74,6 +75,7 @@ function getConfirmContent(state: ConfirmState | null) {
 }
 
 export function UserList({ users, currentUserId }: UserListProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [passwordTarget, setPasswordTarget] = useState<UserItem | null>(null);
@@ -82,6 +84,7 @@ export function UserList({ users, currentUserId }: UserListProps) {
   const refreshAfter = (message: string) => {
     toast.success(message);
     setConfirmState(null);
+    router.refresh();
   };
 
   const handleToggle = (user: UserItem) => {
