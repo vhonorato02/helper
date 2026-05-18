@@ -56,6 +56,11 @@ function revalidateUserSurfaces() {
 }
 
 export async function getUsers() {
+  // NOTE: we intentionally do NOT select `mustChangePassword`, `lastLoginAt` or
+  // `updatedAt` here. Those columns exist in src/db/schema.ts but the
+  // production database has not been migrated yet. Selecting them caused 500s
+  // on every page that lists users (configurações, tickets, kanban, detalhe).
+  // Once `npm run db:push` runs against prod, feel free to add them back.
   return db
     .select({
       id: users.id,
@@ -63,8 +68,6 @@ export async function getUsers() {
       displayName: users.displayName,
       isAdmin: users.isAdmin,
       isActive: users.isActive,
-      mustChangePassword: users.mustChangePassword,
-      lastLoginAt: users.lastLoginAt,
       createdAt: users.createdAt,
     })
     .from(users)
@@ -95,13 +98,13 @@ export async function createUser(formData: FormData) {
   if (!available) return { error: copy.validation.usernameExists };
 
   const passwordHash = await bcrypt.hash(parsed.data.password, 12);
+  // passwordChangedAt / mustChangePassword intentionally omitted —
+  // see note on getUsers above. Schema is ready; awaiting db:push.
   await db.insert(users).values({
     username: parsed.data.username,
     displayName: parsed.data.displayName,
     passwordHash,
     isAdmin: parsed.data.isAdmin,
-    passwordChangedAt: new Date(),
-    mustChangePassword: true,
   });
 
   revalidatePath('/configuracoes');
