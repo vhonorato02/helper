@@ -12,6 +12,7 @@ import {
   LogOut,
   Menu,
   Plus,
+  Search,
   Settings,
   X,
 } from 'lucide-react';
@@ -79,30 +80,40 @@ export function Nav({ user, users }: NavProps) {
   }, [handleKeydown]);
 
   const userName = user.name ?? copy.dashboard.greeting.fallbackName;
+  const isActiveLink = (href: string) =>
+    href === '/' ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex h-14 items-center gap-3">
-          <Link href="/" className="flex items-center gap-2.5 font-semibold shrink-0 group">
-            <div className="size-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground text-sm font-bold shadow-sm shadow-primary/20 transition-transform group-hover:scale-105">
+      <header className="sticky top-0 z-40 w-full border-b border-border/70 bg-background/88 backdrop-blur-xl supports-[backdrop-filter]:bg-background/75">
+        <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6">
+          <Link
+            href="/"
+            className="group flex min-w-0 shrink-0 items-center gap-2.5 rounded-md pr-1 font-semibold"
+          >
+            <div className="flex size-9 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground shadow-sm shadow-primary/25 transition-transform group-hover:scale-105">
               {copy.brand.initials}
             </div>
-            <span className="hidden sm:block tracking-tight">{copy.brand.name}</span>
+            <div className="hidden min-w-0 sm:block">
+              <span className="block leading-tight tracking-tight">{copy.brand.name}</span>
+              <span className="block truncate text-[11px] font-medium text-muted-foreground">
+                {copy.brand.institution}
+              </span>
+            </div>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-0.5 ml-4">
+          <nav className="ml-3 hidden items-center gap-1 rounded-lg border bg-card/75 p-1 shadow-xs md:flex">
             {NAV_LINKS.map(({ href, label, icon: Icon }) => {
-              const active = pathname === href;
+              const active = isActiveLink(href);
               return (
                 <Link
                   key={href}
                   href={href}
                   className={cn(
-                    'flex items-center gap-1.5 px-3 h-9 rounded-md text-sm transition-colors',
+                    'flex h-9 items-center gap-1.5 rounded-md px-3 text-sm font-medium transition-all',
                     active
-                      ? 'bg-accent text-foreground font-medium'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-accent/60',
+                      ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/15'
+                      : 'text-muted-foreground hover:bg-accent hover:text-foreground',
                   )}
                 >
                   <Icon className="size-4" />
@@ -115,9 +126,10 @@ export function Nav({ user, users }: NavProps) {
           <div className="ml-auto flex items-center gap-1.5">
             <button
               onClick={() => setPaletteOpen(true)}
-              className="hidden lg:inline-flex items-center gap-2 h-8 px-2.5 rounded-md border border-border bg-muted/40 text-xs text-muted-foreground hover:bg-muted hover:border-foreground/20 transition-colors"
+              className="hidden h-9 items-center gap-2 rounded-md border border-border/90 bg-card px-3 text-xs font-medium text-muted-foreground shadow-xs transition-all hover:border-foreground/20 hover:bg-accent hover:text-foreground lg:inline-flex"
               aria-label={copy.commandPalette.title}
             >
+              <Search className="size-3.5" />
               <span>{copy.nav.search}</span>
               <span className="kbd">{copy.nav.commandShortcut}</span>
             </button>
@@ -125,7 +137,7 @@ export function Nav({ user, users }: NavProps) {
             <Button
               size="sm"
               onClick={() => setFormOpen(true)}
-              className="gap-1.5 shadow-sm shadow-primary/20"
+              className="gap-1.5"
             >
               <Plus className="size-4" />
               <span className="hidden sm:inline">{copy.nav.newTicket}</span>
@@ -136,15 +148,16 @@ export function Nav({ user, users }: NavProps) {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
-                  className="hidden md:flex items-center gap-1.5 h-9 pl-1 pr-2 rounded-md hover:bg-accent transition-colors"
+                  className="hidden h-10 items-center gap-2 rounded-md border border-transparent pl-1.5 pr-2 transition-colors hover:border-border hover:bg-card md:flex"
                   aria-label={copy.auth.menu.userMenu}
                 >
-                  <Avatar className="size-7">
-                    <AvatarFallback className="text-[10px] font-semibold bg-primary/10 text-primary">
+                  <Avatar className="size-8">
+                    <AvatarFallback className="bg-primary/10 text-[10px] font-semibold text-primary">
                       {initials(userName)}
                     </AvatarFallback>
                   </Avatar>
-                  <ChevronDown className="size-3 text-muted-foreground" />
+                  <span className="max-w-28 truncate text-sm font-medium">{userName}</span>
+                  <ChevronDown className="size-3.5 text-muted-foreground" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -186,6 +199,7 @@ export function Nav({ user, users }: NavProps) {
               className="md:hidden"
               onClick={() => setMobileOpen((open) => !open)}
               aria-label={copy.nav.mobileMenu}
+              aria-expanded={mobileOpen}
             >
               {mobileOpen ? <X className="size-4" /> : <Menu className="size-4" />}
             </Button>
@@ -193,17 +207,31 @@ export function Nav({ user, users }: NavProps) {
         </div>
 
         {mobileOpen && (
-          <div className="md:hidden border-t bg-background px-4 py-3 space-y-1">
+          <div className="border-t border-border/70 bg-background/95 px-4 py-3 shadow-lg md:hidden">
+            <div className="mb-3 flex items-center gap-3 rounded-lg border bg-card p-3">
+              <Avatar className="size-9">
+                <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
+                  {initials(userName)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">{userName}</p>
+                {user.isAdmin && (
+                  <p className="text-xs text-muted-foreground">{copy.auth.menu.admin}</p>
+                )}
+              </div>
+            </div>
+            <div className="space-y-1">
             {NAV_LINKS.map(({ href, label, icon: Icon }) => (
               <Link
                 key={href}
                 href={href}
                 onClick={() => setMobileOpen(false)}
                 className={cn(
-                  'flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors',
-                  pathname === href
-                    ? 'bg-accent text-foreground font-medium'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/60',
+                  'flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition-colors',
+                  isActiveLink(href)
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground',
                 )}
               >
                 <Icon className="size-4" />
@@ -237,6 +265,7 @@ export function Nav({ user, users }: NavProps) {
               <LogOut className="size-4" />
               {copy.nav.signOutWithName(userName)}
             </button>
+            </div>
           </div>
         )}
       </header>

@@ -142,13 +142,13 @@ export function UserList({ users, currentUserId }: UserListProps) {
 
   return (
     <>
-      <div className="rounded-xl border bg-card overflow-hidden divide-y">
+      <div className="surface-panel overflow-hidden rounded-lg divide-y">
         {users.map((user) => {
           const isSelf = user.id === currentUserId;
           return (
             <div
               key={user.id}
-              className={`flex items-center gap-3 px-4 py-3 transition-colors ${
+              className={`flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/35 ${
                 !user.isActive ? 'bg-muted/30' : ''
               }`}
             >

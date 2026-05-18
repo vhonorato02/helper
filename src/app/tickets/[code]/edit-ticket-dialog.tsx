@@ -86,7 +86,7 @@ export function EditTicketDialog({ open, onOpenChange, ticket }: EditTicketDialo
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <div className="flex items-start gap-3">
-            <div className="size-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10">
               <Pencil className="size-4 text-primary" />
             </div>
             <div className="min-w-0">
@@ -97,7 +97,7 @@ export function EditTicketDialog({ open, onOpenChange, ticket }: EditTicketDialo
         </DialogHeader>
 
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid sm:grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>{copy.tickets.form.fields.area}</Label>
               <Input value={AREA_LABELS[ticket.area]} disabled />
@@ -131,7 +131,7 @@ export function EditTicketDialog({ open, onOpenChange, ticket }: EditTicketDialo
             />
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>{copy.tickets.form.fields.priority}</Label>
               <Select value={priority} onValueChange={(value) => setPriority(value as Ticket['priority'])}>

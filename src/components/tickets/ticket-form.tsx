@@ -134,10 +134,10 @@ export function TicketForm({ open, onClose, users }: TicketFormProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <div className="flex items-start gap-3">
-            <div className="size-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10">
               <Sparkles className="size-4 text-primary" />
             </div>
             <div>
@@ -148,7 +148,7 @@ export function TicketForm({ open, onClose, users }: TicketFormProps) {
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>{copy.tickets.form.fields.area}</Label>
               <Select value={area} onValueChange={handleAreaChange}>
@@ -223,14 +223,14 @@ export function TicketForm({ open, onClose, users }: TicketFormProps) {
           <button
             type="button"
             onClick={() => setShowExtra((value) => !value)}
-            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
+            className="flex w-fit items-center gap-1 rounded-md px-1 py-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             {showExtra ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
             {showExtra ? copy.tickets.form.advanced.close : copy.tickets.form.advanced.open}
           </button>
 
           {showExtra && (
-            <div className="space-y-4 border-t pt-4">
+            <div className="space-y-4 rounded-lg border bg-muted/25 p-4">
               <div className="space-y-1.5">
                 <Label htmlFor="origin">{copy.tickets.form.fields.origin}</Label>
                 <Input
@@ -273,7 +273,7 @@ export function TicketForm({ open, onClose, users }: TicketFormProps) {
             </div>
           )}
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
             <Button type="button" variant="outline" onClick={handleClose} disabled={isPending}>
               {copy.common.cancel}
             </Button>

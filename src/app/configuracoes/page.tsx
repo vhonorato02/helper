@@ -22,10 +22,15 @@ export default async function ConfiguracoesPage() {
   const currentUser = session.user;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight">{copy.users.page.title}</h1>
-        <p className="text-muted-foreground text-sm mt-1.5">{copy.users.page.description}</p>
+        <p className="text-sm font-medium text-muted-foreground">{copy.nav.links.settings}</p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
+          {copy.users.page.title}
+        </h1>
+        <p className="mt-1.5 max-w-2xl text-sm leading-6 text-muted-foreground">
+          {copy.users.page.description}
+        </p>
       </header>
 
       <Tabs defaultValue="usuarios">
@@ -40,7 +45,7 @@ export default async function ConfiguracoesPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="usuarios" className="space-y-8 mt-6">
+        <TabsContent value="usuarios" className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
           <section>
             <div className="flex items-baseline justify-between mb-3">
               <div>

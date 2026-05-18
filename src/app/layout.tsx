@@ -1,17 +1,10 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from '@/components/providers';
 import { Nav } from '@/components/layout/nav';
 import { auth } from '@/auth';
 import { getUsers } from '@/actions/users';
 import { copy } from '@/lib/copy';
-
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-sans',
-  display: 'swap',
-});
 
 export const metadata: Metadata = {
   title: {
@@ -57,7 +50,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           }}
         />
       </head>
-      <body className={`${inter.variable} min-h-screen antialiased`}>
+      <body className="min-h-screen antialiased">
         <Providers>
           {isAuthenticated && (
             <Nav
@@ -65,7 +58,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               users={users}
             />
           )}
-          <main className={isAuthenticated ? 'max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8' : ''}>
+          <main
+            className={
+              isAuthenticated
+                ? 'mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 sm:py-7 lg:py-8'
+                : ''
+            }
+          >
             {children}
           </main>
         </Providers>

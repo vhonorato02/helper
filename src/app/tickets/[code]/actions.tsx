@@ -195,7 +195,7 @@ export function TicketActions({
   return (
     <>
       <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
-        <div className="rounded-xl border bg-card p-4 space-y-5">
+        <div className="surface-panel rounded-lg p-4 space-y-5">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
             <Settings2 className="size-3.5" />
             {copy.tickets.detail.actionsTitle}
@@ -333,7 +333,7 @@ export function TicketActions({
           )}
         </div>
 
-        <div className="rounded-xl border bg-card p-4 space-y-2.5 text-xs">
+        <div className="surface-panel rounded-lg p-4 space-y-2.5 text-xs">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
             {copy.tickets.detail.metaTitle}
           </h3>

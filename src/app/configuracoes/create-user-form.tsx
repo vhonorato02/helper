@@ -77,8 +77,8 @@ export function CreateUserForm() {
   };
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} className="rounded-xl border bg-card p-5 space-y-4">
-      <div className="grid sm:grid-cols-2 gap-4">
+    <form ref={formRef} onSubmit={handleSubmit} className="surface-panel rounded-lg p-5 space-y-4">
+      <div className="grid gap-4">
         <div className="space-y-1.5">
           <Label htmlFor="username">{copy.users.form.username}</Label>
           <Input
@@ -103,7 +103,7 @@ export function CreateUserForm() {
         </div>
       </div>
 
-      <div className="grid sm:grid-cols-[1fr_auto] gap-4">
+      <div className="grid gap-4">
         <div className="space-y-1.5">
           <Label htmlFor="password">{copy.users.form.password}</Label>
           <div className="relative">
@@ -171,7 +171,7 @@ export function CreateUserForm() {
         </p>
       )}
 
-      <div className="flex items-center justify-between gap-2 pt-1">
+      <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-muted-foreground">{copy.users.form.helper}</p>
         <Button type="submit" disabled={isPending} className="gap-1.5 shrink-0">
           {isPending ? <Loader2 className="animate-spin" /> : <Plus />}

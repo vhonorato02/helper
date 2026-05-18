@@ -136,9 +136,9 @@ export function CommandPalette({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="p-0 gap-0 max-w-lg overflow-hidden">
+      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-xl">
         <DialogTitle className="sr-only">{copy.commandPalette.title}</DialogTitle>
-        <div className="flex items-center border-b px-4 gap-3">
+        <div className="flex items-center gap-3 border-b px-4">
           <Search className="size-4 text-muted-foreground shrink-0" />
           <input
             autoFocus
@@ -146,12 +146,12 @@ export function CommandPalette({
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={copy.commandPalette.placeholder}
-            className="flex-1 py-3.5 text-sm bg-transparent outline-none placeholder:text-muted-foreground"
+            className="flex-1 bg-transparent py-4 text-sm outline-none placeholder:text-muted-foreground"
           />
           <kbd className="kbd">{copy.commandPalette.hints.escape}</kbd>
         </div>
 
-        <div className="py-1.5 max-h-[400px] overflow-y-auto">
+        <div className="max-h-[420px] overflow-y-auto py-2">
           {filtered.length === 0 ? (
             <p className="text-center text-sm text-muted-foreground py-8">
               {copy.commandPalette.noResults(query)}
@@ -175,7 +175,7 @@ export function CommandPalette({
                           setQuery('');
                         }}
                         className={cn(
-                          'w-[calc(100%-0.75rem)] flex items-center gap-3 px-4 py-2 text-sm transition-colors text-left mx-1.5 rounded-md',
+                          'mx-1.5 flex w-[calc(100%-0.75rem)] items-center gap-3 rounded-md px-4 py-2.5 text-left text-sm transition-colors',
                           index === selected
                             ? 'bg-accent text-accent-foreground'
                             : 'hover:bg-accent/50',
@@ -196,7 +196,7 @@ export function CommandPalette({
           )}
         </div>
 
-        <div className="border-t px-4 py-2 flex gap-4 text-xs text-muted-foreground">
+        <div className="flex gap-4 border-t px-4 py-2.5 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <ArrowUp className="size-3" />
             <ArrowDown className="size-3" />

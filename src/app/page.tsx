@@ -40,16 +40,16 @@ interface StatCardProps {
 
 function StatCard({ label, value, icon, href, accent = 'default', empty }: StatCardProps) {
   const accentClass = {
-    default: 'bg-primary/10 text-primary',
-    destructive: 'bg-destructive/10 text-destructive',
-    warning: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
-    success: 'bg-green-500/10 text-green-600 dark:text-green-400',
+    default: 'bg-primary/10 text-primary ring-primary/15',
+    destructive: 'bg-destructive/10 text-destructive ring-destructive/15',
+    warning: 'bg-amber-500/15 text-amber-700 dark:text-amber-400 ring-amber-500/20',
+    success: 'bg-green-500/10 text-green-700 dark:text-green-400 ring-green-500/20',
   }[accent];
 
   return (
     <Link
       href={href}
-      className="group rounded-xl border bg-card p-5 transition-all hover:shadow-md hover:border-foreground/20 hover:-translate-y-0.5"
+      className="group surface-panel rounded-lg p-4 transition-all hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-lg sm:p-5"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
@@ -61,7 +61,7 @@ function StatCard({ label, value, icon, href, accent = 'default', empty }: StatC
         </div>
         <div
           className={cn(
-            'size-9 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-110',
+            'flex size-9 shrink-0 items-center justify-center rounded-md ring-1 ring-inset transition-transform group-hover:scale-110',
             accentClass,
           )}
         >
@@ -94,7 +94,7 @@ function EmptyHint({ text }: { text: string }) {
 function AttentionQueue({ tickets }: { tickets: AttentionTicket[] }) {
   return (
     <section className="xl:sticky xl:top-20 xl:self-start">
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold tracking-tight flex items-center gap-2">
             <AlertTriangle className="size-4 text-amber-600 dark:text-amber-400" />
@@ -114,8 +114,8 @@ function AttentionQueue({ tickets }: { tickets: AttentionTicket[] }) {
       </div>
 
       {tickets.length === 0 ? (
-        <div className="rounded-xl border bg-card py-12 px-5 text-center">
-          <div className="size-11 rounded-xl bg-green-500/10 mx-auto flex items-center justify-center mb-4">
+        <div className="surface-panel rounded-lg px-5 py-12 text-center">
+          <div className="mx-auto mb-4 flex size-11 items-center justify-center rounded-md bg-green-500/10">
             <CheckCircle2 className="size-5 text-green-600 dark:text-green-400" />
           </div>
           <p className="font-medium">{copy.dashboard.attention.emptyTitle}</p>
@@ -124,12 +124,12 @@ function AttentionQueue({ tickets }: { tickets: AttentionTicket[] }) {
           </p>
         </div>
       ) : (
-        <div className="rounded-xl border bg-card overflow-hidden divide-y">
+        <div className="surface-panel overflow-hidden rounded-lg divide-y">
           {tickets.map((ticket) => (
             <Link
               key={ticket.id}
               href={`/tickets/${ticket.code}`}
-              className="block p-3.5 hover:bg-muted/45 transition-colors"
+              className="block p-3.5 transition-colors hover:bg-muted/45"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -174,7 +174,7 @@ function AttentionQueue({ tickets }: { tickets: AttentionTicket[] }) {
 function MyQueue({ tickets, href }: { tickets: TicketRow[]; href: string }) {
   return (
     <section>
-      <div className="flex items-center justify-between mb-3">
+      <div className="mb-3 flex items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold tracking-tight flex items-center gap-2">
             <UserCheck className="size-4 text-primary" />
@@ -194,14 +194,14 @@ function MyQueue({ tickets, href }: { tickets: TicketRow[]; href: string }) {
       </div>
 
       {tickets.length === 0 ? (
-        <div className="rounded-xl border bg-card px-5 py-6">
+        <div className="surface-panel rounded-lg px-5 py-6">
           <p className="font-medium">{copy.dashboard.myQueue.emptyTitle}</p>
           <p className="text-sm text-muted-foreground mt-1">
             {copy.dashboard.myQueue.emptyHint}
           </p>
         </div>
       ) : (
-        <div className="grid sm:grid-cols-2 gap-2.5">
+        <div className="grid gap-2.5 sm:grid-cols-2">
           {tickets.map((ticket) => {
             const staleDays = daysSince(ticket.updatedAt);
 
@@ -209,7 +209,7 @@ function MyQueue({ tickets, href }: { tickets: TicketRow[]; href: string }) {
               <Link
                 key={ticket.id}
                 href={`/tickets/${ticket.code}`}
-                className="rounded-xl border bg-card p-3 transition-colors hover:bg-muted/35 hover:border-foreground/20"
+                className="surface-panel rounded-lg p-3 transition-colors hover:bg-muted/35 hover:border-foreground/20"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -267,15 +267,24 @@ export default async function DashboardPage() {
   const today = capitalizeFirst(formatPtBrDate(new Date(), DATE_FORMATS.dashboardDay));
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-          {getGreeting(userName)}
-        </h1>
-        <p className="text-muted-foreground text-sm mt-1.5">{today}</p>
+    <div className="space-y-7">
+      <div className="flex flex-col gap-4 rounded-lg border bg-card/75 p-5 shadow-xs sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">{today}</p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
+            {getGreeting(userName)}
+          </h1>
+        </div>
+        <Link
+          href="/tickets?attention=true"
+          className="inline-flex w-fit items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm font-semibold text-muted-foreground shadow-xs transition-colors hover:bg-accent hover:text-foreground"
+        >
+          <AlertTriangle className="size-4 text-amber-600 dark:text-amber-400" />
+          {copy.dashboard.attention.title}
+        </Link>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-6">
         <StatCard
           label={copy.dashboard.stats.openTi}
           value={Number(stats.abertosTI)}
@@ -323,12 +332,12 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_370px]">
         <div className="space-y-6">
           <MyQueue tickets={myQueue} href={myQueueHref} />
 
           <section>
-            <div className="flex items-center justify-between mb-4">
+            <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg font-semibold tracking-tight">
                   {copy.dashboard.recent.title}
@@ -346,8 +355,8 @@ export default async function DashboardPage() {
             </div>
 
             {recent.length === 0 ? (
-              <div className="rounded-xl border bg-card py-16 text-center">
-                <div className="size-12 rounded-xl bg-muted/60 mx-auto flex items-center justify-center mb-4">
+              <div className="surface-panel rounded-lg py-16 text-center">
+                <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-md bg-muted/60">
                   <Inbox className="size-5 text-muted-foreground" />
                 </div>
                 <p className="font-medium">{copy.dashboard.recent.emptyTitle}</p>
@@ -356,11 +365,11 @@ export default async function DashboardPage() {
                 </p>
               </div>
             ) : (
-              <div className="rounded-xl border bg-card overflow-hidden">
+              <div className="surface-panel overflow-hidden rounded-lg">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b bg-muted/40 text-xs">
+                      <tr className="border-b bg-muted/55 text-xs">
                         <th className="text-left px-4 py-2.5 font-medium text-muted-foreground uppercase tracking-wide">
                           {copy.tickets.table.headers.code}
                         </th>

@@ -43,7 +43,7 @@ export default async function TicketDetailPage({ params }: PageProps) {
   const authorName = ticket.author?.displayName ?? copy.common.removedUser;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <Link
         href="/tickets"
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -52,7 +52,7 @@ export default async function TicketDetailPage({ params }: PageProps) {
         {copy.tickets.detail.back}
       </Link>
 
-      <header className="space-y-4">
+      <header className="surface-panel space-y-4 rounded-lg p-5 sm:p-6">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-mono text-sm text-muted-foreground font-medium">{ticket.code}</span>
           <span className="text-muted-foreground/40">·</span>
@@ -92,8 +92,6 @@ export default async function TicketDetailPage({ params }: PageProps) {
         </div>
       </header>
 
-      <div className="h-px bg-border" />
-
       <div className="grid lg:grid-cols-[1fr_280px] gap-8">
         <div className="space-y-8 min-w-0">
           {ticket.description ? (
@@ -102,7 +100,7 @@ export default async function TicketDetailPage({ params }: PageProps) {
                 <FileText className="size-3.5" />
                 {copy.tickets.detail.description}
               </h2>
-              <div className="text-sm leading-relaxed whitespace-pre-wrap rounded-xl bg-muted/30 border border-border/60 p-4">
+              <div className="rounded-lg border border-border/70 bg-card p-4 text-sm leading-relaxed shadow-xs whitespace-pre-wrap">
                 {ticket.description}
               </div>
             </section>

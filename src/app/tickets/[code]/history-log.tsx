@@ -51,7 +51,7 @@ export function HistoryLog({ history }: { history: HistoryEntry[] }) {
         {copy.tickets.history.title}
       </h2>
 
-      <ol className="relative space-y-3 border-l border-border/70 pl-5 ml-1.5">
+      <ol className="relative ml-1.5 space-y-3 border-l border-border/70 pl-5">
         {history.map((entry) => {
           const commentAction = COMMENT_ACTIONS[entry.field as keyof typeof COMMENT_ACTIONS];
           const authorName = entry.authorName ?? copy.common.removedUser;

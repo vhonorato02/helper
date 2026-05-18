@@ -210,7 +210,7 @@ export function CommentThread({
                       </div>
                     </div>
                   ) : (
-                    <div className="text-sm leading-relaxed whitespace-pre-wrap rounded-lg bg-muted/40 border border-border/60 px-3.5 py-2.5">
+                    <div className="rounded-lg border border-border/70 bg-card px-3.5 py-2.5 text-sm leading-relaxed shadow-xs whitespace-pre-wrap">
                       {comment.body}
                     </div>
                   )}
@@ -233,7 +233,7 @@ export function CommentThread({
             }
           }}
         />
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground hidden sm:block">
             {copy.tickets.comments.shortcut}
           </p>

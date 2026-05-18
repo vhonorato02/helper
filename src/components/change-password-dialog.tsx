@@ -83,7 +83,7 @@ export function ChangePasswordDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-start gap-3">
-            <div className="size-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10">
               <KeyRound className="size-4 text-primary" />
             </div>
             <div className="flex-1 min-w-0">

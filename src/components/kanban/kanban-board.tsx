@@ -83,8 +83,8 @@ export function KanbanBoard({ initialTickets }: KanbanBoardProps) {
 
   if (initialTickets.length === 0) {
     return (
-      <div className="rounded-xl border bg-card py-20 text-center">
-        <div className="size-12 rounded-2xl bg-muted/60 mx-auto flex items-center justify-center mb-4">
+      <div className="surface-panel rounded-lg px-5 py-20 text-center">
+        <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-md bg-muted/60">
           <Inbox className="size-5 text-muted-foreground" />
         </div>
         <p className="font-medium">{copy.kanban.emptyTitle}</p>
@@ -97,7 +97,7 @@ export function KanbanBoard({ initialTickets }: KanbanBoardProps) {
 
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="flex gap-3 overflow-x-auto pb-4 -mx-4 sm:-mx-6 px-4 sm:px-6 min-h-[calc(100vh-220px)]">
+      <div className="-mx-4 flex min-h-[calc(100vh-240px)] snap-x gap-3 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6">
         {BOARD_STATUSES.map((status: Status) => (
           <KanbanColumn
             key={status}

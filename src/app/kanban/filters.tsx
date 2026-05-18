@@ -75,14 +75,14 @@ export function KanbanFilters({ users }: Props) {
     activeArea !== 'all' || activeAssignee !== 'all' || activePriority !== 'all' || !!search;
 
   return (
-    <div className="flex gap-2 flex-wrap items-center">
-      <div className="relative min-w-[220px] flex-1 sm:flex-none sm:w-64">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
+    <div className="grid w-full gap-2 sm:grid-cols-2 lg:w-auto lg:grid-cols-[16rem_9rem_9rem_12rem_auto]">
+      <div className="relative sm:col-span-2 lg:col-span-1">
+        <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder={copy.kanban.filters.searchPlaceholder}
-          className="h-8 pl-8 pr-8 text-xs"
+          className="h-9 pl-8 pr-8 text-xs"
         />
         {search && (
           <button
@@ -97,7 +97,7 @@ export function KanbanFilters({ users }: Props) {
       </div>
 
       <Select value={activeArea} onValueChange={(value) => update('area', value)}>
-        <SelectTrigger className="w-36 h-8 text-xs">
+        <SelectTrigger className="h-9 text-xs">
           <SelectValue placeholder={copy.kanban.filters.area} />
         </SelectTrigger>
         <SelectContent>
@@ -111,7 +111,7 @@ export function KanbanFilters({ users }: Props) {
       </Select>
 
       <Select value={activePriority} onValueChange={(value) => update('priority', value)}>
-        <SelectTrigger className="w-36 h-8 text-xs">
+        <SelectTrigger className="h-9 text-xs">
           <SelectValue placeholder={copy.kanban.filters.priority} />
         </SelectTrigger>
         <SelectContent>
@@ -125,7 +125,7 @@ export function KanbanFilters({ users }: Props) {
       </Select>
 
       <Select value={activeAssignee} onValueChange={(value) => update('assigneeId', value)}>
-        <SelectTrigger className="w-44 h-8 text-xs">
+        <SelectTrigger className="h-9 text-xs">
           <SelectValue placeholder={copy.kanban.filters.assignee} />
         </SelectTrigger>
         <SelectContent>
@@ -147,7 +147,7 @@ export function KanbanFilters({ users }: Props) {
             setSearch('');
             router.push(pathname);
           }}
-          className="text-xs text-muted-foreground gap-1.5 h-8"
+          className="h-9 gap-1.5 text-xs text-muted-foreground"
         >
           <FilterX className="size-3.5" />
           {copy.common.clear}

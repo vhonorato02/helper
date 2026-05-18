@@ -64,9 +64,14 @@ export default async function TicketsPage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{copy.tickets.page.title}</h1>
-        <p className="text-muted-foreground text-sm mt-1.5">{copy.tickets.page.description}</p>
+      <div className="flex flex-col gap-2">
+        <p className="text-sm font-medium text-muted-foreground">{copy.nav.links.tickets}</p>
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+          {copy.tickets.page.title}
+        </h1>
+        <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+          {copy.tickets.page.description}
+        </p>
       </div>
 
       <Suspense
@@ -78,7 +83,7 @@ export default async function TicketsPage({ searchParams }: PageProps) {
               <Skeleton className="h-9 w-36" />
               <Skeleton className="h-9 w-32" />
             </div>
-            <Skeleton className="h-72 w-full rounded-xl" />
+            <Skeleton className="h-72 w-full rounded-lg" />
           </div>
         }
       >

@@ -45,8 +45,8 @@ export function KanbanCard({ ticket, dragging = false }: KanbanCardProps) {
       ref={setNodeRef}
       style={style}
       className={cn(
-        'group bg-card border border-border/80 rounded-lg p-3 cursor-grab active:cursor-grabbing select-none transition-all',
-        'hover:border-foreground/20 hover:shadow-sm',
+        'group cursor-grab select-none rounded-lg border border-border/80 bg-card p-3 shadow-xs transition-all active:cursor-grabbing',
+        'hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-md',
         isDragging && 'opacity-30',
         dragging && 'shadow-xl ring-2 ring-primary border-primary',
       )}
@@ -65,7 +65,7 @@ export function KanbanCard({ ticket, dragging = false }: KanbanCardProps) {
         <PriorityBadge priority={ticket.priority} />
       </div>
 
-      <p className="text-sm font-medium leading-snug line-clamp-2 mb-2.5">{ticket.title}</p>
+      <p className="mb-2.5 line-clamp-2 text-sm font-semibold leading-snug">{ticket.title}</p>
 
       <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
         <div className="flex items-center gap-1.5 min-w-0">

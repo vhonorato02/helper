@@ -44,8 +44,8 @@ export function KanbanColumn({ status, tickets }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
   return (
-    <div className="flex flex-col w-[280px] sm:w-[300px] shrink-0">
-      <div className="flex items-center justify-between mb-2.5 px-1">
+    <div className="flex w-[82vw] max-w-[320px] shrink-0 snap-start flex-col sm:w-[300px]">
+      <div className="mb-2.5 flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
           <span className={cn('size-1.5 rounded-full', dotColor[status])} />
           <h3 className="text-sm font-semibold">{STATUS_LABELS[status]}</h3>
@@ -58,8 +58,8 @@ export function KanbanColumn({ status, tickets }: KanbanColumnProps) {
       <div
         ref={setNodeRef}
         className={cn(
-          'relative flex flex-col gap-2 rounded-xl border bg-muted/30 p-2 min-h-[140px] flex-1 transition-colors',
-          'before:absolute before:top-0 before:left-0 before:right-0 before:h-0.5 before:rounded-t-xl',
+          'relative flex min-h-[140px] flex-1 flex-col gap-2 rounded-lg border bg-muted/30 p-2 transition-colors',
+          'before:absolute before:left-0 before:right-0 before:top-0 before:h-0.5 before:rounded-t-lg',
           columnAccent[status],
           isOver && 'bg-primary/5 border-primary/40 ring-2 ring-primary/30 ring-inset',
         )}

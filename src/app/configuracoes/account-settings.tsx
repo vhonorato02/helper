@@ -21,7 +21,7 @@ export function AccountSettings({ userId, displayName, isAdmin }: AccountSetting
 
   return (
     <>
-      <div className="rounded-xl border bg-card p-5">
+      <div className="surface-panel rounded-lg p-5">
         <div className="flex items-center gap-4">
           <Avatar className="size-12">
             <AvatarFallback className="bg-primary/10 text-primary font-semibold">
@@ -47,10 +47,10 @@ export function AccountSettings({ userId, displayName, isAdmin }: AccountSetting
         </div>
       </div>
 
-      <div className="rounded-xl border bg-card p-5">
-        <div className="flex items-start justify-between gap-4">
+      <div className="surface-panel rounded-lg p-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-3 min-w-0 flex-1">
-            <div className="size-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted">
               <KeyRound className="size-4 text-muted-foreground" />
             </div>
             <div className="min-w-0">
