@@ -250,32 +250,45 @@ export async function changePassword(formData: FormData) {
     return { error: copy.auth.errors.permissionDenied };
   }
 
-  const parsed = isSelf
-    ? selfPasswordSchema.safeParse({
-        userId: targetId,
-        currentPassword: formData.get('currentPassword'),
-        newPassword: formData.get('newPassword'),
-      })
-    : adminPasswordSchema.safeParse({
-        userId: targetId,
-        newPassword: formData.get('newPassword'),
-      });
+  let userId: string;
+  let newPassword: string;
+  let currentPassword: string | null = null;
 
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? copy.validation.invalidData };
+  if (isSelf) {
+    const parsed = selfPasswordSchema.safeParse({
+      userId: targetId,
+      currentPassword: formData.get('currentPassword'),
+      newPassword: formData.get('newPassword'),
+    });
+    if (!parsed.success) {
+      return { error: parsed.error.issues[0]?.message ?? copy.validation.invalidData };
+    }
+    userId = parsed.data.userId;
+    newPassword = parsed.data.newPassword;
+    currentPassword = parsed.data.currentPassword;
+  } else {
+    const parsed = adminPasswordSchema.safeParse({
+      userId: targetId,
+      newPassword: formData.get('newPassword'),
+    });
+    if (!parsed.success) {
+      return { error: parsed.error.issues[0]?.message ?? copy.validation.invalidData };
+    }
+    userId = parsed.data.userId;
+    newPassword = parsed.data.newPassword;
   }
 
-  const [target] = await db.select().from(users).where(eq(users.id, parsed.data.userId)).limit(1);
+  const [target] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
   if (!target) return { error: copy.validation.invalidUser };
 
-  if (isSelf && 'currentPassword' in parsed.data) {
-    const valid = await bcrypt.compare(parsed.data.currentPassword, target.passwordHash);
+  if (isSelf && currentPassword !== null) {
+    const valid = await bcrypt.compare(currentPassword, target.passwordHash);
     if (!valid) return { error: copy.validation.passwordCurrentInvalid };
-    const sameAsBefore = await bcrypt.compare(parsed.data.newPassword, target.passwordHash);
+    const sameAsBefore = await bcrypt.compare(newPassword, target.passwordHash);
     if (sameAsBefore) return { error: copy.validation.passwordReused };
   }
 
-  const hash = await bcrypt.hash(parsed.data.newPassword, 12);
+  const hash = await bcrypt.hash(newPassword, 12);
   await db
     .update(users)
     .set({
@@ -284,11 +297,11 @@ export async function changePassword(formData: FormData) {
       mustChangePassword: false,
       updatedAt: new Date(),
     })
-    .where(eq(users.id, parsed.data.userId));
+    .where(eq(users.id, userId));
 
   try {
     await db.insert(authEvents).values({
-      userId: parsed.data.userId,
+      userId,
       username: target.username,
       type: isSelf ? 'password_changed' : 'admin_reset_password',
       detail: isSelf ? 'self' : `by:${currentUser.id}`,

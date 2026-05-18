@@ -1,10 +1,10 @@
 'use client';
 
 import { useOptimistic, useTransition, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import {
   DndContext,
   DragEndEvent,
+  KeyboardSensor,
   PointerSensor,
   TouchSensor,
   useSensor,
@@ -39,7 +39,6 @@ interface KanbanBoardProps {
 }
 
 export function KanbanBoard({ initialTickets }: KanbanBoardProps) {
-  const router = useRouter();
   const [, startTransition] = useTransition();
   const [activeTicket, setActiveTicket] = useState<KanbanTicket | null>(null);
 
@@ -52,6 +51,7 @@ export function KanbanBoard({ initialTickets }: KanbanBoardProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+    useSensor(KeyboardSensor),
   );
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -69,15 +69,31 @@ export function KanbanBoard({ initialTickets }: KanbanBoardProps) {
     const ticket = optimisticTickets.find((t) => t.code === code);
     if (!ticket || ticket.status === newStatus) return;
 
+    const previousStatus = ticket.status;
+
     startTransition(async () => {
       updateOptimistic({ code, status: newStatus });
       const result = await updateTicketStatus(code, newStatus);
       if (result && 'error' in result) {
         toast.error(result.error);
-      } else {
-        toast.success(copy.kanban.moved(ticket.code, newStatus));
+        // Snap back so UI matches the server state.
+        updateOptimistic({ code, status: previousStatus });
+        return;
       }
-      router.refresh();
+      // Undo action — restore the previous column for ~6s.
+      toast.success(copy.kanban.moved(ticket.code, newStatus), {
+        action: {
+          label: copy.common.undo,
+          onClick: () => {
+            startTransition(async () => {
+              updateOptimistic({ code, status: previousStatus });
+              const undo = await updateTicketStatus(code, previousStatus);
+              if (undo && 'error' in undo) toast.error(undo.error);
+            });
+          },
+        },
+        duration: 6000,
+      });
     });
   };
 

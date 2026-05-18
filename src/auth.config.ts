@@ -40,10 +40,10 @@ export const authConfig: NextAuthConfig = {
       return token;
     },
     session({ session, token }) {
-      session.user.id = token.id;
-      session.user.name = token.displayName;
-      session.user.username = token.username;
-      session.user.isAdmin = token.isAdmin;
+      session.user.id = String(token.id ?? '');
+      session.user.name = token.displayName ? String(token.displayName) : null;
+      session.user.username = String(token.username ?? '');
+      session.user.isAdmin = Boolean(token.isAdmin);
       return session;
     },
   },

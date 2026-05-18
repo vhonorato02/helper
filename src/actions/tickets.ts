@@ -10,7 +10,6 @@ import {
   count,
   desc,
   eq,
-  gte,
   ilike,
   inArray,
   isNull,
@@ -556,62 +555,57 @@ export async function exportTicketRows(filters?: TicketFilters) {
 }
 
 export async function getTicket(code: string) {
-  const [ticket] = await db.select().from(tickets).where(eq(tickets.code, code)).limit(1);
-  if (!ticket) return null;
+  const ticketAuthor = alias(users, 'ticket_author');
 
-  const [author] = ticket.authorId
-    ? await db
-        .select({ id: users.id, displayName: users.displayName, username: users.username })
-        .from(users)
-        .where(eq(users.id, ticket.authorId))
-        .limit(1)
-    : [null];
+  const [row] = await db
+    .select({
+      ticket: tickets,
+      author: {
+        id: ticketAuthor.id,
+        displayName: ticketAuthor.displayName,
+        username: ticketAuthor.username,
+      },
+      assignee: {
+        id: ticketAssignee.id,
+        displayName: ticketAssignee.displayName,
+        username: ticketAssignee.username,
+      },
+    })
+    .from(tickets)
+    .leftJoin(ticketAuthor, eq(tickets.authorId, ticketAuthor.id))
+    .leftJoin(ticketAssignee, eq(tickets.assigneeId, ticketAssignee.id))
+    .where(eq(tickets.code, code))
+    .limit(1);
 
-  const [assignee] = ticket.assigneeId
-    ? await db
-        .select({ id: users.id, displayName: users.displayName, username: users.username })
-        .from(users)
-        .where(eq(users.id, ticket.assigneeId))
-        .limit(1)
-    : [null];
+  if (!row) return null;
 
-  return { ...ticket, author: author ?? null, assignee: assignee ?? null };
+  return {
+    ...row.ticket,
+    author: row.author?.id ? row.author : null,
+    assignee: row.assignee?.id ? row.assignee : null,
+  };
 }
 
 export async function getDashboardStats() {
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  const [abertosTI, abertosMKT, urgentes, aguardando, resolvidosSemana] = await Promise.all([
-    db
-      .select({ count: count() })
-      .from(tickets)
-      .where(and(eq(tickets.area, 'TI'), eq(tickets.status, 'aberto'))),
-    db
-      .select({ count: count() })
-      .from(tickets)
-      .where(and(eq(tickets.area, 'MKT'), eq(tickets.status, 'aberto'))),
-    db
-      .select({ count: count() })
-      .from(tickets)
-      .where(
-        and(
-          eq(tickets.priority, 'urgente'),
-          or(eq(tickets.status, 'aberto'), eq(tickets.status, 'em_andamento')),
-        ),
-      ),
-    db.select({ count: count() }).from(tickets).where(eq(tickets.status, 'aguardando')),
-    db
-      .select({ count: count() })
-      .from(tickets)
-      .where(and(eq(tickets.status, 'resolvido'), gte(tickets.resolvedAt, weekAgo))),
-  ]);
+  // Single round-trip: PostgreSQL evaluates each FILTER independently in one pass.
+  const [row] = await db
+    .select({
+      abertosTI: sql<number>`count(*) filter (where ${tickets.area} = 'TI' and ${tickets.status} = 'aberto')`,
+      abertosMKT: sql<number>`count(*) filter (where ${tickets.area} = 'MKT' and ${tickets.status} = 'aberto')`,
+      urgentes: sql<number>`count(*) filter (where ${tickets.priority} = 'urgente' and ${tickets.status} in ('aberto', 'em_andamento'))`,
+      aguardando: sql<number>`count(*) filter (where ${tickets.status} = 'aguardando')`,
+      resolvidosSemana: sql<number>`count(*) filter (where ${tickets.status} = 'resolvido' and ${tickets.resolvedAt} >= ${weekAgo})`,
+    })
+    .from(tickets);
 
   return {
-    abertosTI: abertosTI[0]?.count ?? 0,
-    abertosMKT: abertosMKT[0]?.count ?? 0,
-    urgentes: urgentes[0]?.count ?? 0,
-    aguardando: aguardando[0]?.count ?? 0,
-    resolvidosSemana: resolvidosSemana[0]?.count ?? 0,
+    abertosTI: Number(row?.abertosTI ?? 0),
+    abertosMKT: Number(row?.abertosMKT ?? 0),
+    urgentes: Number(row?.urgentes ?? 0),
+    aguardando: Number(row?.aguardando ?? 0),
+    resolvidosSemana: Number(row?.resolvidosSemana ?? 0),
   };
 }
 

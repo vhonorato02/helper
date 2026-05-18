@@ -8,8 +8,12 @@ export const usernameSchema = z
   .trim()
   .min(2)
   .max(30)
-  .regex(/^[a-z0-9._-]+$/, copy.validation.usernamePattern)
-  .transform((value) => value.toLowerCase());
+  .transform((value) => value.toLowerCase())
+  .pipe(
+    z
+      .string()
+      .regex(/^[a-z0-9._-]+$/, copy.validation.usernamePattern),
+  );
 
 export const displayNameSchema = z.string().trim().min(2).max(80);
 

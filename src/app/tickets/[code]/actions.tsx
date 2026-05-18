@@ -106,7 +106,6 @@ export function TicketActions({
       }
 
       toast.success(copy.tickets.detail.statusUpdated(newStatus));
-      router.refresh();
     });
   };
 
@@ -137,7 +136,6 @@ export function TicketActions({
           ? copy.tickets.detail.assigneeRemoved
           : copy.tickets.detail.assigneeUpdated(newAssignee?.displayName ?? copy.users.roles.user),
       );
-      router.refresh();
     });
   };
 
@@ -158,7 +156,6 @@ export function TicketActions({
       }
 
       toast.success(copy.tickets.detail.takeAndStartDone);
-      router.refresh();
     });
   };
 
@@ -171,7 +168,6 @@ export function TicketActions({
       }
 
       toast.success(copy.tickets.detail.priorityUpdated);
-      router.refresh();
     });
   };
 

@@ -3,7 +3,6 @@
 import { useRef, useState, useTransition } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Loader2, MessageSquare, MoreVertical, Pencil, SendHorizontal, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -41,7 +40,6 @@ export function CommentThread({
   currentUserId,
   currentUserIsAdmin,
 }: CommentThreadProps) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingBody, setEditingBody] = useState('');
@@ -62,7 +60,6 @@ export function CommentThread({
       }
 
       formRef.current?.reset();
-      router.refresh();
     });
   };
 
@@ -92,7 +89,6 @@ export function CommentThread({
 
       toast.success(copy.tickets.comments.edited);
       cancelEdit();
-      router.refresh();
     });
   };
 
@@ -108,7 +104,6 @@ export function CommentThread({
 
       toast.success(copy.tickets.comments.deleted);
       setDeleteTarget(null);
-      router.refresh();
     });
   };
 
