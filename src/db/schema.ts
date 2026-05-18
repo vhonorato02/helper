@@ -5,7 +5,9 @@ import {
   text,
   boolean,
   timestamp,
+  integer,
   index,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -18,6 +20,13 @@ export const statusEnum = pgEnum('status', [
   'resolvido',
   'arquivado',
 ]);
+export const authEventTypeEnum = pgEnum('auth_event_type', [
+  'login_success',
+  'login_failure',
+  'login_rate_limited',
+  'password_changed',
+  'admin_reset_password',
+]);
 
 export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -26,8 +35,29 @@ export const users = pgTable('users', {
   passwordHash: text('password_hash').notNull(),
   isAdmin: boolean('is_admin').default(false).notNull(),
   isActive: boolean('is_active').default(true).notNull(),
+  mustChangePassword: boolean('must_change_password').default(false).notNull(),
+  passwordChangedAt: timestamp('password_changed_at'),
+  lastLoginAt: timestamp('last_login_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
+
+export const subcategories = pgTable(
+  'subcategories',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    area: areaEnum('area').notNull(),
+    label: text('label').notNull(),
+    sortOrder: integer('sort_order').default(100).notNull(),
+    isActive: boolean('is_active').default(true).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex('subcategories_area_label_idx').on(t.area, t.label),
+    index('subcategories_active_idx').on(t.area, t.isActive, t.sortOrder),
+  ],
+);
 
 export const tickets = pgTable(
   'tickets',
@@ -43,6 +73,7 @@ export const tickets = pgTable(
     status: statusEnum('status').default('aberto').notNull(),
     assigneeId: uuid('assignee_id').references(() => users.id, { onDelete: 'set null' }),
     authorId: uuid('author_id').references(() => users.id, { onDelete: 'set null' }),
+    dueDate: timestamp('due_date'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
     resolvedAt: timestamp('resolved_at'),
@@ -53,6 +84,7 @@ export const tickets = pgTable(
     index('tickets_priority_idx').on(t.priority),
     index('tickets_assignee_idx').on(t.assigneeId),
     index('tickets_created_idx').on(t.createdAt),
+    index('tickets_due_idx').on(t.dueDate),
   ],
 );
 
@@ -78,12 +110,51 @@ export const ticketHistory = pgTable('ticket_history', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+export const ticketMentions = pgTable(
+  'ticket_mentions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    ticketId: uuid('ticket_id')
+      .references(() => tickets.id, { onDelete: 'cascade' })
+      .notNull(),
+    commentId: uuid('comment_id').references(() => comments.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    seenAt: timestamp('seen_at'),
+  },
+  (t) => [
+    index('mentions_user_idx').on(t.userId, t.seenAt),
+    index('mentions_ticket_idx').on(t.ticketId),
+  ],
+);
+
+export const authEvents = pgTable(
+  'auth_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+    username: text('username'),
+    type: authEventTypeEnum('type').notNull(),
+    ip: text('ip'),
+    userAgent: text('user_agent'),
+    detail: text('detail'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (t) => [
+    index('auth_events_user_idx').on(t.userId, t.createdAt),
+    index('auth_events_type_idx').on(t.type, t.createdAt),
+  ],
+);
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   authoredTickets: many(tickets, { relationName: 'author' }),
   assignedTickets: many(tickets, { relationName: 'assignee' }),
   comments: many(comments),
   history: many(ticketHistory),
+  mentions: many(ticketMentions),
 }));
 
 export const ticketsRelations = relations(tickets, ({ one, many }) => ({
@@ -99,16 +170,24 @@ export const ticketsRelations = relations(tickets, ({ one, many }) => ({
   }),
   comments: many(comments),
   history: many(ticketHistory),
+  mentions: many(ticketMentions),
 }));
 
-export const commentsRelations = relations(comments, ({ one }) => ({
+export const commentsRelations = relations(comments, ({ one, many }) => ({
   ticket: one(tickets, { fields: [comments.ticketId], references: [tickets.id] }),
   author: one(users, { fields: [comments.authorId], references: [users.id] }),
+  mentions: many(ticketMentions),
 }));
 
 export const ticketHistoryRelations = relations(ticketHistory, ({ one }) => ({
   ticket: one(tickets, { fields: [ticketHistory.ticketId], references: [tickets.id] }),
   author: one(users, { fields: [ticketHistory.authorId], references: [users.id] }),
+}));
+
+export const ticketMentionsRelations = relations(ticketMentions, ({ one }) => ({
+  ticket: one(tickets, { fields: [ticketMentions.ticketId], references: [tickets.id] }),
+  user: one(users, { fields: [ticketMentions.userId], references: [users.id] }),
+  comment: one(comments, { fields: [ticketMentions.commentId], references: [comments.id] }),
 }));
 
 export type User = typeof users.$inferSelect;
@@ -118,3 +197,7 @@ export type NewTicket = typeof tickets.$inferInsert;
 export type Comment = typeof comments.$inferSelect;
 export type NewComment = typeof comments.$inferInsert;
 export type TicketHistory = typeof ticketHistory.$inferSelect;
+export type Subcategory = typeof subcategories.$inferSelect;
+export type NewSubcategory = typeof subcategories.$inferInsert;
+export type AuthEvent = typeof authEvents.$inferSelect;
+export type TicketMention = typeof ticketMentions.$inferSelect;

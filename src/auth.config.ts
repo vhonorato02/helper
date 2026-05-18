@@ -1,11 +1,20 @@
 import type { NextAuthConfig } from 'next-auth';
 
-// Edge-safe config (no DB/bcrypt imports) — used by middleware
+// Session lifetime — short JWT to limit blast radius of token theft and pick
+// up isAdmin / isActive changes from the database within a reasonable window.
+const SESSION_MAX_AGE_SECONDS = 60 * 60 * 8; // 8h
+const SESSION_UPDATE_AGE_SECONDS = 60 * 30; // refresh fields every 30min
+
+// Edge-safe config (no DB/bcrypt imports) — used by middleware.
 export const authConfig: NextAuthConfig = {
   pages: {
     signIn: '/login',
   },
-  session: { strategy: 'jwt' },
+  session: {
+    strategy: 'jwt',
+    maxAge: SESSION_MAX_AGE_SECONDS,
+    updateAge: SESSION_UPDATE_AGE_SECONDS,
+  },
   trustHost: true,
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
@@ -24,16 +33,17 @@ export const authConfig: NextAuthConfig = {
     jwt({ token, user }) {
       if (user) {
         token.id = user.id ?? '';
-        token.username = (user as { username?: string }).username ?? '';
-        token.isAdmin = (user as { isAdmin?: boolean }).isAdmin ?? false;
+        token.username = user.username ?? '';
+        token.isAdmin = user.isAdmin ?? false;
         token.displayName = user.name ?? '';
       }
       return token;
     },
     session({ session, token }) {
-      session.user.id = token.id as string;
-      session.user.name = token.displayName as string;
-      Object.assign(session.user, { username: token.username, isAdmin: token.isAdmin });
+      session.user.id = token.id;
+      session.user.name = token.displayName;
+      session.user.username = token.username;
+      session.user.isAdmin = token.isAdmin;
       return session;
     },
   },

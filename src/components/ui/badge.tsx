@@ -14,6 +14,8 @@ const badgeVariants = cva(
         success: 'bg-green-500/10 text-green-700 dark:text-green-400 ring-1 ring-inset ring-green-500/30',
         warning: 'bg-amber-500/15 text-amber-700 dark:text-amber-400 ring-1 ring-inset ring-amber-500/30',
         orange: 'bg-orange-500/10 text-orange-700 dark:text-orange-400 ring-1 ring-inset ring-orange-500/30',
+        magenta: 'bg-fuchsia-500/12 text-fuchsia-700 dark:text-fuchsia-300 ring-1 ring-inset ring-fuchsia-500/30',
+        violet: 'bg-violet-500/12 text-violet-700 dark:text-violet-300 ring-1 ring-inset ring-violet-500/30',
         solid: 'bg-primary text-primary-foreground',
       },
     },

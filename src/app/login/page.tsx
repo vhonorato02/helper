@@ -7,6 +7,7 @@ import { AlertCircle, Loader2, TicketCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { BrandMark } from '@/components/brand/brand-mark';
 import { copy } from '@/lib/copy';
 
 export default function LoginPage() {
@@ -52,9 +53,7 @@ export default function LoginPage() {
       {/* Left branding panel — hidden on small screens */}
       <div className="hidden lg:flex lg:w-[44%] xl:w-[40%] flex-col justify-between p-12 border-r border-border/50">
         <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 font-bold text-base">
-            {copy.brand.initials}
-          </div>
+          <BrandMark className="size-10 rounded-xl shadow-lg shadow-primary/20" />
           <span className="font-semibold tracking-tight">{copy.brand.name}</span>
         </div>
 

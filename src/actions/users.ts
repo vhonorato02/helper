@@ -1,32 +1,33 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
+import { redirect } from 'next/navigation';
 import { db } from '@/db';
-import { comments, ticketHistory, tickets, users } from '@/db/schema';
+import { authEvents, comments, ticketHistory, tickets, users } from '@/db/schema';
 import { and, asc, count, desc, eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { copy } from '@/lib/copy';
 import {
+  currentPasswordSchema,
   displayNameSchema,
   passwordSchema,
   userIdSchema,
   usernameSchema,
 } from '@/lib/validation';
+import { logger } from '@/lib/logger';
 
-async function requireAdmin() {
+async function requireSession() {
   const session = await auth();
-  if (!session?.user) redirect('/login');
-  if (!session.user.isAdmin) redirect('/');
+  if (!session?.user?.id) redirect('/login');
   return session.user;
 }
 
-async function requireAuth() {
-  const session = await auth();
-  if (!session?.user) redirect('/login');
-  return session.user;
+async function requireAdmin() {
+  const user = await requireSession();
+  if (!user.isAdmin) redirect('/');
+  return user;
 }
 
 async function getActiveAdminCount() {
@@ -62,6 +63,8 @@ export async function getUsers() {
       displayName: users.displayName,
       isAdmin: users.isAdmin,
       isActive: users.isActive,
+      mustChangePassword: users.mustChangePassword,
+      lastLoginAt: users.lastLoginAt,
       createdAt: users.createdAt,
     })
     .from(users)
@@ -97,6 +100,8 @@ export async function createUser(formData: FormData) {
     displayName: parsed.data.displayName,
     passwordHash,
     isAdmin: parsed.data.isAdmin,
+    passwordChangedAt: new Date(),
+    mustChangePassword: true,
   });
 
   revalidatePath('/configuracoes');
@@ -142,6 +147,7 @@ export async function updateUser(formData: FormData) {
       username: parsed.data.username,
       displayName: parsed.data.displayName,
       isAdmin: parsed.data.isAdmin,
+      updatedAt: new Date(),
     })
     .where(eq(users.id, parsed.data.userId));
 
@@ -164,7 +170,7 @@ export async function setUserAdmin(userId: string, isAdmin: boolean) {
     }
   }
 
-  await db.update(users).set({ isAdmin }).where(eq(users.id, parsed.data));
+  await db.update(users).set({ isAdmin, updatedAt: new Date() }).where(eq(users.id, parsed.data));
   revalidateUserSurfaces();
   return { ok: true };
 }
@@ -187,7 +193,10 @@ export async function toggleUserActive(userId: string) {
     if (activeAdmins <= 1) return { error: copy.users.errors.cannotRemoveLastAdmin };
   }
 
-  await db.update(users).set({ isActive: !user.isActive }).where(eq(users.id, parsed.data));
+  await db
+    .update(users)
+    .set({ isActive: !user.isActive, updatedAt: new Date() })
+    .where(eq(users.id, parsed.data));
   revalidateUserSurfaces();
   return { ok: true };
 }
@@ -221,38 +230,83 @@ export async function deleteUser(userId: string) {
   return { ok: true };
 }
 
-const changePasswordSchema = z.object({
+const selfPasswordSchema = z.object({
+  userId: userIdSchema,
+  currentPassword: currentPasswordSchema,
+  newPassword: passwordSchema,
+});
+
+const adminPasswordSchema = z.object({
   userId: userIdSchema,
   newPassword: passwordSchema,
 });
 
 export async function changePassword(formData: FormData) {
-  const currentUser = await requireAuth();
-  const parsed = changePasswordSchema.safeParse({
-    userId: formData.get('userId'),
-    newPassword: formData.get('newPassword'),
-  });
+  const currentUser = await requireSession();
+  const targetId = String(formData.get('userId') ?? '');
+  const isSelf = targetId === currentUser.id;
+
+  if (!isSelf && !currentUser.isAdmin) {
+    return { error: copy.auth.errors.permissionDenied };
+  }
+
+  const parsed = isSelf
+    ? selfPasswordSchema.safeParse({
+        userId: targetId,
+        currentPassword: formData.get('currentPassword'),
+        newPassword: formData.get('newPassword'),
+      })
+    : adminPasswordSchema.safeParse({
+        userId: targetId,
+        newPassword: formData.get('newPassword'),
+      });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? copy.validation.invalidData };
   }
 
-  if (parsed.data.userId !== currentUser.id && !currentUser.isAdmin) {
-    return { error: copy.auth.errors.permissionDenied };
-  }
-
-  const [target] = await db.select({ id: users.id }).from(users).where(eq(users.id, parsed.data.userId)).limit(1);
+  const [target] = await db.select().from(users).where(eq(users.id, parsed.data.userId)).limit(1);
   if (!target) return { error: copy.validation.invalidUser };
 
+  if (isSelf && 'currentPassword' in parsed.data) {
+    const valid = await bcrypt.compare(parsed.data.currentPassword, target.passwordHash);
+    if (!valid) return { error: copy.validation.passwordCurrentInvalid };
+    const sameAsBefore = await bcrypt.compare(parsed.data.newPassword, target.passwordHash);
+    if (sameAsBefore) return { error: copy.validation.passwordReused };
+  }
+
   const hash = await bcrypt.hash(parsed.data.newPassword, 12);
-  await db.update(users).set({ passwordHash: hash }).where(eq(users.id, parsed.data.userId));
+  await db
+    .update(users)
+    .set({
+      passwordHash: hash,
+      passwordChangedAt: new Date(),
+      mustChangePassword: false,
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, parsed.data.userId));
+
+  try {
+    await db.insert(authEvents).values({
+      userId: parsed.data.userId,
+      username: target.username,
+      type: isSelf ? 'password_changed' : 'admin_reset_password',
+      detail: isSelf ? 'self' : `by:${currentUser.id}`,
+    });
+  } catch (error) {
+    logger.warn('auth_event_insert_failed', { error: String(error) });
+  }
 
   revalidatePath('/configuracoes');
   return { ok: true };
 }
 
 export async function getTicketHistory(ticketCode: string) {
-  const [ticket] = await db.select({ id: tickets.id }).from(tickets).where(eq(tickets.code, ticketCode)).limit(1);
+  const [ticket] = await db
+    .select({ id: tickets.id })
+    .from(tickets)
+    .where(eq(tickets.code, ticketCode))
+    .limit(1);
   if (!ticket) return [];
 
   return db

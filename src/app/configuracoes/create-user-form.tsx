@@ -113,7 +113,7 @@ export function CreateUserForm() {
               name="password"
               type={showPassword ? 'text' : 'password'}
               placeholder={copy.users.form.placeholders.password}
-              minLength={8}
+              minLength={10}
               required
               disabled={isPending}
               className="pr-20"

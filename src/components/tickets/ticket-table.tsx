@@ -35,6 +35,7 @@ import {
 import { copy } from '@/lib/copy';
 import { DATE_FORMATS, daysSince, formatPtBrDate } from '@/lib/format';
 import { exportTicketRows, type TicketRow } from '@/actions/tickets';
+import { CSV_BOM, csvDocument } from '@/lib/csv';
 
 type ExportTicketRow = Awaited<ReturnType<typeof exportTicketRows>>['rows'][number];
 
@@ -45,10 +46,6 @@ interface Props {
   page: number;
   pageSize: number;
   currentUserId?: string;
-}
-
-function csvCell(value: string | number | null | undefined) {
-  return `"${String(value ?? '').replace(/"/g, '""')}"`;
 }
 
 function downloadCSV(tickets: ExportTicketRow[]) {
@@ -77,15 +74,15 @@ function downloadCSV(tickets: ExportTicketRow[]) {
     STATUS_LABELS[ticket.status],
     ticket.assigneeName ?? copy.tickets.table.unassigned,
     ticket.authorName ?? copy.common.removedUser,
-    ticket.origin,
-    ticket.description,
+    ticket.origin ?? '',
+    ticket.description ?? '',
     formatPtBrDate(ticket.createdAt, DATE_FORMATS.csvDateTime),
     formatPtBrDate(ticket.updatedAt, DATE_FORMATS.csvDateTime),
     ticket.resolvedAt ? formatPtBrDate(ticket.resolvedAt, DATE_FORMATS.csvDateTime) : '',
   ]);
 
-  const csv = [headers, ...rows].map((row) => row.map(csvCell).join(';')).join('\n');
-  const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+  const csv = csvDocument(headers, rows);
+  const blob = new Blob([`${CSV_BOM}${csv}`], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;

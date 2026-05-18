@@ -34,6 +34,8 @@ import { ChangePasswordDialog } from '@/components/change-password-dialog';
 import { cn } from '@/lib/utils';
 import { copy } from '@/lib/copy';
 import { initials } from '@/lib/format';
+import { BrandMark } from '@/components/brand/brand-mark';
+import { KeyboardCheatSheet } from '@/components/keyboard-cheatsheet';
 import type { User } from '@/db/schema';
 
 const NAV_LINKS = [
@@ -43,7 +45,12 @@ const NAV_LINKS = [
 ] as const;
 
 interface NavProps {
-  user: { id?: string; name?: string | null; isAdmin?: boolean };
+  user: {
+    id?: string;
+    name?: string | null;
+    isAdmin?: boolean;
+    username?: string;
+  };
   users: Pick<User, 'id' | 'displayName'>[];
 }
 
@@ -53,10 +60,12 @@ export function Nav({ user, users }: NavProps) {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [cheatSheetOpen, setCheatSheetOpen] = useState(false);
 
   const handleKeydown = useCallback((event: KeyboardEvent) => {
-    if (['INPUT', 'TEXTAREA', 'SELECT'].includes((event.target as HTMLElement)?.tagName)) return;
-    if ((event.target as HTMLElement)?.isContentEditable) return;
+    const target = event.target as HTMLElement | null;
+    if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
+    if (target?.isContentEditable) return;
 
     if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
       event.preventDefault();
@@ -66,6 +75,11 @@ export function Nav({ user, users }: NavProps) {
     if (event.key === 'n' || event.key === 'N') {
       event.preventDefault();
       setFormOpen(true);
+      return;
+    }
+    if (event.key === '?' || (event.shiftKey && event.key === '/')) {
+      event.preventDefault();
+      setCheatSheetOpen(true);
       return;
     }
     if (event.key === '/') {
@@ -89,13 +103,14 @@ export function Nav({ user, users }: NavProps) {
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:px-6">
           <Link
             href="/"
-            className="group flex min-w-0 shrink-0 items-center gap-2.5 rounded-lg pr-1 font-semibold"
+            className="group flex min-w-0 shrink-0 items-center gap-2.5 rounded-lg pr-1 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            aria-label={`${copy.brand.name} – ${copy.brand.institution}`}
           >
-            <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground shadow-md shadow-primary/30 transition-all group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-primary/25">
-              {copy.brand.initials}
-            </div>
+            <BrandMark className="size-8 rounded-lg shadow-md shadow-primary/25 transition-transform group-hover:scale-105 group-hover:shadow-lg" />
             <div className="hidden min-w-0 sm:block">
-              <span className="block text-sm leading-tight tracking-tight font-bold">{copy.brand.name}</span>
+              <span className="block text-sm leading-tight tracking-tight font-bold">
+                Ticket<span className="text-primary">Anglo</span>
+              </span>
               <span className="block truncate text-[10.5px] font-medium text-muted-foreground leading-tight">
                 {copy.brand.institution}
               </span>
@@ -270,6 +285,7 @@ export function Nav({ user, users }: NavProps) {
         )}
       </header>
 
+      <KeyboardCheatSheet open={cheatSheetOpen} onOpenChange={setCheatSheetOpen} />
       <TicketForm open={formOpen} onClose={() => setFormOpen(false)} users={users} />
       <CommandPalette
         open={paletteOpen}

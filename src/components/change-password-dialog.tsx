@@ -53,7 +53,7 @@ export function ChangePasswordDialog({
     const newPassword = String(formData.get('newPassword') ?? '');
     const confirmPassword = String(formData.get('confirmPassword') ?? '');
 
-    if (newPassword.length < 8) {
+    if (newPassword.length < 10) {
       setError(copy.validation.passwordTooShort);
       return;
     }
@@ -98,6 +98,21 @@ export function ChangePasswordDialog({
         </DialogHeader>
 
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+          {isSelf && (
+            <div className="space-y-1.5">
+              <Label htmlFor="currentPassword">{copy.users.password.currentPassword}</Label>
+              <Input
+                id="currentPassword"
+                name="currentPassword"
+                type={show ? 'text' : 'password'}
+                placeholder={copy.users.password.currentPlaceholder}
+                autoComplete="current-password"
+                required
+                disabled={isPending}
+              />
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <Label htmlFor="newPassword">{copy.users.password.newPassword}</Label>
             <div className="relative">
@@ -106,7 +121,7 @@ export function ChangePasswordDialog({
                 name="newPassword"
                 type={show ? 'text' : 'password'}
                 placeholder={copy.users.password.placeholder}
-                minLength={8}
+                minLength={10}
                 autoComplete="new-password"
                 required
                 disabled={isPending}
@@ -131,7 +146,7 @@ export function ChangePasswordDialog({
               name="confirmPassword"
               type={show ? 'text' : 'password'}
               placeholder={copy.users.password.confirmPlaceholder}
-              minLength={8}
+              minLength={10}
               autoComplete="new-password"
               required
               disabled={isPending}
