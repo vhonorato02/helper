@@ -80,8 +80,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
+        // Explicit column list avoids SELECT * crashing when the DB schema is
+        // ahead of the deployed migration (e.g. new columns not yet in prod).
         const [user] = await db
-          .select()
+          .select({
+            id: users.id,
+            username: users.username,
+            displayName: users.displayName,
+            passwordHash: users.passwordHash,
+            isAdmin: users.isAdmin,
+            isActive: users.isActive,
+          })
           .from(users)
           .where(eq(users.username, username))
           .limit(1)
