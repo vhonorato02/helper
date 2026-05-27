@@ -1,0 +1,13 @@
+import { NextResponse } from 'next/server';
+import { assertCron } from '@/lib/cron-auth';
+import { sendImminentScheduleReminder } from '@/lib/reminders';
+
+export const dynamic = 'force-dynamic';
+export const maxDuration = 30;
+
+export async function GET(req: Request) {
+  const denied = assertCron(req);
+  if (denied) return denied;
+  const result = await sendImminentScheduleReminder();
+  return NextResponse.json({ ok: true, ...result });
+}

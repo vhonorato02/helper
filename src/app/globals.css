@@ -1,0 +1,306 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: oklch(0.985 0 0);
+  --foreground: oklch(0.18 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0 0);
+
+  --primary: oklch(0.22 0 0);
+  --primary-foreground: oklch(1 0 0);
+
+  --secondary: oklch(0.2 0 0);
+  --secondary-foreground: oklch(0.98 0 0);
+
+  --muted: oklch(0.96 0 0);
+  --muted-foreground: oklch(0.45 0 0);
+
+  --accent: oklch(0.96 0 0);
+  --accent-foreground: oklch(0.18 0 0);
+
+  --destructive: oklch(0.552 0.222 25);
+  --destructive-foreground: oklch(0.99 0 0);
+
+  --success: oklch(0.62 0.145 154);
+  --warning: oklch(0.73 0.16 78);
+  --info: oklch(0.5 0.13 240);
+
+  --border: oklch(0.9 0 0);
+  --input: oklch(0.88 0 0);
+  --ring: oklch(0.32 0 0);
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: oklch(0.14 0 0);
+  --foreground: oklch(0.97 0 0);
+  --card: oklch(0.18 0 0);
+  --card-foreground: oklch(0.97 0 0);
+  --popover: oklch(0.18 0 0);
+  --popover-foreground: oklch(0.97 0 0);
+
+  --primary: oklch(0.94 0 0);
+  --primary-foreground: oklch(0.14 0 0);
+
+  --secondary: oklch(0.92 0 0);
+  --secondary-foreground: oklch(0.14 0 0);
+
+  --muted: oklch(0.22 0 0);
+  --muted-foreground: oklch(0.68 0 0);
+
+  --accent: oklch(0.22 0 0);
+  --accent-foreground: oklch(0.97 0 0);
+
+  --destructive: oklch(0.648 0.2 24);
+  --destructive-foreground: oklch(0.98 0.005 250);
+
+  --success: oklch(0.7 0.145 154);
+  --warning: oklch(0.8 0.145 78);
+  --info: oklch(0.7 0.13 240);
+
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.86 0 0);
+}
+
+* {
+  border-color: var(--border);
+  outline-color: color-mix(in oklch, var(--ring) 50%, transparent);
+}
+
+html {
+  text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "cv11", "ss01", "ss03";
+  letter-spacing: 0;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in oklch, var(--muted-foreground) 26%, transparent);
+  border-radius: 9999px;
+  border: 2px solid var(--background);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklch, var(--muted-foreground) 44%, transparent);
+}
+
+/* Selection */
+::selection {
+  background: color-mix(in oklch, var(--primary) 22%, transparent);
+}
+
+/* Focus */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Animations */
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up-fade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes soft-pulse {
+  0%, 100% {
+    opacity: 0.72;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-in {
+  animation: scale-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fade-in-0 {
+  --tw-enter-opacity: 0;
+}
+
+.zoom-in-95 {
+  --tw-enter-scale: 0.95;
+}
+
+[data-state="open"].animate-in {
+  animation: scale-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-state="closed"].animate-out {
+  animation: scale-in 0.12s cubic-bezier(0.16, 1, 0.3, 1) reverse;
+}
+
+.motion-safe-enter {
+  animation: slide-up-fade 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Utility components */
+
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.25rem;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--muted-foreground);
+  background: color-mix(in oklch, var(--muted) 80%, transparent);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) - 4px);
+  box-shadow: 0 1px 0 var(--border);
+}
+
+.surface-panel {
+  background: var(--card);
+  border: 1px solid color-mix(in oklch, var(--border) 88%, transparent);
+  box-shadow:
+    0 1px 2px color-mix(in oklch, var(--foreground) 5%, transparent),
+    0 1px 3px color-mix(in oklch, var(--foreground) 4%, transparent);
+}
+
+.surface-elevated {
+  background: var(--card);
+  border: 1px solid color-mix(in oklch, var(--border) 82%, transparent);
+  box-shadow:
+    0 4px 8px -2px color-mix(in oklch, var(--foreground) 8%, transparent),
+    0 2px 4px -2px color-mix(in oklch, var(--foreground) 5%, transparent);
+}
+
+.soft-panel {
+  background: color-mix(in oklch, var(--card) 86%, var(--muted));
+  border: 1px solid color-mix(in oklch, var(--border) 82%, transparent);
+}
+
+.page-hero {
+  padding: 1.25rem 1.5rem 1.375rem;
+  border-radius: calc(var(--radius) + 2px);
+  background: var(--card);
+  border: 1px solid color-mix(in oklch, var(--border) 82%, transparent);
+  box-shadow: 0 1px 3px color-mix(in oklch, var(--foreground) 5%, transparent);
+}
+
+.section-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+/* Subtle dot grid background for empty states */
+.bg-dot-grid {
+  background-image: radial-gradient(
+    circle,
+    color-mix(in oklch, var(--foreground) 7%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 18px 18px;
+}
+
+/* Print styles */
+@media print {
+  /* Esconde navegacao, botoes e elementos interativos */
+  header,
+  nav,
+  button,
+  .no-print,
+  [role="dialog"] {
+    display: none !important;
+  }
+
+  /* Garante texto preto em fundo branco */
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  .surface-panel,
+  .surface-elevated,
+  .page-hero {
+    background: white !important;
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+
+  /* Quebras de pagina sensiveis */
+  h1, h2, h3 {
+    page-break-after: avoid;
+  }
+
+  /* Reduz margens em print */
+  main {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  /* Cores chapadas para badges/textos */
+  .text-primary,
+  .text-muted-foreground,
+  .text-destructive {
+    color: black !important;
+  }
+}
