@@ -1,13 +1,14 @@
 # Changelog
 
-## Helper 0.1.3 - 2026-05-27
+## Helper 0.1.4 - 2026-05-28
 
-- Renomeia a identidade visível do produto para Helper em app, PWA, e-mails, testes, documentação, metadados e assets públicos.
-- Substitui a base visual por preto, branco e escalas de cinza; cores continuam reservadas para estado, prioridade e alerta.
-- Atualiza favicon, logo, service worker e ícones PWA para a marca Helper, com cache `helper-static-v5`.
-- Revalida os bancos Neon acessíveis, aplica o schema idempotente sem apagar dados e separa Preview de Production.
-- Mantém Production no banco com dados preservados e schema completo; prepara o banco novo de `sa-east-1` para Preview.
-- Corrige variáveis mínimas de Vercel: `AUTH_SECRET`, `CRON_SECRET`, `NEXT_PUBLIC_SITE_URL` e banco de Preview.
-- Mantém validação backend de reservas de Chromebooks com lock persistido, bloqueio de sala e limite por disponibilidade.
-- Confirma o Kanban com abertura, edição por query string, movimentação otimista e rollback em erro.
-- Atualiza documentação para operação real, recuperação de banco, deploy, PWA, Vercel e troubleshooting.
+- Remove a dependência beta de autenticação e substitui por sessão própria com cookie HTTP-only e JWT assinado.
+- Atualiza a versão do produto para Helper 0.1.4 em metadados, package e documentação.
+- Atualiza dependências diretas mantidas e remove pacotes sem uso ou conflitantes.
+- Mantém Tailwind CSS 3.4.19 como linha estável validada para build sem warnings.
+- Corrige o smoke test para refletir as rotas reais do Helper.
+- Reforça as reservas de Chromebooks com validação backend de total configurado, status ativo, aprovação e lock persistido.
+- Garante que reservas canceladas não consumam disponibilidade.
+- Revalida conflitos de sala e capacidade também no fluxo de aprovação.
+- Corrige criação da tabela de lock para drivers que não aceitam múltiplas instruções SQL no mesmo execute.
+- Reescreve o README como manual de instalação, operação, manutenção, deploy, banco, PWA, segurança e troubleshooting.

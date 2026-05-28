@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -20,7 +20,7 @@ import {
   Settings,
   X,
 } from 'lucide-react';
-import { signOut } from 'next-auth/react';
+import { logoutAction } from '@/actions/auth';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
@@ -72,6 +72,7 @@ export function Nav({ user, users }: NavProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [cheatSheetOpen, setCheatSheetOpen] = useState(false);
+  const [isSigningOut, startSignOut] = useTransition();
   const shouldOpenTicketForm = searchParams.get('novo') === '1';
 
   const closeTicketForm = useCallback(() => {
@@ -127,6 +128,14 @@ export function Nav({ user, users }: NavProps) {
   const userName = user.name ?? copy.dashboard.greeting.fallbackName;
   const isActiveLink = (href: string) =>
     href === '/' ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
+  const handleSignOut = () => {
+    startSignOut(async () => {
+      await logoutAction();
+      setMobileOpen(false);
+      router.push('/login');
+      router.refresh();
+    });
+  };
 
   return (
     <>
@@ -232,7 +241,11 @@ export function Nav({ user, users }: NavProps) {
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onSelect={() => signOut({ callbackUrl: '/login' })}
+                  onSelect={(event) => {
+                    event.preventDefault();
+                    handleSignOut();
+                  }}
+                  disabled={isSigningOut}
                   className="text-destructive focus:text-destructive focus:bg-destructive/10"
                 >
                   <LogOut className="size-4" />
@@ -308,7 +321,8 @@ export function Nav({ user, users }: NavProps) {
               </Link>
             )}
             <button
-              onClick={() => signOut({ callbackUrl: '/login' })}
+              onClick={handleSignOut}
+              disabled={isSigningOut}
               className="flex w-full items-center gap-2 px-3 py-2 rounded-md text-sm text-destructive hover:bg-destructive/10"
             >
               <LogOut className="size-4" />

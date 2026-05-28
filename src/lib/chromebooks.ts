@@ -6,6 +6,12 @@ export const ACTIVE_CHROMEBOOK_BOOKING_STATUSES = ['pendente', 'confirmado'] as 
 
 export type ChromebookBookingStatus = 'pendente' | 'confirmado' | 'cancelado';
 
+export function isActiveChromebookBookingStatus(status: ChromebookBookingStatus) {
+  return ACTIVE_CHROMEBOOK_BOOKING_STATUSES.includes(
+    status as (typeof ACTIVE_CHROMEBOOK_BOOKING_STATUSES)[number],
+  );
+}
+
 export const CHROMEBOOK_STATUS_LABELS: Record<ChromebookBookingStatus, string> = {
   pendente: 'Pendente',
   confirmado: 'Confirmado',

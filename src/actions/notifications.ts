@@ -16,8 +16,8 @@ async function requireAuth() {
 let notificationSchemaPromise: Promise<void> | null = null;
 
 async function ensureNotificationSchema() {
-  notificationSchemaPromise ??= db
-    .execute(sql`
+  notificationSchemaPromise ??= (async () => {
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS notifications (
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -28,9 +28,17 @@ async function ensureNotificationSchema() {
         ticket_id uuid REFERENCES tickets(id) ON DELETE CASCADE,
         read_at timestamp,
         created_at timestamp NOT NULL DEFAULT now()
-      );
-      CREATE INDEX IF NOT EXISTS notifications_user_unread_idx ON notifications (user_id, read_at);
-      CREATE INDEX IF NOT EXISTS notifications_created_idx ON notifications (created_at);
+      )
+    `);
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS notifications_user_unread_idx
+      ON notifications (user_id, read_at)
+    `);
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS notifications_created_idx
+      ON notifications (created_at)
+    `);
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS notification_preferences (
         user_id uuid PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
         ticket_created boolean NOT NULL DEFAULT true,
@@ -39,9 +47,9 @@ async function ensureNotificationSchema() {
         daily_digest boolean NOT NULL DEFAULT true,
         email_enabled boolean NOT NULL DEFAULT true,
         updated_at timestamp NOT NULL DEFAULT now()
-      );
-    `)
-    .then(() => undefined);
+      )
+    `);
+  })();
   return notificationSchemaPromise;
 }
 

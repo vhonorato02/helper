@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AlertCircle, Loader2 } from 'lucide-react';
+import { loginAction } from '@/actions/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -48,14 +48,13 @@ export default function LoginPage() {
     const password = (form.elements.namedItem('password') as HTMLInputElement).value;
 
     try {
-      const result = await signIn('credentials', {
+      const result = await loginAction({
         username,
         password,
-        redirect: false,
       });
 
       if (result?.error) {
-        setError(copy.auth.errors.invalidCredentials);
+        setError(result.error);
         setIsSubmitting(false);
         return;
       }

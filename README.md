@@ -1,399 +1,737 @@
 # Helper
 
-Versão atual: `Helper 0.1.3`
+Versão atual: `Helper 0.1.4`
 
-Helper é uma central operacional para equipes escolares e administrativas acompanharem demandas, tickets, prazos, agenda, solicitações públicas, reservas de Chromebooks, ações de Marketing, rotinas de TI, notificações e histórico de atendimento.
+Helper é uma central operacional para registrar, organizar e acompanhar demandas internas. O sistema reúne página pública de solicitações, tickets, Kanban, agenda, reservas de Chromebooks, notificações, rotinas administrativas e PWA em uma única aplicação.
 
-A versão 0.1.3 consolida a identidade Helper, remove a identidade anterior do produto, estabiliza o schema do banco, reforça a separação de ambientes, atualiza PWA e documentação, e mantém a base preparada para uso diário em produção.
+Este README é o guia oficial de instalação, configuração, operação, manutenção, deploy e recuperação. Sempre comece a partir do GitHub. Não use cópias locais antigas como fonte de verdade.
 
-## Módulos principais
+## Fonte de Verdade
 
-- Painel com métricas, fila de atenção e demandas recentes.
-- Tickets com criação, edição, comentários, histórico, responsáveis, prioridades e prazos.
-- Kanban com movimentação por status, filtros e rollback visual em erro.
-- Agenda para compromissos e tarefas com data marcada.
-- Marketing com calendário editorial, gravações, campanhas e demandas da área.
-- Feriados e pontos facultativos de Pindamonhangaba em fonte única no código.
-- Chromebooks com reserva pública, administração interna, conflitos e total configurável.
-- Página pública sem login para TI, mídia, arte, cobertura, Chromebooks e outras solicitações.
-- Notificações internas, e-mail quando configurado, preferências e rotinas por cron.
-- PWA instalável com manifesto, ícones, service worker e orientação mobile.
+Repositório oficial:
+
+```bash
+https://github.com/vhonorato02/helper
+```
+
+Branch principal:
+
+```bash
+main
+```
+
+Regras de trabalho:
+
+- Clone o projeto diretamente do GitHub antes de mexer em código.
+- Não reaproveite pastas locais antigas.
+- Não use worktrees para manutenção comum.
+- Se existir divergência entre uma pasta local e o GitHub, o GitHub vence.
+- Nunca versionar senhas, tokens, dumps, `.env`, `node_modules` ou artefatos de build local.
+
+## Módulos
+
+- Dashboard: visão de métricas, fila de atenção, prazos e atividade recente.
+- Tickets: criação, edição, responsáveis, prioridade, status, comentários e histórico.
+- Kanban: movimentação visual por status com feedback e rollback quando a mutation falha.
+- Agenda: compromissos e demandas com data marcada.
+- Marketing: calendário editorial, gravações, campanhas e solicitações da área.
+- Chromebooks: reserva pública, administração interna, status, disponibilidade e total configurável.
+- Página pública: solicitações de TI, fotos, vídeos, arte, divulgação, cobertura de evento, Chromebooks e outros pedidos.
+- Notificações: preferências internas, e-mail quando configurado e rotinas por cron.
+- PWA: manifesto, ícones, service worker, instalação mobile e atualização de cache.
 
 ## Stack
 
 - Next.js 16 com App Router.
 - React 19.
 - TypeScript 6.
-- Node.js 24 para CI, Vercel e runtime recomendado.
+- Node.js `>=24.14.0 <27`.
 - npm com `package-lock.json`.
-- Tailwind CSS 3.
+- Tailwind CSS 3.4.19.
 - Radix UI para primitivas acessíveis.
 - lucide-react para ícones.
 - Drizzle ORM com Neon PostgreSQL.
-- Auth.js/NextAuth 5 beta com credenciais e JWT.
+- Autenticação própria com cookie HTTP-only e JWT assinado por `jose`.
 - Zod para validação.
-- date-fns e date-fns-tz para datas em pt-BR e America/Sao_Paulo.
+- date-fns e date-fns-tz para datas em `pt-BR` e `America/Sao_Paulo`.
 - Vercel para deploy e crons.
 - Neon PostgreSQL para dados.
 
-## Estrutura de pastas
+Tailwind 3.4.19 está fixado por compatibilidade estável e build limpo. Atualize somente depois de validar que a versão nova não adiciona warnings no build, no runtime ou no CSS gerado.
+
+## Estrutura
 
 - `src/app`: rotas, páginas, layouts, loading states, API routes e crons.
-- `src/actions`: server actions de tickets, usuários, comentários, notificações, marketing, reservas e solicitações públicas.
-- `src/components`: componentes reutilizáveis, UI base, layout, Kanban, tickets, dashboard e PWA.
-- `src/db`: schema Drizzle, conexão com Neon e seed.
-- `src/lib`: regras de domínio, textos do produto, validações, e-mail, rate limit, datas, feriados, marca e helpers.
-- `database/schema.sql`: schema SQL idempotente para recuperar ou sincronizar bancos.
-- `public`: favicon, logo, ícones PWA, imagem Open Graph e service worker.
+- `src/actions`: server actions de domínio.
+- `src/components`: UI reutilizável, layout, Kanban, tickets, dashboard e PWA.
+- `src/db`: conexão, schema Drizzle e seed.
+- `src/lib`: regras de negócio, copy, validações, e-mail, rate limit, datas, marca e utilitários.
+- `database/schema.sql`: schema SQL idempotente para preparar ou recuperar banco.
+- `public`: favicon, logo, ícones PWA, Open Graph e service worker.
 - `scripts`: build controlado, smoke test, geração de ícones e setup do banco.
-- `tests`: testes unitários das regras críticas e helpers.
+- `tests`: testes unitários das regras críticas.
 - `.github/workflows`: CI com lint, typecheck, testes e build.
 
-## Pré-requisitos
-
-- Node.js 24.x.
-- npm 11 ou compatível com Node 24.
-- Acesso ao repositório `https://github.com/vhonorato02/helper`.
-- Um banco Neon PostgreSQL com SSL.
-- Projeto Vercel vinculado ao GitHub.
-
-Use Node 24 para evitar warning de engine. Rodar com Node 26 pode funcionar localmente, mas gera `EBADENGINE` porque a entrega está padronizada em Node 24.
-
-## Rodar localmente a partir do GitHub
+## Instalação Limpa
 
 ```bash
 git clone https://github.com/vhonorato02/helper.git
 cd helper
 git checkout main
 npm ci
-cp .env.example .env.local
-npm run db:setup
-npm run dev
 ```
 
-Acesse `http://localhost:3000`.
+Resultado esperado:
 
-Nunca copie valores reais de produção para o README, para issues ou para commits. Configure segredos apenas em `.env.local`, Vercel ou no painel do provedor.
+- npm instala sem warning relevante.
+- Apenas `package-lock.json` existe como lockfile.
+- `npm audit` não encontra vulnerabilidades.
 
-## Variáveis de ambiente
+Se falhar:
 
-Obrigatórias para app autenticado:
+- Confirme a versão do Node com `node -v`.
+- Apague `node_modules` e rode `npm ci` novamente.
+- Não troque o package manager sem decisão explícita de manutenção.
 
-- `DATABASE_URL`: string do Neon. Pode ser pooled ou unpooled.
-- `DATABASE_URL_UNPOOLED`: string direta do Neon. Usada como fallback.
-- `AUTH_SECRET`: segredo forte para Auth.js.
-- `NEXTAUTH_URL`: URL local ou pública do app.
-- `NEXT_PUBLIC_SITE_URL`: URL pública usada em metadados e links.
+## Variáveis de Ambiente
 
-Operação e bootstrap:
+Crie `.env` para scripts que usam `--env-file=.env` e `.env.local` para desenvolvimento Next.js.
+
+Modelo:
+
+```bash
+cp .env.example .env
+cp .env.example .env.local
+```
+
+Obrigatórias:
+
+- `DATABASE_URL`: conexão Neon com SSL.
+- `DATABASE_URL_UNPOOLED`: conexão direta Neon, usada como fallback e em operações sensíveis.
+- `DATABASE_TIMEOUT_MS`: timeout de conexão.
+- `AUTH_SECRET`: segredo forte, com pelo menos 32 caracteres.
+- `APP_URL`: URL canônica para e-mails e links.
+- `NEXT_PUBLIC_SITE_URL`: URL pública usada por metadados.
+- `CRON_SECRET`: segredo dos crons.
+
+Bootstrap e seed:
 
 - `BOOTSTRAP_ADMIN_USERNAME`: usuário admin inicial.
-- `BOOTSTRAP_ADMIN_DISPLAY_NAME`: nome exibido do admin inicial.
+- `BOOTSTRAP_ADMIN_DISPLAY_NAME`: nome exibido.
 - `BOOTSTRAP_ADMIN_PASSWORD`: senha inicial forte.
-- `BOOTSTRAP_SECRET`: token para `/api/admin/bootstrap`.
-- `CRON_SECRET`: token usado pelos crons da Vercel.
+- `BOOTSTRAP_SECRET`: segredo da rota `/api/admin/bootstrap`.
 
 E-mail:
 
-- `GMAIL_USER`: conta Gmail remetente.
+- `GMAIL_USER`: remetente SMTP.
 - `GMAIL_APP_PASSWORD`: senha de app do Google.
 - `NOTIFICATION_TO_EMAILS`: destinatários gerais.
 - `NOTIFICATION_TI_EMAILS`: destinatários de TI.
 - `EMAIL_TIMEOUT_MS`: timeout SMTP.
 
-Nunca use variáveis sensíveis com prefixo `NEXT_PUBLIC_`.
+Nunca use segredo com prefixo `NEXT_PUBLIC_`. Tudo com esse prefixo pode aparecer no navegador.
 
-## Banco de dados
+## Banco e Neon
 
-O app lê `DATABASE_URL` e, se ela estiver vazia, usa `DATABASE_URL_UNPOOLED`.
+O Helper usa Neon PostgreSQL. Production, Preview e Development devem apontar para bancos ou branches separados.
 
-Para aplicar o schema de forma idempotente:
+Separação recomendada:
+
+- Production: branch Neon de produção, com dados reais.
+- Preview: branch Neon temporária ou branch dedicada de prévia.
+- Development: branch local/dev, sem escrever em produção.
+
+Validação de conexão:
 
 ```bash
 npm run db:setup
 ```
 
-O script executa `database/schema.sql`, cria tipos, tabelas, índices e dados base sem apagar registros existentes.
+Resultado esperado:
 
-Validação segura recomendada:
+- `Database schema applied (...) statements.`
+- Nenhuma tabela crítica ausente.
+- Nenhuma migration destrutiva.
+
+O que o setup faz:
+
+- Executa `database/schema.sql`.
+- Cria tipos, tabelas, índices e dados base de forma idempotente.
+- Não apaga dados existentes.
+
+Se falhar:
+
+- Verifique host, usuário, senha, database e `sslmode=require`.
+- Confirme se `DATABASE_URL` e `DATABASE_URL_UNPOOLED` apontam para o ambiente certo.
+- Rode uma consulta simples no Neon antes de tentar build.
+- Não aponte Preview para Production para “resolver rápido”.
+- Não rode comando destrutivo sem backup.
+
+Consultas úteis:
 
 ```sql
-select current_database(), current_schema(), now();
-select table_name from information_schema.tables where table_schema = 'public';
-select count(*) from tickets;
+select current_database(), current_user, now();
 select count(*) from users;
+select count(*) from tickets;
 select count(*) from chromebook_bookings;
+select total_chromebooks from chromebook_settings where id = 'default';
 ```
 
-Antes de qualquer mudança de região, confirme:
+## Rodar Localmente
 
-- Qual banco Production usa.
-- Qual banco Preview usa.
-- Qual banco Development usa.
-- Se o banco novo tem schema.
-- Se o banco novo tem dados ou está vazio.
-- Se há backup, snapshot ou dump.
-- Se existe rollback documentado.
+```bash
+npm run dev
+```
 
-Não use banco vazio como produção. Se um banco novo for criado para Preview ou Development, aplique schema, valide conexão e mantenha Production no banco com dados preservados até haver migração planejada.
+Acesse:
 
-## Ambientes
+```bash
+http://localhost:3000
+```
 
-Production deve usar o banco preservado, com dados reais e schema completo.
+Resultado esperado:
 
-Preview deve usar banco separado, sem escrever nos dados reais.
+- `/login` abre sem erro.
+- `/solicitar` abre sem login.
+- `/solicitar/chromebooks` abre sem login.
+- Rotas internas redirecionam para login quando não autenticado.
+- Console do navegador não mostra erro.
 
-Development deve usar banco de desenvolvimento ou local. Só use dados de produção localmente quando houver autorização e justificativa documentada.
+## Scripts
 
-Checklist por ambiente:
+### `npm run dev`
 
-- `DATABASE_URL` conecta.
-- Schema tem as tabelas esperadas.
-- `AUTH_SECRET` está configurado.
-- `NEXT_PUBLIC_SITE_URL` aponta para a URL correta.
-- `CRON_SECRET` existe em Production.
-- Gmail só é obrigatório se notificações por e-mail estiverem habilitadas.
-- Nenhum segredo aparece no frontend.
+Inicia o Next.js em modo desenvolvimento.
+
+Use quando estiver implementando ou testando no navegador.
+
+Se falhar:
+
+- Verifique `.env.local`.
+- Confirme se o banco responde.
+- Veja o terminal do Next.js e o console do navegador.
+
+### `npm run build`
+
+Executa `scripts/next-build.mjs`, limpa `.next` e roda `next build`.
+
+Use antes de commit, push ou deploy.
+
+Resultado esperado:
+
+- Build concluído.
+- Sem warning relevante.
+- Sem erro de TypeScript, framework, PWA ou CSS.
+
+Se falhar:
+
+- Leia o primeiro erro real, não apenas o último stack trace.
+- Rode `npm run typecheck`.
+- Rode `npm run lint`.
+- Confirme envs obrigatórias.
+
+### `npm run start`
+
+Sobe a build de produção local.
+
+Use depois de `npm run build` para validar comportamento próximo ao deploy.
+
+### `npm run lint`
+
+Executa ESLint em todo o projeto.
+
+Resultado esperado:
+
+- Zero erros.
+- Zero warnings.
+
+Se falhar:
+
+- Corrija import não usado, código morto, acessibilidade e regras de React/Next.
+- Não use `eslint-disable` sem justificativa pontual.
+
+### `npm run typecheck`
+
+Executa `tsc --noEmit`.
+
+Resultado esperado:
+
+- TypeScript limpo.
+
+Se falhar:
+
+- Corrija o tipo na origem.
+- Não troque para `any` para esconder erro.
+
+### `npm test`
+
+Executa testes unitários com `tsx --test`.
+
+Resultado esperado:
+
+- Todos os testes passam.
+
+Se falhar:
+
+- Corrija a regra de negócio ou atualize o teste quando o comportamento esperado mudou.
+
+### `npm run test:watch`
+
+Roda testes em modo watch.
+
+Use durante desenvolvimento de regras de domínio.
+
+### `npm run test:smoke`
+
+Sobe um servidor local temporário e valida login público, manifesto, assets, rota pública, redirect de rota protegida e proteção do bootstrap.
+
+Resultado esperado:
+
+- `Smoke tests passed.`
+
+Se falhar:
+
+- Verifique porta ocupada com `SMOKE_PORT`.
+- Confirme se a rota pública renderiza sem exigir banco indevido.
+- Corrija redirects quebrados antes de deploy.
+
+### `npm run test:e2e`
+
+Executa Playwright em Chromium desktop e mobile.
+
+Use para validar navegador real, manifesto, página pública e redirects protegidos.
+
+Resultado esperado:
+
+- Todos os projetos Playwright passam.
+- Nenhum console error ou warning relevante aparece.
+
+Se falhar:
+
+- Instale os navegadores com `npx playwright install`.
+- Confirme se a porta `3101` está livre ou configure `PLAYWRIGHT_PORT`.
+- Para testar um servidor já aberto, use `PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 npm run test:e2e`.
+
+### `npm run icons`
+
+Gera ícones PWA, favicon e imagem Open Graph a partir dos scripts locais.
+
+Use quando alterar identidade visual.
+
+Resultado esperado:
+
+- Arquivos em `public` atualizados.
+- Manifesto e service worker continuam apontando para os assets existentes.
+
+### `npm run db:setup`
+
+Aplica o schema SQL idempotente usando `.env`.
+
+Use em banco novo, branch Neon nova ou recuperação de schema.
+
+Se falhar:
+
+- Não tente “inventar” tabela manualmente.
+- Corrija a conexão ou o SQL idempotente.
+- Faça backup antes de qualquer ação arriscada.
+
+### `npm run db:seed`
+
+Cria ou atualiza o admin inicial usando `.env`.
+
+Use apenas em ambiente controlado.
+
+Resultado esperado:
+
+- Usuário admin criado ou atualizado.
+
+Se falhar:
+
+- Confirme `BOOTSTRAP_ADMIN_USERNAME`, `BOOTSTRAP_ADMIN_DISPLAY_NAME` e `BOOTSTRAP_ADMIN_PASSWORD`.
+- Nunca coloque senha no README, issue, commit ou log.
+
+## Checklist de Qualidade
+
+Antes de entregar:
+
+```bash
+npm ci
+npm audit --audit-level=low
+npm ls --depth=0
+npm run lint
+npm run typecheck
+npm test
+npm run test:smoke
+npm run build
+```
+
+Buscas obrigatórias:
+
+```bash
+rg -n "PADRAO_REMOVIDO_1|PADRAO_REMOVIDO_2|VERSAO_REMOVIDA" . -g "!node_modules" -g "!.next"
+rg -n "TODO|FIXME|HACK|deprecated|console\\.log|console\\.warn|console\\.error" src scripts tests public database
+```
+
+Resultado esperado:
+
+- Nenhuma referência visível a marcas antigas.
+- Nenhum app version antigo.
+- Nenhum TODO crítico.
+- Nenhum console indevido no código do navegador.
+
+Observação: lockfiles podem conter versões transitivas de dependências. Diferencie semver de pacote de versão do produto.
 
 ## Vercel
 
-Configuração esperada:
+O projeto deve estar vinculado ao repositório GitHub oficial.
 
-- Projeto: `helper`.
-- Branch de produção: `main`.
-- Node.js: `24.x`.
+Configuração recomendada:
+
+- Framework: Next.js.
+- Production branch: `main`.
+- Node.js: 24.x ou runtime compatível com `>=24.14.0 <27`.
 - Build command: `npm run build`.
-- Framework preset: Next.js.
-- Crons em `vercel.json`.
+- Install command: `npm ci`.
 
-Comandos úteis:
+Ambientes:
 
-```bash
-npx vercel project ls
-npx vercel env ls
-npx vercel env pull .env.production.local --environment=production
-npx vercel deploy --prod
-```
+- Production: banco de produção.
+- Preview: banco ou branch Neon de preview.
+- Development: banco local/dev.
 
-Depois de alterar envs na Vercel, faça novo deploy. Deploys antigos não recebem envs novas retroativamente.
+Nunca deixe Preview escrever no banco real sem decisão explícita.
 
-Para rollback, use o painel da Vercel ou promova um deployment anterior que tenha sido validado com o banco correto.
+Variáveis por ambiente:
+
+- Production: `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `AUTH_SECRET`, `APP_URL`, `NEXT_PUBLIC_SITE_URL`, `CRON_SECRET` e e-mail se usado.
+- Preview: mesmas chaves, mas apontando para branch Neon segura.
+- Development: valores locais.
+
+Validação de deploy:
+
+- Confirme se o commit implantado é o commit esperado.
+- Leia os build logs.
+- Abra a URL de produção.
+- Teste `/login`, `/solicitar`, `/solicitar/chromebooks` e uma rota protegida.
+- Verifique console e network.
 
 ## PWA
 
 Arquivos importantes:
 
-- `src/app/manifest.ts`: nome, short name, tema, ícones, start URL e shortcuts.
-- `public/sw.js`: service worker.
-- `public/icon-192.png`, `public/icon-512.png`, `public/icon-maskable-512.png`: ícones Android/PWA.
-- `public/apple-touch-icon.png`: ícone iOS.
-- `public/favicon.svg` e `public/favicon-32.png`: favicon.
+- `src/app/manifest.ts`
+- `public/sw.js`
+- `public/favicon.svg`
+- `public/favicon-32.png`
+- `public/icon-192.png`
+- `public/icon-512.png`
+- `public/icon-maskable-512.png`
+- `public/apple-touch-icon.png`
+- `public/og.png`
 
-O service worker mantém páginas autenticadas em modo network-only e cacheia apenas assets estáticos. Ao mudar marca ou ícones, incremente o nome do cache para evitar versão antiga instalada.
+Regras:
 
-Android normalmente oferece instalação nativa. iOS depende do menu Compartilhar e tem limitações maiores para push; por isso o app mantém notificações internas e e-mail como fallback.
+- Nome e short name devem ser `Helper`.
+- Tema principal deve usar preto, branco e cinzas.
+- Cores fortes ficam reservadas para status, alerta, prioridade e sucesso.
+- Service worker não deve servir HTML autenticado em cache antigo.
 
-## Página pública
+Teste Android:
+
+- Abra no Chrome.
+- Instale pelo prompt do navegador.
+- Feche e reabra pelo ícone.
+- Valide splash, nome, ícone, login e refresh.
+
+Teste iOS:
+
+- Abra no Safari.
+- Use “Adicionar à Tela de Início”.
+- Abra pelo ícone.
+- Valide safe area, rolagem, teclado virtual e refresh.
+
+Se PWA parecer preso em versão antiga:
+
+- Abra DevTools.
+- Application > Service Workers > Unregister.
+- Application > Storage > Clear site data.
+- Recarregue.
+- Confirme se `public/sw.js` usa cache novo quando assets mudarem.
+
+## Tickets
+
+Fluxo esperado:
+
+- Criar ticket.
+- Abrir detalhes.
+- Editar título, descrição, área, prioridade, responsável e prazo.
+- Salvar.
+- Comentar.
+- Fechar.
+- Reabrir.
+- Buscar e filtrar.
+- Testar ticket inexistente.
+
+Falhas comuns:
+
+- Mutation salva no banco, mas UI não revalida.
+- Status visual diverge do banco.
+- Modal abre sem foco.
+- Erro de rede aparece como silêncio.
+
+Correção esperada:
+
+- Server action valida e retorna mensagem clara.
+- UI mostra loading, sucesso ou erro.
+- Cache é revalidado.
+- Histórico registra mudança relevante.
+
+## Kanban
+
+Fluxo esperado:
+
+- Arrastar ticket entre colunas.
+- Abrir ticket por card.
+- Alterar status por ação alternativa quando drag não for ideal.
+- Filtrar por responsável, área, prioridade e busca.
+- Validar mobile.
+
+Regras:
+
+- Drag deve ter feedback visual.
+- Falha deve desfazer mudança otimista.
+- Colunas não podem ficar com loading infinito.
+- Card precisa ser navegável por teclado.
+
+## Chromebooks
+
+O total de Chromebooks é configurável na administração.
+
+Status que reservam máquinas:
+
+- `pendente`
+- `confirmado`
+
+Status que libera máquinas:
+
+- `cancelado`
+
+Validações obrigatórias no backend:
+
+- Data válida.
+- Horário final maior que horário inicial.
+- Duração mínima de 15 minutos.
+- Duração máxima de 8 horas.
+- Antecedência mínima configurada na regra atual.
+- Quantidade maior que zero.
+- Quantidade menor ou igual ao total configurado.
+- Bloqueio de sala com reserva ativa no mesmo intervalo.
+- Bloqueio de sobreposição parcial quando a soma ultrapassa o total disponível.
+- Revalidação ao aprovar reserva pendente.
+- Lock persistido para reduzir race condition.
+
+Fluxos para testar:
+
+- Criar reserva válida.
+- Criar reserva com horário final menor ou igual ao inicial.
+- Criar reserva com quantidade zero.
+- Criar reserva acima do total configurado.
+- Criar reserva na mesma sala e mesmo horário.
+- Criar reserva em sala diferente ultrapassando o total geral.
+- Criar reserva com sobreposição parcial.
+- Editar reserva sem conflito.
+- Editar reserva criando conflito.
+- Cancelar reserva e confirmar que disponibilidade foi liberada.
+- Filtrar por data e status.
+- Conferir resumo do dia e da semana.
+- Testar no celular.
+
+## Página Pública
 
 Rotas públicas:
 
 - `/solicitar`
-- `/solicitar/chromebooks`
 - `/solicitar/ti`
 - `/solicitar/midia`
 - `/solicitar/arte`
 - `/solicitar/cobertura`
+- `/solicitar/chromebooks`
 - `/solicitar/outra`
 
-Essas rotas não exigem login. Elas usam validação no backend, honeypot, rate limit, trava contra envio duplicado no cliente e mensagem de sucesso com protocolo quando aplicável.
+Regras:
 
-Não exponha listas internas, dados de usuários ou reservas completas na área pública.
+- Não exige login.
+- Validação deve existir no backend.
+- Honeypot deve bloquear spam simples.
+- Rate limit deve reduzir envio duplicado.
+- Mensagens não podem expor stack trace.
+- Dados internos não podem aparecer para usuário público.
 
-## Chromebooks
+Teste:
 
-Regras críticas ficam no backend:
+- Envio vazio.
+- Envio inválido.
+- Envio válido.
+- Envio duplicado.
+- Mobile.
+- Erro de rede.
+- Confirmação final com protocolo quando aplicável.
+- Recebimento na administração.
 
-- Horário final deve ser maior que o inicial.
-- Duração mínima: 15 minutos.
-- Duração máxima: 8 horas.
-- Antecedência mínima: 1 hora.
-- Quantidade deve ser positiva.
-- Quantidade não pode ultrapassar o total configurado.
-- Sala não pode ter outro agendamento sobreposto.
-- Soma de reservas ativas não pode ultrapassar o total disponível.
-- Feriados sem expediente bloqueiam reservas.
-- Ponto facultativo parcial respeita horário de início permitido.
+## Calendário e Notificações
 
-O módulo usa lock persistido no Postgres para reduzir risco de duas reservas simultâneas passarem pela validação ao mesmo tempo.
+Valide:
 
-## Tickets e Kanban
+- Criação e edição de itens com data.
+- Timezone `America/Sao_Paulo`.
+- Notificações internas.
+- Preferências do usuário.
+- E-mail desativado sem quebrar ticket.
+- E-mail configurado enviando para destinatários corretos.
+- Crons protegidos por `CRON_SECRET`.
 
-Fluxos esperados:
+Se notificação falhar:
 
-- Criar demanda em `/tickets?novo=1`.
-- Abrir demanda por `/tickets/[code]`.
-- Editar detalhes em `/tickets/[code]?edit=1`.
-- Alterar responsável, prioridade e status no detalhe.
-- Mover cards no Kanban por drag and drop.
-- Desfazer movimento pelo toast.
-- Exportar CSV na lista de tickets.
+- Confira `GMAIL_USER` e `GMAIL_APP_PASSWORD`.
+- Valide destinatários.
+- Verifique logs do servidor.
+- Não exponha conteúdo sensível em erro público.
 
-Se o Kanban não abrir ou editar:
+## Segurança
 
-- Confirme que o link gerado é `/tickets/CODIGO`.
-- Confirme que o usuário está autenticado.
-- Confirme que a tabela `tickets` existe e tem a coluna `code`.
-- Verifique logs de server action e erro de banco.
+Checklist:
 
-## Feriados
+- Rotas administrativas exigem autenticação.
+- Ações administrativas conferem permissão.
+- Cookies são HTTP-only.
+- `AUTH_SECRET` é forte.
+- Inputs usam Zod ou validação equivalente no backend.
+- E-mails escapam HTML.
+- Página pública tem honeypot e rate limit.
+- Upload, se adicionado, deve validar tipo, tamanho e destino.
+- Logs não imprimem senhas, tokens ou connection strings.
+- `.env` não é versionado.
+- CORS e endpoints públicos não retornam dados internos.
 
-Fonte única:
+## Acessibilidade
 
-- `src/lib/holidays.ts`
+Checklist:
 
-O arquivo diferencia feriado nacional, estadual, municipal, ponto facultativo e ponto facultativo parcial. Use os helpers desse módulo em calendário, prazos, marketing, lembretes e Chromebooks. Não replique datas dentro de componentes.
+- Labels associados aos campos.
+- Foco visível.
+- Navegação por teclado.
+- Modais com foco gerenciado.
+- Botões com nome acessível.
+- Erros próximos aos campos.
+- Contraste adequado.
+- Alvos de toque confortáveis no mobile.
+- Tabelas com cabeçalhos.
+- Não depender apenas de cor para comunicar status.
 
-## Notificações
+## Performance
 
-O Helper suporta:
+Checklist:
 
-- Notificações internas em `/notificacoes`.
-- Preferências em `/configuracoes`.
-- E-mail via Gmail quando configurado.
-- Crons para resumo, demandas paradas, atrasos e agenda.
+- Evitar `SELECT *` em rotas críticas.
+- Paginar listas grandes.
+- Evitar requisições duplicadas após mutation.
+- Revalidar somente paths necessários.
+- Não carregar bundle pesado em página simples.
+- Usar imports específicos.
+- Reduzir renderizações de listas e Kanban.
+- Manter imagens públicas otimizadas.
+- Evitar cache de HTML autenticado no service worker.
 
-Evite ruído: prefira resumos agrupados quando a mesma pessoa receberia muitos avisos semelhantes.
+## Diagnóstico Rápido
 
-## Scripts
+Erro de banco:
 
-`npm run dev`
+1. Rode `npm run db:setup`.
+2. Consulte `select current_database(), current_user, now();`.
+3. Confirme SSL.
+4. Confirme ambiente correto.
 
-Inicia o servidor local. Use durante desenvolvimento.
+Erro de migration:
 
-`npm run build`
+1. Leia o statement que falhou.
+2. Confira se é idempotente.
+3. Valide permissão do usuário.
+4. Faça backup antes de qualquer correção arriscada.
 
-Executa build de produção via `scripts/next-build.mjs`. Deve passar antes de deploy.
+Erro de env:
 
-`npm start`
+1. Compare `.env` com `.env.example`.
+2. Confirme que Production, Preview e Development têm valores separados.
+3. Verifique se nenhuma variável sensível usa `NEXT_PUBLIC_`.
 
-Sobe o build já gerado. Use para validar produção local.
+Erro de build:
 
-`npm run lint`
+1. Rode `npm run typecheck`.
+2. Rode `npm run lint`.
+3. Rode `npm test`.
+4. Rode `npm run build` novamente.
 
-Roda ESLint no projeto.
+Nome, ícone ou logo antigo aparecendo:
 
-`npm run typecheck`
+1. Rode a busca global de marca.
+2. Confira `src/lib/copy.ts`, `src/lib/brand.ts`, manifest e assets públicos.
+3. Limpe service worker e storage do navegador.
+4. Gere ícones novamente com `npm run icons` se necessário.
 
-Roda TypeScript sem emitir arquivos.
+## Limpeza do GitHub
 
-`npm test`
+Auditoria segura:
 
-Executa testes unitários em `tests/*.test.ts`.
+```bash
+git branch -r
+gh pr list --state open
+gh release list
+git ls-files | rg "(^|/)(node_modules|dist|build|\\.next|coverage|\\.env|dump|backup)"
+```
 
-`npm run test:smoke`
+Regras:
 
-Sobe o app e valida rotas principais de forma simples.
+- Apague branch remota somente quando ela estiver mesclada ou comprovadamente morta.
+- Não apague tag/release histórica sem motivo real.
+- Se houver risco, crie tag de segurança antes de remover algo.
+- Mantenha `.gitignore` cobrindo envs, build, dumps e dependências.
 
-`npm run icons`
+## Releases
 
-Regenera ícones PWA a partir de `scripts/generate-icons.mjs`.
-
-`npm run db:setup`
-
-Aplica `database/schema.sql` no banco configurado.
-
-`npm run db:seed`
-
-Cria ou atualiza o admin inicial a partir das variáveis de bootstrap.
-
-## Validação antes de publicar
+Fluxo recomendado:
 
 ```bash
 npm ci
+npm audit --audit-level=low
 npm run lint
 npm run typecheck
 npm test
+npm run test:smoke
 npm run build
-npm run icons
+git status
+git add .
+git commit -m "release: Helper 0.1.4"
+git push origin main
+git tag v0.1.4
+git push origin v0.1.4
 ```
 
-Valide também:
+Depois:
 
-- Login.
-- Dashboard.
-- Criar demanda.
-- Abrir demanda.
-- Editar demanda.
-- Mover demanda no Kanban.
-- Enviar solicitação pública.
-- Criar reserva de Chromebooks.
-- Bloquear conflito de Chromebooks.
-- Ver calendário e feriados.
-- Abrir em mobile.
-- Instalar PWA.
-- Checar `/api/admin/system-status` como admin.
+- Aguarde deploy da Vercel.
+- Valide logs de build.
+- Abra produção.
+- Execute smoke manual no navegador.
+- Crie release no GitHub com o changelog.
 
-## Troubleshooting
+## Operação Diária
 
-Erro de conexão com Neon:
+- Use a página pública para receber pedidos sem login.
+- Use Tickets para triagem e histórico.
+- Use Kanban para operação visual.
+- Use Chromebooks para reservas com disponibilidade controlada.
+- Use Agenda para compromissos datados.
+- Use Notificações para alertas internos.
+- Revise logs antes de mexer em banco ou env.
 
-- Verifique `DATABASE_URL`.
-- Confirme `sslmode=require`.
-- Teste `select 1`.
-- Confirme host, database e role.
-- Veja se a branch do Neon ainda existe.
-
-Schema inconsistente:
-
-- Rode `npm run db:setup`.
-- Compare tabelas em `information_schema.tables`.
-- Confirme índices e colunas novas.
-- Não invente colunas apenas para passar build.
-
-Build falhando na Vercel:
-
-- Confirme Node 24.
-- Rode `npm ci` localmente.
-- Rode `npm run build`.
-- Compare envs Production, Preview e Development.
-
-PWA com versão antiga:
-
-- Incremente o nome do cache em `public/sw.js`.
-- Rode `npm run icons`.
-- Faça novo deploy.
-- Reinstale o app se o dispositivo continuar preso em assets antigos.
-
-E-mail não enviado:
-
-- Confirme `GMAIL_USER`.
-- Confirme `GMAIL_APP_PASSWORD`.
-- Confirme destinatários.
-- Veja se o erro é timeout SMTP.
-- O ticket deve continuar salvo mesmo sem e-mail.
-
-Reserva de Chromebooks recusada:
-
-- Confira horário inicial e final.
-- Confira antecedência mínima.
-- Confira feriados.
-- Confira sala.
-- Confira total configurado.
-- Confira reservas sobrepostas.
-
-## Checklist final de aceite
-
-- Nome visível: Helper.
-- Versão: Helper 0.1.3.
-- Build passa.
-- Lint passa.
-- Typecheck passa.
-- Testes passam.
-- Banco Production conecta e preserva dados.
-- Preview não escreve no banco de Production.
-- Página pública funciona sem login.
-- Regras críticas de Chromebooks rodam no backend.
-- Kanban abre, edita e move demandas.
-- PWA usa ícones e cache Helper.
-- README está atualizado.
-- Nenhum segredo está versionado.
+Helper 0.1.4 deve permanecer limpo: sem warnings relevantes, sem marcas antigas, sem rotas quebradas, sem cache PWA antigo e sem Preview escrevendo em Production por acidente.

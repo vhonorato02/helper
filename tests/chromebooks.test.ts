@@ -4,6 +4,7 @@ import {
   calculateMaxChromebooksUsed,
   combineDateTimeInSaoPaulo,
   findRoomConflict,
+  isActiveChromebookBookingStatus,
   validateChromebookHolidayPolicy,
 } from '@/lib/chromebooks';
 
@@ -49,5 +50,11 @@ describe('Chromebook scheduling rules', () => {
     assert.equal(validateChromebookHolidayPolicy('2026-04-03', '09:00').ok, false);
     assert.equal(validateChromebookHolidayPolicy('2026-02-18', '09:00').ok, false);
     assert.equal(validateChromebookHolidayPolicy('2026-02-18', '13:00').ok, true);
+  });
+
+  it('reserves devices only for pending and confirmed statuses', () => {
+    assert.equal(isActiveChromebookBookingStatus('pendente'), true);
+    assert.equal(isActiveChromebookBookingStatus('confirmado'), true);
+    assert.equal(isActiveChromebookBookingStatus('cancelado'), false);
   });
 });

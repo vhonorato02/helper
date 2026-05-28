@@ -1,7 +1,9 @@
 // @ts-check
 import nextPlugin from '@next/eslint-plugin-next';
-import tsPlugin from '@typescript-eslint/eslint-plugin';
-import tsParser from '@typescript-eslint/parser';
+import tseslint from 'typescript-eslint';
+
+const tsPlugin = tseslint.plugin;
+const tsParser = tseslint.parser;
 
 export default [
   {

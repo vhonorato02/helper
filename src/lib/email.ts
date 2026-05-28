@@ -58,7 +58,6 @@ export function getAppUrl() {
   return (
     normalizeUrl(process.env.APP_URL) ??
     normalizeUrl(process.env.NEXT_PUBLIC_SITE_URL) ??
-    normalizeUrl(process.env.NEXTAUTH_URL) ??
     normalizeUrl(process.env.VERCEL_PROJECT_PRODUCTION_URL) ??
     normalizeUrl(process.env.VERCEL_URL) ??
     null

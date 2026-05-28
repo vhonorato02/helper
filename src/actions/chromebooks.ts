@@ -18,6 +18,7 @@ import {
   dateInputInSaoPaulo,
   findRoomConflict,
   formatChromebookPeriod,
+  isActiveChromebookBookingStatus,
   validateChromebookHolidayPolicy,
   type ChromebookBookingStatus,
 } from '@/lib/chromebooks';
@@ -177,10 +178,24 @@ async function validateBookingAvailability(input: BookingInput, excludeId?: stri
   const holidayPolicy = validateChromebookHolidayPolicy(input.date, input.startTime);
   if (!holidayPolicy.ok) return { error: holidayPolicy.reason } as const;
 
-  const [settings, overlapping] = await Promise.all([
-    getChromebookSettings(),
-    getOverlappingActiveBookings(period.startAt, period.endAt, excludeId),
-  ]);
+  const settings = await getChromebookSettings();
+  if (input.quantity > settings.totalChromebooks) {
+    return {
+      error: `A quantidade solicitada ultrapassa o total configurado de ${settings.totalChromebooks} Chromebook(s).`,
+    } as const;
+  }
+
+  const requestedStatus = input.status ?? 'pendente';
+  if (!isActiveChromebookBookingStatus(requestedStatus)) {
+    return {
+      period,
+      maxUsed: 0,
+      available: settings.totalChromebooks,
+      total: settings.totalChromebooks,
+    } as const;
+  }
+
+  const overlapping = await getOverlappingActiveBookings(period.startAt, period.endAt, excludeId);
 
   const roomConflict = findRoomConflict(input.room, period.startAt, period.endAt, overlapping);
   if (roomConflict) {
@@ -214,19 +229,21 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 let lockTablePromise: Promise<void> | null = null;
 
 async function ensureChromebookLockTable() {
-  lockTablePromise ??= db
-    .execute(sql`
-      ALTER TABLE chromebook_bookings ADD COLUMN IF NOT EXISTS requester_contact text;
-      ALTER TABLE chromebook_bookings ADD COLUMN IF NOT EXISTS protocol text;
+  lockTablePromise ??= (async () => {
+    await db.execute(sql`ALTER TABLE chromebook_bookings ADD COLUMN IF NOT EXISTS requester_contact text`);
+    await db.execute(sql`ALTER TABLE chromebook_bookings ADD COLUMN IF NOT EXISTS protocol text`);
+    await db.execute(sql`
       CREATE UNIQUE INDEX IF NOT EXISTS chromebook_bookings_protocol_idx
-        ON chromebook_bookings (protocol) WHERE protocol IS NOT NULL;
+      ON chromebook_bookings (protocol) WHERE protocol IS NOT NULL
+    `);
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS chromebook_booking_locks (
         id text PRIMARY KEY,
         owner text NOT NULL,
         expires_at timestamp NOT NULL
       )
-    `)
-    .then(() => undefined);
+    `);
+  })();
   return lockTablePromise;
 }
 
@@ -265,45 +282,45 @@ function createChromebookProtocol() {
 
 async function saveBooking(input: BookingInput, options: { id?: string; responsibleId?: string | null }) {
   return withChromebookBookingLock(async () => {
-  const availability = await validateBookingAvailability(input, options.id);
-  if ('error' in availability) return { error: availability.error };
+    const availability = await validateBookingAvailability(input, options.id);
+    if ('error' in availability) return { error: availability.error };
 
-  const values = {
-    startAt: availability.period.startAt,
-    endAt: availability.period.endAt,
-    quantity: input.quantity,
-    room: input.room,
-    requesterName: input.requesterName,
-    requesterContact: normalizeOptionalText(input.requesterContact),
-    notes: normalizeOptionalText(input.notes),
-    status: (input.status ?? 'pendente') as ChromebookBookingStatus,
-    responsibleId: options.responsibleId ?? null,
-    updatedAt: new Date(),
-  };
+    const values = {
+      startAt: availability.period.startAt,
+      endAt: availability.period.endAt,
+      quantity: input.quantity,
+      room: input.room,
+      requesterName: input.requesterName,
+      requesterContact: normalizeOptionalText(input.requesterContact),
+      notes: normalizeOptionalText(input.notes),
+      status: (input.status ?? 'pendente') as ChromebookBookingStatus,
+      responsibleId: options.responsibleId ?? null,
+      updatedAt: new Date(),
+    };
 
-  if (options.id) {
-    const [existing] = await db
-      .select({ id: chromebookBookings.id })
-      .from(chromebookBookings)
-      .where(eq(chromebookBookings.id, options.id))
-      .limit(1);
-    if (!existing) return { error: 'Agendamento não encontrado.' };
+    if (options.id) {
+      const [existing] = await db
+        .select({ id: chromebookBookings.id })
+        .from(chromebookBookings)
+        .where(eq(chromebookBookings.id, options.id))
+        .limit(1);
+      if (!existing) return { error: 'Agendamento não encontrado.' };
 
-    await db.update(chromebookBookings).set(values).where(eq(chromebookBookings.id, options.id));
-  } else {
-    const protocol = createChromebookProtocol();
-    await db.insert(chromebookBookings).values({ ...values, protocol });
+      await db.update(chromebookBookings).set(values).where(eq(chromebookBookings.id, options.id));
+    } else {
+      const protocol = createChromebookProtocol();
+      await db.insert(chromebookBookings).values({ ...values, protocol });
+
+      revalidatePath('/chromebooks');
+      revalidatePath('/chromebooks/solicitar');
+      revalidatePath('/solicitar/chromebooks');
+      return { ok: true, protocol };
+    }
 
     revalidatePath('/chromebooks');
     revalidatePath('/chromebooks/solicitar');
     revalidatePath('/solicitar/chromebooks');
-    return { ok: true, protocol };
-  }
-
-  revalidatePath('/chromebooks');
-  revalidatePath('/chromebooks/solicitar');
-  revalidatePath('/solicitar/chromebooks');
-  return { ok: true };
+    return { ok: true };
   });
 }
 
@@ -322,8 +339,8 @@ export async function createPublicChromebookBooking(formData: FormData) {
 
   if ('protocol' in result && isEmail(parsed.data.requesterContact)) {
     const { html, text } = buildSimpleEmail({
-          title: `Solicitação ${result.protocol} recebida`,
-          intro: 'Recebemos sua solicitação de reserva de Chromebooks.',
+      title: `Solicitação ${result.protocol} recebida`,
+      intro: 'Recebemos sua solicitação de reserva de Chromebooks.',
       items: [
         {
           heading: 'Resumo',
@@ -384,26 +401,57 @@ export async function cancelChromebookBooking(id: string) {
 
 export async function confirmChromebookBooking(id: string) {
   const user = await requireAuth();
-  const [existing] = await db
-    .select({ id: chromebookBookings.id, status: chromebookBookings.status })
-    .from(chromebookBookings)
-    .where(eq(chromebookBookings.id, id))
-    .limit(1);
-  if (!existing) return { error: 'Agendamento não encontrado.' };
-  if (existing.status === 'confirmado') return { ok: true };
-  if (existing.status === 'cancelado') {
-    return { error: 'Agendamentos cancelados não podem ser aprovados diretamente.' };
-  }
+  return withChromebookBookingLock(async () => {
+    const [existing] = await db
+      .select({
+        id: chromebookBookings.id,
+        startAt: chromebookBookings.startAt,
+        endAt: chromebookBookings.endAt,
+        quantity: chromebookBookings.quantity,
+        room: chromebookBookings.room,
+        requesterName: chromebookBookings.requesterName,
+        requesterContact: chromebookBookings.requesterContact,
+        notes: chromebookBookings.notes,
+        status: chromebookBookings.status,
+      })
+      .from(chromebookBookings)
+      .where(eq(chromebookBookings.id, id))
+      .limit(1);
+    if (!existing) return { error: 'Agendamento não encontrado.' };
+    if (existing.status === 'confirmado') return { ok: true };
+    if (existing.status === 'cancelado') {
+      return { error: 'Agendamentos cancelados não podem ser aprovados diretamente.' };
+    }
 
-  await db
-    .update(chromebookBookings)
-    .set({ status: 'confirmado', responsibleId: user.id, updatedAt: new Date() })
-    .where(eq(chromebookBookings.id, id));
+    const settings = await getChromebookSettings();
+    if (existing.quantity > settings.totalChromebooks) {
+      return {
+        error: `A quantidade solicitada ultrapassa o total configurado de ${settings.totalChromebooks} Chromebook(s).`,
+      };
+    }
 
-  revalidatePath('/chromebooks');
-  revalidatePath('/chromebooks/solicitar');
-  revalidatePath('/solicitar/chromebooks');
-  return { ok: true };
+    const overlapping = await getOverlappingActiveBookings(existing.startAt, existing.endAt, existing.id);
+    const roomConflict = findRoomConflict(existing.room, existing.startAt, existing.endAt, overlapping);
+    if (roomConflict) {
+      return { error: `A sala ${existing.room} já tem um agendamento nesse intervalo.` };
+    }
+
+    const maxUsed = calculateMaxChromebooksUsed(existing.startAt, existing.endAt, overlapping);
+    if (maxUsed + existing.quantity > settings.totalChromebooks) {
+      const available = Math.max(0, settings.totalChromebooks - maxUsed);
+      return { error: `Há apenas ${available} Chromebook(s) disponível(is) nesse intervalo.` };
+    }
+
+    await db
+      .update(chromebookBookings)
+      .set({ status: 'confirmado', responsibleId: user.id, updatedAt: new Date() })
+      .where(eq(chromebookBookings.id, id));
+
+    revalidatePath('/chromebooks');
+    revalidatePath('/chromebooks/solicitar');
+    revalidatePath('/solicitar/chromebooks');
+    return { ok: true };
+  });
 }
 
 export async function deleteChromebookBooking(id: string) {
