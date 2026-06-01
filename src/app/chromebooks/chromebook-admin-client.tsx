@@ -257,7 +257,7 @@ function BookingDialog({
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-[1fr_180px]">
+          <div className="grid gap-3 sm:grid-cols-[1fr_220px_180px]">
             <div className="space-y-1.5">
               <Label htmlFor="chromebook-requester">Solicitante</Label>
               <Input
@@ -266,6 +266,17 @@ function BookingDialog({
                 defaultValue={initial?.requesterName ?? currentUserName}
                 maxLength={120}
                 required
+                disabled={isPending}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="chromebook-contact">Contato</Label>
+              <Input
+                id="chromebook-contact"
+                name="requesterContact"
+                defaultValue={initial?.requesterContact ?? ''}
+                placeholder="E-mail ou telefone"
+                maxLength={120}
                 disabled={isPending}
               />
             </div>
@@ -599,6 +610,12 @@ export function ChromebookAdminClient({
                       <td className="px-4 py-3 tabular-nums">{booking.quantity}</td>
                       <td className="px-4 py-3">
                         {booking.requesterName}
+                        {booking.requesterContact && (
+                          <p className="text-xs text-muted-foreground">{booking.requesterContact}</p>
+                        )}
+                        {booking.protocol && (
+                          <p className="font-mono text-xs text-primary">{booking.protocol}</p>
+                        )}
                         {booking.responsibleName && (
                           <p className="text-xs text-muted-foreground">Resp. {booking.responsibleName}</p>
                         )}

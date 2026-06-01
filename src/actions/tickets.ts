@@ -22,7 +22,7 @@ import {
 import { alias } from 'drizzle-orm/pg-core';
 import { z } from 'zod';
 import { copy } from '@/lib/copy';
-import { type Area, type BoardStatus, type Priority, type Status } from '@/lib/constants';
+import { STATUS_LABELS, type Area, type BoardStatus, type Priority, type Status } from '@/lib/constants';
 import type { KanbanTicket } from '@/lib/kanban';
 import { isValidSubcategoryAsync } from '@/actions/subcategories';
 import { sendTicketNotification } from '@/lib/email';
@@ -517,9 +517,11 @@ export async function bulkUpdateTickets(input: {
     .select({
       id: tickets.id,
       code: tickets.code,
+      title: tickets.title,
       status: tickets.status,
       resolvedAt: tickets.resolvedAt,
       priority: tickets.priority,
+      authorId: tickets.authorId,
       assigneeId: tickets.assigneeId,
       assigneeName: ticketAssignee.displayName,
     })
@@ -532,6 +534,7 @@ export async function bulkUpdateTickets(input: {
   let updates: Partial<NewTicket> = { updatedAt: new Date() };
   let historyField = '';
   let historyNewValue: string | null = null;
+  let notifyAssigneeId: string | null = null;
 
   if (action === 'archive') {
     updates = { ...updates, status: 'arquivado' };
@@ -565,6 +568,21 @@ export async function bulkUpdateTickets(input: {
       })),
     );
 
+    await Promise.all(
+      ticketsToUpdate.map((ticket) =>
+        dispatchNotification({
+          userIds: [ticket.authorId, ticket.assigneeId].filter(
+            (id): id is string => Boolean(id && id !== user.id),
+          ),
+          type: 'ticket_status_updated',
+          title: `Status atualizado: ${ticket.code}`,
+          body: `${ticket.title} agora está como ${STATUS_LABELS[parsedStatus.data]}.`,
+          link: `/tickets/${ticket.code}`,
+          ticketId: ticket.id,
+        }),
+      ),
+    );
+
     revalidatePath('/');
     revalidatePath('/tickets');
     revalidatePath('/kanban');
@@ -592,6 +610,7 @@ export async function bulkUpdateTickets(input: {
       updates = { ...updates, assigneeId: assignee.id };
       historyField = 'responsavel';
       historyNewValue = assignee.displayName;
+      notifyAssigneeId = assignee.id;
     }
   }
 
@@ -614,6 +633,38 @@ export async function bulkUpdateTickets(input: {
       newValue: historyNewValue,
     })),
   );
+
+  if (action === 'archive') {
+    await Promise.all(
+      ticketsToUpdate.map((ticket) =>
+        dispatchNotification({
+          userIds: [ticket.authorId, ticket.assigneeId].filter(
+            (id): id is string => Boolean(id && id !== user.id),
+          ),
+          type: 'ticket_status_updated',
+          title: `Demanda arquivada: ${ticket.code}`,
+          body: ticket.title,
+          link: `/tickets/${ticket.code}`,
+          ticketId: ticket.id,
+        }),
+      ),
+    );
+  }
+
+  if (action === 'set_assignee' && notifyAssigneeId && notifyAssigneeId !== user.id) {
+    await Promise.all(
+      ticketsToUpdate.map((ticket) =>
+        dispatchNotification({
+          userIds: [notifyAssigneeId],
+          type: 'ticket_assigned',
+          title: `Demanda atribuída a você: ${ticket.code}`,
+          body: ticket.title,
+          link: `/tickets/${ticket.code}`,
+          ticketId: ticket.id,
+        }),
+      ),
+    );
+  }
 
   revalidatePath('/');
   revalidatePath('/tickets');

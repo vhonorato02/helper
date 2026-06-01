@@ -8,15 +8,54 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { combineDateTimeInSaoPaulo, dateInputInSaoPaulo } from '@/lib/chromebooks';
 import { getHolidaySchedulingNotice } from '@/lib/holidays';
+
+const MIN_BOOKING_DURATION_MINUTES = 15;
+const MAX_BOOKING_DURATION_MINUTES = 8 * 60;
+const MIN_BOOKING_LEAD_MS = 60 * 60 * 1000;
+
+function minutesFromTime(value: string) {
+  const [hours, minutes] = value.split(':').map((part) => Number.parseInt(part, 10));
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
+  return hours * 60 + minutes;
+}
+
+function validateLocalPeriod(date: string, startTime: string, endTime: string) {
+  if (!date || !startTime || !endTime) return 'Preencha data, início e término.';
+  const start = minutesFromTime(startTime);
+  const end = minutesFromTime(endTime);
+  if (start === null || end === null || end <= start) {
+    return 'O horário de término precisa ser maior que o início.';
+  }
+  const duration = end - start;
+  if (duration < MIN_BOOKING_DURATION_MINUTES) return 'A reserva precisa ter pelo menos 15 minutos.';
+  if (duration > MAX_BOOKING_DURATION_MINUTES) return 'A reserva pode ter no máximo 8 horas.';
+
+  const startAt = combineDateTimeInSaoPaulo(date, startTime);
+  if (Number.isNaN(startAt.getTime())) return 'Informe uma data e horário válidos.';
+  const now = Date.now();
+  if (startAt.getTime() < now) {
+    return 'Não é possível reservar Chromebooks para um horário que já passou.';
+  }
+  if (startAt.getTime() < now + MIN_BOOKING_LEAD_MS) {
+    return 'Solicite a reserva com pelo menos 1 hora de antecedência.';
+  }
+  return '';
+}
 
 export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromebooks: number }) {
   const formRef = useRef<HTMLFormElement>(null);
   const submitLockRef = useRef(false);
   const [isPending, startTransition] = useTransition();
   const [date, setDate] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
   const [success, setSuccess] = useState('');
+  const [formError, setFormError] = useState('');
+  const [notesLength, setNotesLength] = useState(0);
   const holidayNotice = getHolidaySchedulingNotice(date);
+  const minDate = dateInputInSaoPaulo(new Date());
 
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -24,12 +63,22 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
     submitLockRef.current = true;
     const formData = new FormData(event.currentTarget);
     setSuccess('');
+    setFormError('');
+
+    const localPeriodError = validateLocalPeriod(date, startTime, endTime);
+    if (localPeriodError) {
+      submitLockRef.current = false;
+      setFormError(localPeriodError);
+      return;
+    }
 
     startTransition(async () => {
       const result = await createPublicChromebookBooking(formData);
       submitLockRef.current = false;
       if (result && 'error' in result) {
-        toast.error(result.error);
+        const message = result.error ?? 'Não foi possível registrar a solicitação.';
+        setFormError(message);
+        toast.error(message);
         return;
       }
 
@@ -38,6 +87,9 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
       toast.success(result?.protocol ? `Solicitação ${result.protocol} registrada.` : 'Solicitação registrada.');
       formRef.current?.reset();
       setDate('');
+      setStartTime('');
+      setEndTime('');
+      setNotesLength(0);
     });
   };
 
@@ -70,19 +122,36 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
               name="date"
               type="date"
               value={date}
+              min={minDate}
               onChange={(event) => setDate(event.target.value)}
-              required
               disabled={isPending}
             />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="public-chromebook-start">Início</Label>
-            <Input id="public-chromebook-start" name="startTime" type="time" required disabled={isPending} />
+            <Input
+              id="public-chromebook-start"
+              name="startTime"
+              type="time"
+              value={startTime}
+              onChange={(event) => setStartTime(event.target.value)}
+              disabled={isPending}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="public-chromebook-end">Término</Label>
-            <Input id="public-chromebook-end" name="endTime" type="time" required disabled={isPending} />
+            <Input
+              id="public-chromebook-end"
+              name="endTime"
+              type="time"
+              value={endTime}
+              onChange={(event) => setEndTime(event.target.value)}
+              disabled={isPending}
+            />
           </div>
+          <p className="text-xs text-muted-foreground sm:col-span-3">
+            Mínimo de 15 minutos e antecedência de 1 hora. A disponibilidade é revalidada antes de salvar.
+          </p>
         </div>
 
         {holidayNotice && (
@@ -140,6 +209,9 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
             maxLength={120}
             disabled={isPending}
           />
+          <p className="text-xs text-muted-foreground">
+            Opcional, mas será usado para confirmar detalhes da reserva.
+          </p>
         </div>
 
         <div className="space-y-1.5">
@@ -151,8 +223,21 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
             className="min-h-[100px]"
             maxLength={1000}
             disabled={isPending}
+            onChange={(event) => setNotesLength(event.currentTarget.value.length)}
           />
+          <div className="flex justify-end text-xs text-muted-foreground">
+            <span className="tabular-nums">{notesLength}/1000</span>
+          </div>
         </div>
+
+        {formError && (
+          <div
+            role="alert"
+            className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive ring-1 ring-inset ring-destructive/20"
+          >
+            {formError}
+          </div>
+        )}
 
         {success && (
           <div role="status" className="flex items-start gap-2 rounded-lg bg-green-500/10 p-3 text-sm text-green-700 ring-1 ring-inset ring-green-500/25 dark:text-green-300">

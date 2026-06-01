@@ -52,7 +52,7 @@ export async function GET() {
   }
 
   return NextResponse.json({
-    ok: true,
+    ok: dbOk,
     timestamp: new Date().toISOString(),
     elapsedMs: Date.now() - startedAt,
     env: {

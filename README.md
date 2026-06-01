@@ -63,6 +63,14 @@ Tailwind 4 usa tema CSS-first em `src/app/globals.css`; não há mais `tailwind.
 
 ## Mudanças da Versão 0.1.5
 
+- Formulário público de solicitações com validação de agendamento antes do envio, erro inline e contador de descrição.
+- Reserva pública de Chromebooks com data mínima, validação imediata de período, erro inline, contador de observações e mensagens de recuperação.
+- Administração de Chromebooks preserva contato do solicitante ao editar reservas e exibe contato/protocolo na lista.
+- Dashboard mobile ganhou resumo operacional de entradas, resoluções, fila e área mais carregada.
+- Ações em lote de tickets agora notificam autores e responsáveis quando status, responsável ou arquivamento mudam.
+- Status administrativo do sistema passa a refletir falha real de banco.
+- Testes unitários cobrem a validação pública de agendamento.
+
 - Migração de Tailwind 3.4 para Tailwind 4.3 com `@tailwindcss/postcss`.
 - Tokens de cor, radius, sombra, fonte e opacidade movidos para `@theme inline`.
 - Runtime travado em Node 24.x com `engine-strict`.

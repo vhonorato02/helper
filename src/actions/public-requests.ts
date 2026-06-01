@@ -15,6 +15,7 @@ import {
 } from '@/lib/email';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { dispatchNotificationToAdmins } from '@/actions/notifications';
+import { validatePublicRequestSchedule } from '@/lib/public-requests';
 
 const publicKindSchema = z.enum(['ti', 'midia', 'arte', 'cobertura', 'outra']);
 const prioritySchema = z.enum(['baixa', 'media', 'alta', 'urgente']);
@@ -151,6 +152,9 @@ export async function createPublicRequest(formData: FormData) {
   if (publicHoneypotFilled(input)) {
     return { ok: true, protocol: fakeProtocol(meta.protocolPrefix) };
   }
+
+  const schedule = validatePublicRequestSchedule(input);
+  if (!schedule.ok) return { error: schedule.error };
 
   const ip = await getClientIp();
   const rate = checkRateLimit({ key: `public-request:${input.kind}:${ip}`, ...PUBLIC_LIMIT });

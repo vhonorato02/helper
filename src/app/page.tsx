@@ -30,6 +30,7 @@ import { ResolutionTimeCard, TopAssigneesCard } from '@/components/dashboard/met
 import { AreaBadge, PriorityBadge, StatusBadge } from '@/components/tickets/ticket-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { AREA_LABELS } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { copy } from '@/lib/copy';
 import { capitalizeFirst, DATE_FORMATS, daysSince, formatPtBrDate } from '@/lib/format';
@@ -38,6 +39,9 @@ export const dynamic = 'force-dynamic';
 
 type AttentionTicket = Awaited<ReturnType<typeof getAttentionTickets>>[number];
 type TicketRow = Awaited<ReturnType<typeof getTickets>>[number];
+type TrendPoint = Awaited<ReturnType<typeof getTicketTrend>>[number];
+type AreaDist = Awaited<ReturnType<typeof getAreaDistribution>>;
+type ResolutionStats = Awaited<ReturnType<typeof getAvgResolutionTime>>;
 
 interface StatCardProps {
   label: string;
@@ -111,6 +115,72 @@ function EmptyHint({ text }: { text: string }) {
       <kbd className="kbd mx-0.5">N</kbd>
       {after}
     </>
+  );
+}
+
+function MobileOpsSummary({
+  trend,
+  areaDist,
+  resolutionTime,
+}: {
+  trend: TrendPoint[];
+  areaDist: AreaDist;
+  resolutionTime: ResolutionStats;
+}) {
+  const created = trend.reduce((total, item) => total + item.created, 0);
+  const resolved = trend.reduce((total, item) => total + item.resolved, 0);
+  const activeByArea = Object.entries(areaDist) as Array<[keyof AreaDist, number]>;
+  const busiest = activeByArea.sort((a, b) => b[1] - a[1])[0];
+  const resolutionSamples = Object.values(resolutionTime).reduce(
+    (total, item) => total + item.total,
+    0,
+  );
+  const avgHours =
+    resolutionSamples > 0
+      ? Object.values(resolutionTime).reduce(
+          (total, item) => total + item.avgHours * item.total,
+          0,
+        ) / resolutionSamples
+      : 0;
+  const avgLabel =
+    resolutionSamples === 0
+      ? 'sem dados'
+      : avgHours < 24
+        ? `${Math.round(avgHours)}h`
+        : `${(avgHours / 24).toFixed(1)}d`;
+
+  return (
+    <section className="surface-elevated rounded-xl p-4 md:hidden">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-bold tracking-tight">Resumo da operação</h2>
+          <p className="text-xs text-muted-foreground">Últimos {trend.length} dias</p>
+        </div>
+        <Badge variant={created > resolved ? 'warning' : 'success'}>
+          {created - resolved > 0 ? `+${created - resolved} na fila` : 'equilibrado'}
+        </Badge>
+      </div>
+      <div className="grid grid-cols-3 gap-2 text-center">
+        <div className="rounded-lg bg-muted/45 px-2 py-3">
+          <p className="text-lg font-bold tabular-nums">{created}</p>
+          <p className="text-[11px] text-muted-foreground">criadas</p>
+        </div>
+        <div className="rounded-lg bg-muted/45 px-2 py-3">
+          <p className="text-lg font-bold tabular-nums">{resolved}</p>
+          <p className="text-[11px] text-muted-foreground">resolvidas</p>
+        </div>
+        <div className="rounded-lg bg-muted/45 px-2 py-3">
+          <p className="text-lg font-bold tabular-nums">{avgLabel}</p>
+          <p className="text-[11px] text-muted-foreground">média</p>
+        </div>
+      </div>
+      {busiest && busiest[1] > 0 && (
+        <p className="mt-3 text-xs text-muted-foreground">
+          Maior fila ativa: <span className="font-medium text-foreground">{AREA_LABELS[busiest[0]]}</span>
+          {' '}com {busiest[1]} {busiest[1] === 1 ? 'demanda' : 'demandas'}.
+        </p>
+      )}
+    </section>
   );
 }
 
@@ -393,6 +463,8 @@ export default async function DashboardPage() {
           empty={copy.dashboard.stats.noneThisWeek}
         />
       </div>
+
+      <MobileOpsSummary trend={trend} areaDist={areaDist} resolutionTime={resolutionTime} />
 
       <div className="hidden md:grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <TrendChart data={trend} />

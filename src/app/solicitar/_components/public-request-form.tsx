@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { validatePublicRequestSchedule } from '@/lib/public-requests';
 
 type PublicKind = 'ti' | 'midia' | 'arte' | 'cobertura' | 'outra';
 
@@ -36,21 +37,37 @@ export function PublicRequestForm({
   const submitLockRef = useRef(false);
   const [isPending, startTransition] = useTransition();
   const [protocol, setProtocol] = useState('');
+  const [formError, setFormError] = useState('');
+  const [descriptionLength, setDescriptionLength] = useState(0);
 
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (submitLockRef.current) return;
     submitLockRef.current = true;
     setProtocol('');
+    setFormError('');
 
     const formData = new FormData(event.currentTarget);
+    const schedule = validatePublicRequestSchedule({
+      desiredDate: String(formData.get('desiredDate') ?? ''),
+      startTime: String(formData.get('startTime') ?? ''),
+      endTime: String(formData.get('endTime') ?? ''),
+    });
+
+    if (showSchedule && !schedule.ok) {
+      submitLockRef.current = false;
+      setFormError(schedule.error);
+      return;
+    }
 
     startTransition(async () => {
       const result = await createPublicRequest(formData);
       submitLockRef.current = false;
 
       if (result && 'error' in result) {
-        toast.error(result.error);
+        const message = result.error ?? 'Não foi possível registrar a solicitação.';
+        setFormError(message);
+        toast.error(message);
         return;
       }
 
@@ -58,6 +75,7 @@ export function PublicRequestForm({
       setProtocol(nextProtocol);
       toast.success(nextProtocol ? `Solicitação ${nextProtocol} recebida.` : 'Solicitação recebida.');
       formRef.current?.reset();
+      setDescriptionLength(0);
     });
   };
 
@@ -76,7 +94,15 @@ export function PublicRequestForm({
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="public-name">Nome do solicitante</Label>
-          <Input id="public-name" name="requesterName" maxLength={120} required disabled={isPending} />
+          <Input
+            id="public-name"
+            name="requesterName"
+            autoComplete="name"
+            minLength={2}
+            maxLength={120}
+            required
+            disabled={isPending}
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="public-contact">Contato</Label>
@@ -84,9 +110,13 @@ export function PublicRequestForm({
             id="public-contact"
             name="requesterContact"
             placeholder="E-mail ou telefone"
+            autoComplete="email"
             maxLength={120}
             disabled={isPending}
           />
+          <p className="text-xs text-muted-foreground">
+            Opcional, mas ajuda a equipe a tirar dúvidas rapidamente.
+          </p>
         </div>
       </div>
 
@@ -118,6 +148,7 @@ export function PublicRequestForm({
           id="public-title"
           name="title"
           placeholder={titlePlaceholder}
+          minLength={4}
           maxLength={100}
           required
           disabled={isPending}
@@ -138,6 +169,9 @@ export function PublicRequestForm({
             <Label htmlFor="public-end">Término</Label>
             <Input id="public-end" name="endTime" type="time" disabled={isPending} />
           </div>
+          <p className="text-xs text-muted-foreground sm:col-span-3">
+            Se informar um horário, preencha data, início e término. O término precisa ser depois do início.
+          </p>
         </div>
       )}
 
@@ -161,11 +195,26 @@ export function PublicRequestForm({
           name="description"
           placeholder={descriptionPlaceholder}
           className="min-h-[130px]"
+          minLength={10}
           maxLength={2500}
           required
           disabled={isPending}
+          onChange={(event) => setDescriptionLength(event.currentTarget.value.length)}
         />
+        <div className="flex justify-between gap-3 text-xs text-muted-foreground">
+          <span>Inclua contexto, prazo e responsáveis quando houver.</span>
+          <span className="tabular-nums">{descriptionLength}/2500</span>
+        </div>
       </div>
+
+      {formError && (
+        <div
+          role="alert"
+          className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive ring-1 ring-inset ring-destructive/20"
+        >
+          {formError}
+        </div>
+      )}
 
       {protocol && (
         <div role="status" className="flex items-start gap-2 rounded-lg bg-green-500/10 p-3 text-sm text-green-700 ring-1 ring-inset ring-green-500/25 dark:text-green-300">
