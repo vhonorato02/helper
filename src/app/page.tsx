@@ -6,6 +6,7 @@ import {
   CalendarClock,
   CheckCircle2,
   Clock,
+  FileInput,
   Inbox,
   Megaphone,
   Monitor,
@@ -23,10 +24,10 @@ import {
   getTicketCount,
   getTicketTrend,
   getTickets,
-  getTopAssignees,
 } from '@/actions/tickets';
+import { getExternalIntakeSummary } from '@/actions/external-intake';
 import { AreaDistribution, TrendChart } from '@/components/dashboard/charts';
-import { ResolutionTimeCard, TopAssigneesCard } from '@/components/dashboard/metrics';
+import { ReminderChecklistCard, ResolutionTimeCard } from '@/components/dashboard/metrics';
 import { AreaBadge, PriorityBadge, StatusBadge } from '@/components/tickets/ticket-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,7 @@ type TicketRow = Awaited<ReturnType<typeof getTickets>>[number];
 type TrendPoint = Awaited<ReturnType<typeof getTicketTrend>>[number];
 type AreaDist = Awaited<ReturnType<typeof getAreaDistribution>>;
 type ResolutionStats = Awaited<ReturnType<typeof getAvgResolutionTime>>;
+type ExternalIntakeSummary = Awaited<ReturnType<typeof getExternalIntakeSummary>>;
 
 interface StatCardProps {
   label: string;
@@ -264,6 +266,85 @@ function AttentionQueue({ tickets }: { tickets: AttentionTicket[] }) {
   );
 }
 
+function ExternalIntakeQueue({ summary }: { summary: ExternalIntakeSummary }) {
+  return (
+    <section>
+      <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="text-base font-bold tracking-tight flex items-center gap-2">
+            <FileInput className="size-4 text-primary" />
+            Entrada externa
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Solicitações enviadas sem login, já separadas para triagem.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/tickets?origin=public&status=ativas">Tickets públicos</Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/chromebooks?status=pendente">Chromebooks pendentes</Link>
+          </Button>
+        </div>
+      </div>
+
+      {summary.items.length === 0 ? (
+        <div className="surface-elevated rounded-xl px-5 py-6">
+          <p className="font-semibold">Sem entrada externa pendente</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Novos pedidos públicos e reservas de Chromebook aparecerão aqui.
+          </p>
+        </div>
+      ) : (
+        <div className="surface-elevated overflow-hidden rounded-xl divide-y divide-border/60">
+          <div className="grid grid-cols-3 gap-0 divide-x divide-border/60 bg-muted/35 text-center text-xs">
+            <div className="px-3 py-2">
+              <p className="font-bold tabular-nums">{summary.publicTicketCount}</p>
+              <p className="text-muted-foreground">tickets públicos</p>
+            </div>
+            <div className="px-3 py-2">
+              <p className="font-bold tabular-nums">{summary.publicUnassignedCount}</p>
+              <p className="text-muted-foreground">sem responsável</p>
+            </div>
+            <div className="px-3 py-2">
+              <p className="font-bold tabular-nums">{summary.chromebookPendingCount}</p>
+              <p className="text-muted-foreground">chromebooks</p>
+            </div>
+          </div>
+
+          {summary.items.map((item) => (
+            <Link
+              key={`${item.kind}-${item.id}`}
+              href={item.href}
+              className="block p-3.5 transition-all hover:bg-muted/35"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-xs font-medium text-primary">{item.code}</span>
+                    <Badge variant={item.kind === 'chromebook' ? 'warning' : 'secondary'}>
+                      {item.kind === 'chromebook' ? 'Chromebook' : 'Ticket público'}
+                    </Badge>
+                  </div>
+                  <p className="line-clamp-1 text-sm font-medium">{item.title}</p>
+                  <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{item.detail}</p>
+                </div>
+                <ArrowUpRight className="mt-1 size-4 shrink-0 text-muted-foreground" />
+              </div>
+              {(item.location || item.contact) && (
+                <p className="mt-2 line-clamp-1 text-xs text-muted-foreground">
+                  {[item.location, item.contact].filter(Boolean).join(' · ')}
+                </p>
+              )}
+            </Link>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function MyQueue({ tickets, href }: { tickets: TicketRow[]; href: string }) {
   return (
     <section>
@@ -344,7 +425,7 @@ export default async function DashboardPage() {
     trend,
     areaDist,
     resolutionTime,
-    topAssignees,
+    externalSummary,
   ] = await Promise.all([
     getDashboardStats(),
     getTickets({ page: 1 }),
@@ -363,7 +444,7 @@ export default async function DashboardPage() {
     getTicketTrend(14),
     getAreaDistribution(),
     getAvgResolutionTime(30),
-    getTopAssignees(30, 5),
+    getExternalIntakeSummary(6),
   ]);
 
   const recent = recentTickets.slice(0, 8);
@@ -455,12 +536,12 @@ export default async function DashboardPage() {
           empty={copy.dashboard.stats.noOverdue}
         />
         <StatCard
-          label={copy.dashboard.stats.resolvedWeek}
-          value={Number(stats.resolvidosSemana)}
-          icon={<CheckCircle2 className="size-4" />}
-          href="/tickets?status=resolvido"
-          accent="success"
-          empty={copy.dashboard.stats.noneThisWeek}
+          label="Solicitações públicas"
+          value={externalSummary.publicTicketCount}
+          icon={<FileInput className="size-4" />}
+          href="/tickets?origin=public&status=ativas"
+          accent={externalSummary.publicTicketCount > 0 ? 'warning' : 'success'}
+          empty="Sem pedido público pendente"
         />
       </div>
 
@@ -473,11 +554,19 @@ export default async function DashboardPage() {
 
       <div className="hidden md:grid gap-4 sm:grid-cols-2">
         <ResolutionTimeCard data={resolutionTime} />
-        <TopAssigneesCard data={topAssignees} />
+        <ReminderChecklistCard
+          publicTickets={externalSummary.publicTicketCount}
+          chromebookPending={externalSummary.chromebookPendingCount}
+          overdue={Number(stats.atrasadas)}
+          waiting={Number(stats.aguardando)}
+          attention={attentionTickets.length}
+        />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_370px]">
         <div className="space-y-6">
+          <ExternalIntakeQueue summary={externalSummary} />
+
           <MyQueue tickets={myQueue} href={myQueueHref} />
 
           <section>

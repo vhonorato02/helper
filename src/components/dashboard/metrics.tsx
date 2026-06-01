@@ -1,4 +1,5 @@
-import { Clock, Trophy } from 'lucide-react';
+import Link from 'next/link';
+import { BellRing, Clock } from 'lucide-react';
 import { AREA_LABELS } from '@/lib/constants';
 
 interface ResolutionStats {
@@ -44,51 +45,68 @@ export function ResolutionTimeCard({ data }: { data: ResolutionStats }) {
   );
 }
 
-export function TopAssigneesCard({ data }: { data: Array<{ id: string; name: string; resolved: number }> }) {
-  if (data.length === 0) {
-    return (
-      <div className="surface-elevated rounded-xl p-5">
-        <div className="mb-3 flex items-center gap-2">
-          <Trophy className="size-4 text-amber-500" />
-          <h3 className="font-semibold text-sm">Top resolvedores</h3>
-        </div>
-        <p className="text-sm text-muted-foreground">Sem resolvidas nos últimos 30 dias.</p>
-      </div>
-    );
-  }
-
-  const max = Math.max(...data.map((d) => d.resolved));
+export function ReminderChecklistCard({
+  publicTickets,
+  chromebookPending,
+  overdue,
+  waiting,
+  attention,
+}: {
+  publicTickets: number;
+  chromebookPending: number;
+  overdue: number;
+  waiting: number;
+  attention: number;
+}) {
+  const rows = [
+    {
+      label: 'Solicitações públicas',
+      value: publicTickets,
+      href: '/tickets?origin=public&status=ativas',
+    },
+    {
+      label: 'Chromebooks pendentes',
+      value: chromebookPending,
+      href: '/chromebooks?status=pendente',
+    },
+    {
+      label: 'Demandas atrasadas',
+      value: overdue,
+      href: '/tickets?due=overdue',
+    },
+    {
+      label: 'Aguardando retorno',
+      value: waiting,
+      href: '/tickets?status=aguardando',
+    },
+    {
+      label: 'Fila de atenção',
+      value: attention,
+      href: '/tickets?attention=true',
+    },
+  ];
 
   return (
     <div className="surface-elevated rounded-xl p-5">
       <div className="mb-3 flex items-center gap-2">
-        <Trophy className="size-4 text-amber-500" />
-        <h3 className="font-semibold text-sm">Top resolvedores</h3>
+        <BellRing className="size-4 text-primary" />
+        <h3 className="font-semibold text-sm">Lembretes operacionais</h3>
       </div>
-      <p className="text-xs text-muted-foreground mb-3">Últimos 30 dias</p>
-      <ul className="space-y-2.5">
-        {data.map((person, idx) => {
-          const pct = max > 0 ? (person.resolved / max) * 100 : 0;
-          return (
-            <li key={person.id} className="space-y-1">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium truncate flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground tabular-nums w-4">
-                    {idx + 1}.
-                  </span>
-                  {person.name}
-                </span>
-                <span className="tabular-nums text-sm font-semibold">{person.resolved}</span>
-              </div>
-              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary/60 rounded-full transition-all"
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-            </li>
-          );
-        })}
+      <p className="text-xs text-muted-foreground mb-3">Itens que precisam de triagem ou cobrança</p>
+      <ul className="space-y-2">
+        {rows.map((row) => (
+          <li key={row.label}>
+            <Link
+              href={row.href}
+              className="flex items-center justify-between rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-muted/55"
+            >
+              <span className="font-medium">{row.label}</span>
+              <span className={row.value > 0 ? 'font-bold tabular-nums text-primary' : 'tabular-nums text-muted-foreground'}>
+                {row.value}
+              </span>
+            </Link>
+          </li>
+        ))}
       </ul>
     </div>
   );

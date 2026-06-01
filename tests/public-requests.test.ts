@@ -1,6 +1,21 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { validatePublicRequestSchedule } from '@/lib/public-requests';
+import { validatePublicContact, validatePublicRequestSchedule } from '@/lib/public-requests';
+
+describe('public request contact validation', () => {
+  it('requires an external contact', () => {
+    const result = validatePublicContact('  ');
+
+    assert.equal(result.ok, false);
+  });
+
+  it('normalizes a valid contact', () => {
+    assert.deepEqual(validatePublicContact(' escola@example.com '), {
+      ok: true,
+      contact: 'escola@example.com',
+    });
+  });
+});
 
 describe('public request schedule validation', () => {
   const now = new Date('2026-06-01T12:00:00-03:00');

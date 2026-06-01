@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { combineDateTimeInSaoPaulo, dateInputInSaoPaulo } from '@/lib/chromebooks';
 import { getHolidaySchedulingNotice } from '@/lib/holidays';
+import { validatePublicContact } from '@/lib/public-requests';
 
 const MIN_BOOKING_DURATION_MINUTES = 15;
 const MAX_BOOKING_DURATION_MINUTES = 8 * 60;
@@ -65,6 +66,13 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
     setSuccess('');
     setFormError('');
 
+    const contact = validatePublicContact(String(formData.get('requesterContact') ?? ''));
+    if (!contact.ok) {
+      submitLockRef.current = false;
+      setFormError(contact.error);
+      return;
+    }
+
     const localPeriodError = validateLocalPeriod(date, startTime, endTime);
     if (localPeriodError) {
       submitLockRef.current = false;
@@ -83,7 +91,7 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
       }
 
       const protocol = result?.protocol ? ` Protocolo: ${result.protocol}.` : '';
-      setSuccess(`Solicitação registrada.${protocol} A equipe interna acompanhará o agendamento.`);
+      setSuccess(`Solicitação registrada.${protocol} Guarde esse protocolo para falar com a equipe.`);
       toast.success(result?.protocol ? `Solicitação ${result.protocol} registrada.` : 'Solicitação registrada.');
       formRef.current?.reset();
       setDate('');
@@ -206,11 +214,12 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
             id="public-chromebook-contact"
             name="requesterContact"
             placeholder="E-mail ou telefone"
+            minLength={3}
             maxLength={120}
             disabled={isPending}
           />
           <p className="text-xs text-muted-foreground">
-            Opcional, mas será usado para confirmar detalhes da reserva.
+            Obrigatório para confirmar detalhes, avisar conflito e devolver o protocolo.
           </p>
         </div>
 

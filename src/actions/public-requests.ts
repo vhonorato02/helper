@@ -15,7 +15,7 @@ import {
 } from '@/lib/email';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { dispatchNotificationToAdmins } from '@/actions/notifications';
-import { validatePublicRequestSchedule } from '@/lib/public-requests';
+import { validatePublicContact, validatePublicRequestSchedule } from '@/lib/public-requests';
 
 const publicKindSchema = z.enum(['ti', 'midia', 'arte', 'cobertura', 'outra']);
 const prioritySchema = z.enum(['baixa', 'media', 'alta', 'urgente']);
@@ -111,7 +111,7 @@ function buildDescription(input: PublicRequestInput) {
   return [
     `[SOLICITAÇÃO PÚBLICA]`,
     `Solicitante: ${input.requesterName}`,
-    `Contato: ${input.requesterContact || 'Não informado'}`,
+    `Contato: ${input.requesterContact}`,
     `Local/setor: ${input.location}`,
     input.desiredDate ? `Data desejada/evento: ${input.desiredDate}` : null,
     input.startTime || input.endTime
@@ -146,13 +146,17 @@ export async function createPublicRequest(formData: FormData) {
   const parsed = parsePublicRequest(formData);
   if (!parsed.success) return { error: copy.validation.invalidData };
 
-  const input = parsed.data;
-  const meta = REQUEST_META[input.kind];
+  const rawInput = parsed.data;
+  const meta = REQUEST_META[rawInput.kind];
 
-  if (publicHoneypotFilled(input)) {
+  if (publicHoneypotFilled(rawInput)) {
     return { ok: true, protocol: fakeProtocol(meta.protocolPrefix) };
   }
 
+  const contact = validatePublicContact(rawInput.requesterContact);
+  if (!contact.ok) return { error: contact.error };
+
+  const input = { ...rawInput, requesterContact: contact.contact };
   const schedule = validatePublicRequestSchedule(input);
   if (!schedule.ok) return { error: schedule.error };
 

@@ -60,6 +60,53 @@ async function expectVisible(locator, message) {
   assert(await locator.isVisible(), message);
 }
 
+async function expectNoHorizontalOverflow(page, message) {
+  const hasOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 2,
+  );
+  assert(!hasOverflow, message);
+}
+
+async function expectPublicRoutes(page, name) {
+  const routes = [
+    ['/solicitar/ti', 'Solicitar suporte de TI'],
+    ['/solicitar/midia', 'Solicitar fotos ou vídeos'],
+    ['/solicitar/arte', 'Solicitar arte ou divulgação'],
+    ['/solicitar/cobertura', 'Solicitar cobertura de evento'],
+    ['/solicitar/outra', 'Enviar outra solicitação'],
+    ['/solicitar/chromebooks', 'Solicitar Chromebooks'],
+    ['/chromebooks/solicitar', 'Solicitar Chromebooks'],
+  ];
+
+  for (const [path, heading] of routes) {
+    await page.goto(`${baseURL}${path}`, { waitUntil: 'networkidle' });
+    await expectVisible(page.getByRole('heading', { name: heading }), `${name}: ${path} heading`);
+    await expectNoHorizontalOverflow(page, `${name}: ${path} should not overflow horizontally`);
+  }
+}
+
+async function expectPublicContactValidation(page, name) {
+  await page.goto(`${baseURL}/solicitar/ti`, { waitUntil: 'networkidle' });
+  await page.locator('#public-name').fill('QA Visual');
+  await page.locator('#public-location').fill('Sala QA');
+  await page.locator('#public-title').fill('Teste de contato obrigatorio');
+  await page.locator('#public-description').fill('Validando contato obrigatorio.');
+  await page.getByRole('button', { name: 'Enviar solicitação' }).click();
+  await expectVisible(
+    page.getByRole('alert').filter({ hasText: 'Informe um e-mail ou telefone para contato.' }),
+    `${name}: public ticket contact validation`,
+  );
+
+  await page.goto(`${baseURL}/solicitar/chromebooks`, { waitUntil: 'networkidle' });
+  await page.locator('#public-chromebook-room').fill('Sala QA');
+  await page.locator('#public-chromebook-requester').fill('QA Visual');
+  await page.getByRole('button', { name: 'Solicitar agendamento' }).click();
+  await expectVisible(
+    page.getByRole('alert').filter({ hasText: 'Informe um e-mail ou telefone para contato.' }),
+    `${name}: public Chromebook contact validation`,
+  );
+}
+
 async function runScenario(browser, name, contextOptions) {
   const context = await browser.newContext(contextOptions);
   const page = await context.newPage();
@@ -115,6 +162,9 @@ async function runScenario(browser, name, contextOptions) {
     page.getByRole('link', { name: /Suporte de TI/ }),
     `${name}: IT public request link`,
   );
+  await expectNoHorizontalOverflow(page, `${name}: public request hub should not overflow horizontally`);
+  await expectPublicRoutes(page, name);
+  await expectPublicContactValidation(page, name);
 
   await page.goto(`${baseURL}/tickets?page=abc&status=bad`, { waitUntil: 'domcontentloaded' });
   assert(page.url().includes('/login?callbackUrl='), `${name}: protected route should redirect`);

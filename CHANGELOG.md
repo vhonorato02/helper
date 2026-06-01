@@ -1,5 +1,15 @@
 # Changelog
 
+## Helper 0.1.6 - 2026-06-01
+
+- Adiciona fila de Entrada externa no dashboard, reunindo tickets públicos e reservas públicas de Chromebooks pendentes.
+- Substitui o card "Top resolvedores" por lembretes operacionais com fila pública, Chromebooks pendentes, atrasadas, aguardando e atenção.
+- Torna contato obrigatório nos formulários públicos para melhorar retorno, confirmação e triagem.
+- Envia notificação interna para administradores quando uma reserva pública de Chromebook é criada.
+- Melhora a página pública de solicitações com protocolo, contato e triagem explícitos.
+- Adiciona `MEMORY.md` e `STACK.md` para orientar próximas versões, revisão visual e stack técnica.
+- Atualiza metadados de versão para Helper 0.1.6.
+
 ## Helper 0.1.5 - 2026-06-01
 
 - Melhora o fluxo público de solicitações com validação compartilhada de agendamento, erro inline e contador de descrição antes de enviar.

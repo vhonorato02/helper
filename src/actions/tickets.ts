@@ -1029,37 +1029,6 @@ export async function getAvgResolutionTime(days = 30) {
   };
 }
 
-export async function getTopAssignees(days = 30, limit = 5) {
-  await requireAuth();
-  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-
-  const rows = await db
-    .select({
-      assigneeId: tickets.assigneeId,
-      assigneeName: users.displayName,
-      resolved: sql<number>`count(*)`,
-    })
-    .from(tickets)
-    .leftJoin(users, eq(tickets.assigneeId, users.id))
-    .where(
-      and(
-        eq(tickets.status, 'resolvido'),
-        sql`${tickets.resolvedAt} IS NOT NULL`,
-        sql`${tickets.resolvedAt} >= ${since}`,
-        sql`${tickets.assigneeId} IS NOT NULL`,
-      ),
-    )
-    .groupBy(tickets.assigneeId, users.displayName)
-    .orderBy(sql`count(*) desc`)
-    .limit(limit);
-
-  return rows.map((r) => ({
-    id: r.assigneeId ?? '',
-    name: r.assigneeName ?? copy.common.unknown,
-    resolved: Number(r.resolved),
-  }));
-}
-
 export async function getActivityFeed(limit = 30) {
   await requireAuth();
   const rows = await db

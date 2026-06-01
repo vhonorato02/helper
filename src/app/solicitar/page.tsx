@@ -5,7 +5,10 @@ import {
   Camera,
   CircleHelp,
   Clapperboard,
+  FileCheck2,
   Laptop2,
+  MessageCircle,
+  ShieldCheck,
   Wrench,
 } from 'lucide-react';
 import { BrandMark } from '@/components/brand/brand-mark';
@@ -73,8 +76,39 @@ export default function PublicRequestHubPage() {
         <section className="page-hero">
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Como podemos ajudar?</h1>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Escolha o tipo de pedido e envie sua solicitação para a equipe interna.
+            Escolha o tipo de pedido. Cada envio gera protocolo, entra na fila interna e precisa de contato para retorno.
           </p>
+        </section>
+
+        <section className="grid gap-3 sm:grid-cols-3">
+          {[
+            {
+              title: 'Protocolo no envio',
+              description: 'O código confirma que a solicitação entrou no Helper.',
+              icon: FileCheck2,
+            },
+            {
+              title: 'Contato obrigatório',
+              description: 'A equipe usa e-mail ou telefone para tirar dúvidas e devolver status.',
+              icon: MessageCircle,
+            },
+            {
+              title: 'Triagem interna',
+              description: 'Pedidos públicos aparecem para a equipe como entrada externa.',
+              icon: ShieldCheck,
+            },
+          ].map((item) => {
+            const Icon = item.icon;
+            return (
+              <div key={item.title} className="rounded-xl border border-border/70 bg-muted/25 p-3">
+                <div className="mb-2 flex items-center gap-2">
+                  <Icon className="size-4 text-primary" />
+                  <p className="text-sm font-semibold">{item.title}</p>
+                </div>
+                <p className="text-xs leading-relaxed text-muted-foreground">{item.description}</p>
+              </div>
+            );
+          })}
         </section>
 
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

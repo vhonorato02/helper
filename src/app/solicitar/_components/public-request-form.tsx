@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { validatePublicRequestSchedule } from '@/lib/public-requests';
+import { validatePublicContact, validatePublicRequestSchedule } from '@/lib/public-requests';
 
 type PublicKind = 'ti' | 'midia' | 'arte' | 'cobertura' | 'outra';
 
@@ -48,6 +48,13 @@ export function PublicRequestForm({
     setFormError('');
 
     const formData = new FormData(event.currentTarget);
+    const contact = validatePublicContact(String(formData.get('requesterContact') ?? ''));
+    if (!contact.ok) {
+      submitLockRef.current = false;
+      setFormError(contact.error);
+      return;
+    }
+
     const schedule = validatePublicRequestSchedule({
       desiredDate: String(formData.get('desiredDate') ?? ''),
       startTime: String(formData.get('startTime') ?? ''),
@@ -111,11 +118,12 @@ export function PublicRequestForm({
             name="requesterContact"
             placeholder="E-mail ou telefone"
             autoComplete="email"
+            minLength={3}
             maxLength={120}
             disabled={isPending}
           />
           <p className="text-xs text-muted-foreground">
-            Opcional, mas ajuda a equipe a tirar dúvidas rapidamente.
+            Obrigatório para a equipe confirmar detalhes e devolver o protocolo.
           </p>
         </div>
       </div>
@@ -219,7 +227,7 @@ export function PublicRequestForm({
       {protocol && (
         <div role="status" className="flex items-start gap-2 rounded-lg bg-green-500/10 p-3 text-sm text-green-700 ring-1 ring-inset ring-green-500/25 dark:text-green-300">
           <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
-          <p>Solicitação {protocol} recebida. A equipe interna acompanhará o pedido.</p>
+          <p>Solicitação {protocol} recebida. Guarde esse protocolo para falar com a equipe.</p>
         </div>
       )}
 

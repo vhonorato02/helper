@@ -8,6 +8,19 @@ export type PublicRequestScheduleInput = {
   endTime?: string;
 };
 
+export function validatePublicContact(
+  value: string | null | undefined,
+): { ok: true; contact: string } | { ok: false; error: string } {
+  const contact = value?.trim() ?? '';
+  if (contact.length < 3) {
+    return { ok: false, error: 'Informe um e-mail ou telefone para contato.' };
+  }
+  if (/[\r\n]/.test(contact)) {
+    return { ok: false, error: 'Informe um contato válido.' };
+  }
+  return { ok: true, contact };
+}
+
 function dateInputInTimeZone(date: Date, timeZone = SAO_PAULO_TIME_ZONE) {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone,

@@ -24,6 +24,8 @@ import {
 } from '@/lib/chromebooks';
 import { buildSimpleEmail, sendGenericEmail } from '@/lib/email';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { dispatchNotificationToAdmins } from '@/actions/notifications';
+import { validatePublicContact } from '@/lib/public-requests';
 
 const timeSchema = z.string().regex(/^\d{2}:\d{2}$/);
 const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -309,12 +311,15 @@ async function saveBooking(input: BookingInput, options: { id?: string; responsi
       await db.update(chromebookBookings).set(values).where(eq(chromebookBookings.id, options.id));
     } else {
       const protocol = createChromebookProtocol();
-      await db.insert(chromebookBookings).values({ ...values, protocol });
+      const [created] = await db
+        .insert(chromebookBookings)
+        .values({ ...values, protocol })
+        .returning({ id: chromebookBookings.id });
 
       revalidatePath('/chromebooks');
       revalidatePath('/chromebooks/solicitar');
       revalidatePath('/solicitar/chromebooks');
-      return { ok: true, protocol };
+      return { ok: true, protocol, id: created?.id ?? protocol };
     }
 
     revalidatePath('/chromebooks');
@@ -335,9 +340,23 @@ export async function createPublicChromebookBooking(formData: FormData) {
 
   const parsed = parseBookingForm(formData);
   if (!parsed.success) return { error: copy.validation.invalidData };
-  const result = await saveBooking(parsed.data, { responsibleId: null });
 
-  if ('protocol' in result && isEmail(parsed.data.requesterContact)) {
+  const contact = validatePublicContact(parsed.data.requesterContact);
+  if (!contact.ok) return { error: contact.error };
+
+  const input = { ...parsed.data, requesterContact: contact.contact };
+  const result = await saveBooking(input, { responsibleId: null });
+
+  if ('protocol' in result) {
+    await dispatchNotificationToAdmins({
+      type: 'public_chromebook_created',
+      title: `Reserva pública ${result.protocol}`,
+      body: `${input.requesterName} · ${input.room} · ${input.date} ${input.startTime}-${input.endTime} · ${input.quantity} Chromebook(s)`,
+      link: '/chromebooks?status=pendente',
+    });
+  }
+
+  if ('protocol' in result && isEmail(input.requesterContact)) {
     const { html, text } = buildSimpleEmail({
       title: `Solicitação ${result.protocol} recebida`,
       intro: 'Recebemos sua solicitação de reserva de Chromebooks.',
@@ -345,16 +364,16 @@ export async function createPublicChromebookBooking(formData: FormData) {
         {
           heading: 'Resumo',
           lines: [
-            `Data: ${parsed.data.date}`,
-            `Horário: ${parsed.data.startTime} às ${parsed.data.endTime}`,
-            `Sala: ${parsed.data.room}`,
-            `Quantidade: ${parsed.data.quantity}`,
+            `Data: ${input.date}`,
+            `Horário: ${input.startTime} às ${input.endTime}`,
+            `Sala: ${input.room}`,
+            `Quantidade: ${input.quantity}`,
           ],
         },
       ],
     });
     await sendGenericEmail({
-      to: [parsed.data.requesterContact!],
+      to: [input.requesterContact],
       subject: `[Helper] Solicitação ${result.protocol} recebida`,
       html,
       text,
