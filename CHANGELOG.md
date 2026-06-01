@@ -1,5 +1,16 @@
 # Changelog
 
+## Helper 0.1.5 - 2026-06-01
+
+- Atualiza o produto para Helper 0.1.5 em package, metadados e documentação.
+- Atualiza dependências diretas para versões estáveis atuais: Tailwind CSS 4.3, `date-fns` 4.4, `react-hook-form` 7.77, ESLint 10.4.1 e `tsx` 4.22.4.
+- Migra Tailwind para o plugin `@tailwindcss/postcss`, tema CSS-first em `globals.css` e variante `dark` baseada na classe `.dark`.
+- Remove `tailwind.config.js`, `autoprefixer` e `@radix-ui/react-popover`, que ficaram sem uso após a migração.
+- Restringe o runtime a Node.js 24.x (`>=24.14.0 <25`) e ativa `engine-strict` para evitar builds em runtime que gera warnings de depreciação.
+- Torna o envio de notificações internas best-effort com log estruturado, impedindo que falha de notificação transforme uma criação ou atualização já salva em erro para o usuário.
+- Atualiza o service worker para `helper-static-v6`, forçando limpeza do cache estático antigo.
+- Valida build local em Node 24.14.0 sem warnings após a migração.
+
 ## Helper 0.1.4 - 2026-05-28
 
 - Remove a dependência beta de autenticação e substitui por sessão própria com cookie HTTP-only e JWT assinado.

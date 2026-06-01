@@ -6,6 +6,7 @@ import { and, count, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { auth } from '@/auth';
 import { db } from '@/db';
 import { notificationPreferences, notifications, users } from '@/db/schema';
+import { logger } from '@/lib/logger';
 
 async function requireAuth() {
   const session = await auth();
@@ -110,23 +111,31 @@ export async function dispatchNotification(input: {
   link?: string | null;
   ticketId?: string | null;
 }) {
-  const userIds = Array.from(new Set(input.userIds.filter(Boolean)));
-  if (userIds.length === 0) return;
+  try {
+    const userIds = Array.from(new Set(input.userIds.filter(Boolean)));
+    if (userIds.length === 0) return;
 
-  await ensureNotificationSchema();
-  const enabledUserIds = await filterUserIdsByPreference(userIds, input.type);
-  if (enabledUserIds.length === 0) return;
+    await ensureNotificationSchema();
+    const enabledUserIds = await filterUserIdsByPreference(userIds, input.type);
+    if (enabledUserIds.length === 0) return;
 
-  await db.insert(notifications).values(
-    enabledUserIds.map((userId) => ({
-      userId,
+    await db.insert(notifications).values(
+      enabledUserIds.map((userId) => ({
+        userId,
+        type: input.type,
+        title: input.title,
+        body: input.body ?? null,
+        link: input.link ?? null,
+        ticketId: input.ticketId ?? null,
+      })),
+    );
+  } catch (error) {
+    logger.warn('notification_dispatch_failed', {
       type: input.type,
-      title: input.title,
-      body: input.body ?? null,
-      link: input.link ?? null,
-      ticketId: input.ticketId ?? null,
-    })),
-  );
+      ticketId: input.ticketId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
 export async function dispatchNotificationToAdmins(input: {
@@ -136,11 +145,19 @@ export async function dispatchNotificationToAdmins(input: {
   link?: string | null;
   ticketId?: string | null;
 }) {
-  const admins = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(and(eq(users.isAdmin, true), eq(users.isActive, true)));
-  await dispatchNotification({ ...input, userIds: admins.map((user) => user.id) });
+  try {
+    const admins = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(and(eq(users.isAdmin, true), eq(users.isActive, true)));
+    await dispatchNotification({ ...input, userIds: admins.map((user) => user.id) });
+  } catch (error) {
+    logger.warn('admin_notification_dispatch_failed', {
+      type: input.type,
+      ticketId: input.ticketId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
 export async function getUnreadNotificationCount() {

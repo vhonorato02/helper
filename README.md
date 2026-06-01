@@ -1,6 +1,6 @@
 # Helper
 
-Versão atual: `Helper 0.1.4`
+Versão atual: `Helper 0.1.5`
 
 Helper é uma central operacional para registrar, organizar e acompanhar demandas internas. O sistema reúne página pública de solicitações, tickets, Kanban, agenda, reservas de Chromebooks, notificações, rotinas administrativas e PWA em uma única aplicação.
 
@@ -45,9 +45,9 @@ Regras de trabalho:
 - Next.js 16 com App Router.
 - React 19.
 - TypeScript 6.
-- Node.js `>=24.14.0 <27`.
+- Node.js `>=24.14.0 <25`.
 - npm com `package-lock.json`.
-- Tailwind CSS 3.4.19.
+- Tailwind CSS 4.3 com `@tailwindcss/postcss`.
 - Radix UI para primitivas acessíveis.
 - lucide-react para ícones.
 - Drizzle ORM com Neon PostgreSQL.
@@ -57,7 +57,18 @@ Regras de trabalho:
 - Vercel para deploy e crons.
 - Neon PostgreSQL para dados.
 
-Tailwind 3.4.19 está fixado por compatibilidade estável e build limpo. Atualize somente depois de validar que a versão nova não adiciona warnings no build, no runtime ou no CSS gerado.
+O runtime é estritamente Node 24.x. O projeto usa `.node-version`, `.nvmrc`, `engines` e `engine-strict=true` para evitar builds em Node 26, que emite warning de depreciação no plugin atual do Tailwind.
+
+Tailwind 4 usa tema CSS-first em `src/app/globals.css`; não há mais `tailwind.config.js`. A variante `dark` é baseada na classe `.dark`, pois o Helper usa alternância manual de tema.
+
+## Mudanças da Versão 0.1.5
+
+- Migração de Tailwind 3.4 para Tailwind 4.3 com `@tailwindcss/postcss`.
+- Tokens de cor, radius, sombra, fonte e opacidade movidos para `@theme inline`.
+- Runtime travado em Node 24.x com `engine-strict`.
+- Dependências diretas atualizadas e pacote Radix Popover removido por falta de uso.
+- Notificações internas agora falham de forma não bloqueante e registram log estruturado.
+- Service worker atualizado para cache `helper-static-v6`.
 
 ## Estrutura
 
@@ -89,7 +100,7 @@ Resultado esperado:
 
 Se falhar:
 
-- Confirme a versão do Node com `node -v`.
+- Confirme que `node -v` retorna Node 24.x.
 - Apague `node_modules` e rode `npm ci` novamente.
 - Não troque o package manager sem decisão explícita de manutenção.
 
@@ -358,10 +369,12 @@ Antes de entregar:
 npm ci
 npm audit --audit-level=low
 npm ls --depth=0
+npm outdated --long
 npm run lint
 npm run typecheck
 npm test
 npm run test:smoke
+npm run test:e2e
 npm run build
 ```
 
@@ -389,7 +402,7 @@ Configuração recomendada:
 
 - Framework: Next.js.
 - Production branch: `main`.
-- Node.js: 24.x ou runtime compatível com `>=24.14.0 <27`.
+- Node.js: 24.x, compatível com `>=24.14.0 <25`.
 - Build command: `npm run build`.
 - Install command: `npm ci`.
 
@@ -710,10 +723,10 @@ npm run test:smoke
 npm run build
 git status
 git add .
-git commit -m "release: Helper 0.1.4"
+git commit -m "release: Helper 0.1.5"
 git push origin main
-git tag v0.1.4
-git push origin v0.1.4
+git tag v0.1.5
+git push origin v0.1.5
 ```
 
 Depois:
@@ -734,4 +747,4 @@ Depois:
 - Use Notificações para alertas internos.
 - Revise logs antes de mexer em banco ou env.
 
-Helper 0.1.4 deve permanecer limpo: sem warnings relevantes, sem marcas antigas, sem rotas quebradas, sem cache PWA antigo e sem Preview escrevendo em Production por acidente.
+Helper 0.1.5 deve permanecer limpo: sem warnings relevantes, sem marcas antigas, sem rotas quebradas, sem cache PWA antigo e sem Preview escrevendo em Production por acidente.
