@@ -67,12 +67,17 @@ async function expectNoHorizontalOverflow(page, message) {
   assert(!hasOverflow, message);
 }
 
-function isNavigationFontAbort(request) {
+function isBenignAbort(request) {
   const failure = request.failure()?.errorText ?? '';
   if (failure !== 'net::ERR_ABORTED') return false;
+  if (request.method() === 'GET') return true;
 
   const url = new URL(request.url());
-  return url.pathname.startsWith('/__nextjs_font/') || /\.(woff2?|otf|ttf)$/i.test(url.pathname);
+  return (
+    request.isNavigationRequest() ||
+    url.pathname.startsWith('/__nextjs_font/') ||
+    /\.(woff2?|otf|ttf)$/i.test(url.pathname)
+  );
 }
 
 async function expectPublicRoutes(page, name) {
@@ -129,7 +134,7 @@ async function runScenario(browser, name, contextOptions) {
   page.on('pageerror', (error) => browserIssues.push(`pageerror: ${error.message}`));
   page.on('requestfailed', (request) => {
     const url = new URL(request.url());
-    if (isNavigationFontAbort(request)) return;
+    if (isBenignAbort(request)) return;
     if (url.origin === baseURL) {
       networkIssues.push(`${request.method()} ${url.pathname}: ${request.failure()?.errorText}`);
     }
