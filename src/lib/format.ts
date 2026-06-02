@@ -1,3 +1,5 @@
+import { appCivilDayDistance } from '@/lib/timezone';
+
 export const DATE_FORMATS = {
   dashboardDay: "EEEE, d 'de' MMMM",
   dashboardRecent: "dd 'de' MMM 'às' HH:mm",
@@ -90,11 +92,7 @@ export function daysSince(date: Date | string, now = new Date()) {
 }
 
 export function daysUntil(date: Date | string, now = new Date()) {
-  const target = new Date(date);
-  const today = new Date(now);
-  target.setHours(0, 0, 0, 0);
-  today.setHours(0, 0, 0, 0);
-  return Math.ceil((target.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
+  return appCivilDayDistance(date, now);
 }
 
 export function initials(name: string) {

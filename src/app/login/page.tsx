@@ -73,6 +73,8 @@ export default function LoginPage() {
     formRef.current?.requestSubmit();
   };
 
+  const errorId = error ? 'login-error' : undefined;
+
   return (
     <div className="flex min-h-screen w-full items-center justify-center overflow-x-hidden px-4 py-10">
       <div className="w-full min-w-0 max-w-[calc(100vw-2rem)] sm:max-w-sm">
@@ -96,6 +98,7 @@ export default function LoginPage() {
               autoComplete="username"
               placeholder={copy.auth.placeholders.username}
               required
+              aria-describedby={errorId}
               disabled={isSubmitting}
               onKeyDown={submitOnEnter}
             />
@@ -110,6 +113,7 @@ export default function LoginPage() {
               autoComplete="current-password"
               placeholder={copy.auth.placeholders.password}
               required
+              aria-describedby={errorId}
               disabled={isSubmitting}
               onKeyDown={submitOnEnter}
             />
@@ -117,6 +121,7 @@ export default function LoginPage() {
 
           {error && (
             <div
+              id="login-error"
               role="alert"
               className="flex items-start gap-2.5 rounded-lg bg-destructive/8 px-3.5 py-3 text-sm text-destructive ring-1 ring-inset ring-destructive/18"
             >

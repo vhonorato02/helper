@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { getSchedules } from '@/actions/schedules';
 import { copy } from '@/lib/copy';
+import { appDayEnd, appDayStart } from '@/lib/timezone';
 import { NewScheduleButton, ScheduleItem } from './schedule-client';
 import { CalendarView } from './calendar-view';
 import { ViewToggle } from './view-toggle';
@@ -15,9 +16,9 @@ export const metadata = {
 
 function groupSchedules(schedules: Awaited<ReturnType<typeof getSchedules>>) {
   const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
-  const weekEnd = new Date(todayStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const todayStart = appDayStart(0, now);
+  const todayEnd = appDayEnd(0, now);
+  const weekEnd = appDayStart(7, now);
 
   const today: typeof schedules = [];
   const week: typeof schedules = [];

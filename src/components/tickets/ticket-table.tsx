@@ -116,6 +116,15 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
   const allSelected = tickets.length > 0 && tickets.every((t) => selected.has(t.code));
   const someSelected = selected.size > 0;
 
+  useEffect(() => {
+    const visibleCodes = new Set(tickets.map((ticket) => ticket.code));
+    setSelected((prev) => {
+      if (prev.size === 0) return prev;
+      const next = new Set([...prev].filter((code) => visibleCodes.has(code)));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [tickets]);
+
   const toggleOne = (code: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -136,9 +145,12 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
     action: 'set_status' | 'set_assignee' | 'set_priority' | 'archive',
     value?: string | null,
   ) => {
+    const selectedCodes = Array.from(selected);
+    if (selectedCodes.length === 0) return;
+
     startBulkTransition(async () => {
       const result = await bulkUpdateTickets({
-        codes: Array.from(selected),
+        codes: selectedCodes,
         action,
         value: value ?? null,
       });
@@ -455,7 +467,7 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
               <>
                 {copy.tickets.table.emptyFilterHint.replace('limpe a busca.', '')}
                 <button onClick={clearFilters} className="text-primary hover:underline">
-                  {copy.tickets.table.clearSearch.toLowerCase()}
+                  {copy.tickets.table.clearFilters.toLowerCase()}
                 </button>
                 .
               </>

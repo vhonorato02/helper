@@ -35,6 +35,7 @@ import { AREA_LABELS } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { copy } from '@/lib/copy';
 import { capitalizeFirst, DATE_FORMATS, daysSince, formatPtBrDate } from '@/lib/format';
+import { appCurrentHour } from '@/lib/timezone';
 
 export const dynamic = 'force-dynamic';
 
@@ -102,7 +103,7 @@ function StatCard({ label, value, icon, href, accent = 'default', empty }: StatC
 }
 
 function getGreeting(name: string) {
-  const hour = new Date().getHours();
+  const hour = appCurrentHour();
   const firstName = name.split(' ')[0];
   if (hour < 12) return copy.dashboard.greeting.morning(firstName);
   if (hour < 18) return copy.dashboard.greeting.afternoon(firstName);

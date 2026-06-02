@@ -68,26 +68,38 @@ export function PublicRequestForm({
     }
 
     startTransition(async () => {
-      const result = await createPublicRequest(formData);
-      submitLockRef.current = false;
+      try {
+        const result = await createPublicRequest(formData);
 
-      if (result && 'error' in result) {
-        const message = result.error ?? 'Não foi possível registrar a solicitação.';
+        if (result && 'error' in result) {
+          const message = result.error ?? 'Não foi possível registrar a solicitação.';
+          setFormError(message);
+          toast.error(message);
+          return;
+        }
+
+        const nextProtocol = result?.protocol ?? '';
+        setProtocol(nextProtocol);
+        toast.success(nextProtocol ? `Solicitação ${nextProtocol} recebida.` : 'Solicitação recebida.');
+        formRef.current?.reset();
+        setDescriptionLength(0);
+      } catch {
+        const message = 'Não foi possível registrar a solicitação agora.';
         setFormError(message);
         toast.error(message);
-        return;
+      } finally {
+        submitLockRef.current = false;
       }
-
-      const nextProtocol = result?.protocol ?? '';
-      setProtocol(nextProtocol);
-      toast.success(nextProtocol ? `Solicitação ${nextProtocol} recebida.` : 'Solicitação recebida.');
-      formRef.current?.reset();
-      setDescriptionLength(0);
     });
   };
 
   return (
-    <form ref={formRef} onSubmit={submit} className="surface-elevated space-y-4 rounded-lg p-5 sm:p-6">
+    <form
+      ref={formRef}
+      onSubmit={submit}
+      aria-busy={isPending}
+      className="surface-elevated space-y-4 rounded-lg p-5 sm:p-6"
+    >
       <input type="hidden" name="kind" value={kind} />
       <input
         type="text"
@@ -120,9 +132,11 @@ export function PublicRequestForm({
             autoComplete="email"
             minLength={3}
             maxLength={120}
+            aria-required="true"
+            aria-describedby={formError ? 'public-contact-help public-form-error' : 'public-contact-help'}
             disabled={isPending}
           />
-          <p className="text-xs text-muted-foreground">
+          <p id="public-contact-help" className="text-xs text-muted-foreground">
             Obrigatório para a equipe confirmar detalhes e devolver o protocolo.
           </p>
         </div>
@@ -217,6 +231,7 @@ export function PublicRequestForm({
 
       {formError && (
         <div
+          id="public-form-error"
           role="alert"
           className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive ring-1 ring-inset ring-destructive/20"
         >

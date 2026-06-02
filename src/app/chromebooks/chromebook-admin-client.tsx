@@ -147,6 +147,7 @@ function BookingDialog({
   const isEdit = !!initial;
   const start = initial ? formatDateTimeLocal(new Date(initial.startAt)) : null;
   const end = initial ? formatDateTimeLocal(new Date(initial.endAt)) : null;
+  const minimumBookingDate = dateInputInSaoPaulo(new Date());
   const [date, setDate] = useState(start?.date ?? '');
   const holidayNotice = getHolidaySchedulingNotice(date);
 
@@ -193,6 +194,7 @@ function BookingDialog({
                 name="date"
                 type="date"
                 value={date}
+                min={isEdit ? undefined : minimumBookingDate}
                 onChange={(event) => setDate(event.target.value)}
                 required
                 disabled={isPending}
@@ -486,13 +488,19 @@ export function ChromebookAdminClient({
                   <SelectItem value="cancelado">Cancelado</SelectItem>
                 </SelectContent>
               </Select>
-              <Input name="room" placeholder="Sala" defaultValue={filters.room ?? ''} />
+              <Input
+                name="room"
+                placeholder="Sala"
+                defaultValue={filters.room ?? ''}
+                aria-label="Filtrar por sala"
+              />
               <Input
                 name="quantity"
                 type="number"
                 min={1}
                 placeholder="Qtd. mínima"
                 defaultValue={filters.quantity ?? ''}
+                aria-label="Filtrar por quantidade mínima"
               />
               <Button type="submit" variant="outline">
                 <Search className="size-4" />
@@ -632,6 +640,7 @@ export function ChromebookAdminClient({
                                 size="icon-sm"
                                 onClick={() => runConfirm(booking)}
                                 title="Aprovar"
+                                aria-label="Aprovar agendamento"
                                 disabled={isPending}
                               >
                                 <CheckCircle2 className="size-3.5" />
@@ -641,13 +650,20 @@ export function ChromebookAdminClient({
                                 size="icon-sm"
                                 onClick={() => setConfirmCancel(booking)}
                                 title="Recusar"
+                                aria-label="Recusar agendamento"
                                 disabled={isPending}
                               >
                                 <XCircle className="size-3.5" />
                               </Button>
                             </>
                           )}
-                          <Button variant="ghost" size="icon-sm" onClick={() => openEdit(booking)} title="Editar">
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => openEdit(booking)}
+                            title="Editar"
+                            aria-label="Editar agendamento"
+                          >
                             <Pencil className="size-3.5" />
                           </Button>
                           {booking.status === 'confirmado' && (
@@ -656,6 +672,8 @@ export function ChromebookAdminClient({
                               size="icon-sm"
                               onClick={() => setConfirmCancel(booking)}
                               title="Cancelar"
+                              aria-label="Cancelar agendamento"
+                              disabled={isPending}
                             >
                               <XCircle className="size-3.5" />
                             </Button>
@@ -667,6 +685,7 @@ export function ChromebookAdminClient({
                               className="text-destructive hover:text-destructive"
                               onClick={() => setConfirmDelete(booking)}
                               title="Excluir"
+                              aria-label="Excluir agendamento"
                             >
                               <Trash2 className="size-3.5" />
                             </Button>

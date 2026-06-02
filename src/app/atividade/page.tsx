@@ -10,6 +10,7 @@ import {
   type Area,
 } from '@/lib/constants';
 import { copy } from '@/lib/copy';
+import { DATE_FORMATS, formatPtBrDate } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,7 +26,7 @@ function formatRelativeTime(date: Date) {
   if (hours < 24) return `${hours} h atrás`;
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days} ${days === 1 ? 'dia' : 'dias'} atrás`;
-  return new Date(date).toLocaleDateString('pt-BR');
+  return formatPtBrDate(date, DATE_FORMATS.tableCreated);
 }
 
 function describeChange(item: {

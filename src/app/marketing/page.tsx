@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { auth } from '@/auth';
 import { copy } from '@/lib/copy';
+import { appCivilDayDistance, appDayStart } from '@/lib/timezone';
 import { cn } from '@/lib/utils';
 import {
   PINDAMONHANGABA_HOLIDAYS_2026,
@@ -90,17 +91,13 @@ function parseInstitutionalDate(date: string) {
 }
 
 function daysUntilInstitutionalDate(date: string, now: Date) {
-  const target = parseInstitutionalDate(date);
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const targetDay = new Date(target.getFullYear(), target.getMonth(), target.getDate());
-  return Math.ceil((targetDay.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
+  return appCivilDayDistance(parseInstitutionalDate(date), now);
 }
 
 function getUpcomingInstitutionalHolidays(days: number, now = new Date()) {
-  const horizon = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
   return PINDAMONHANGABA_HOLIDAYS_2026.filter((holiday) => {
-    const date = parseInstitutionalDate(holiday.date);
-    return date >= now && date <= horizon;
+    const distance = daysUntilInstitutionalDate(holiday.date, now);
+    return distance >= 0 && distance <= days;
   }).sort((a, b) => a.date.localeCompare(b.date));
 }
 
@@ -156,7 +153,7 @@ export default async function MarketingHubPage() {
   const upcomingHolidays = getUpcomingInstitutionalHolidays(30, now);
   const weekRecordings = recordings.filter((r) => {
     const d = new Date(r.scheduledDate);
-    const weekEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7);
+    const weekEnd = appDayStart(7, now);
     return (
       d >= now &&
       d < weekEnd &&

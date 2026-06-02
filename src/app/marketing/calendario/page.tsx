@@ -15,6 +15,7 @@ import {
 } from '@/lib/holidays';
 import { cn } from '@/lib/utils';
 import type { MarketingEvent } from '@/db/schema';
+import { appCurrentMonth } from '@/lib/timezone';
 
 export const dynamic = 'force-dynamic';
 
@@ -101,7 +102,7 @@ export default async function CalendarPage() {
     holidaysByMonth.set(month, list);
   }
 
-  const currentMonth = new Date().getMonth() + 1;
+  const currentMonth = appCurrentMonth();
   const isEmpty = events.length === 0 && PINDAMONHANGABA_HOLIDAYS_2026.length === 0;
 
   return (

@@ -46,6 +46,10 @@ export function KanbanBoard({ initialTickets }: KanbanBoardProps) {
     setActiveTicket(ticket ?? null);
   };
 
+  const handleDragCancel = () => {
+    setActiveTicket(null);
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     setActiveTicket(null);
     const { active, over } = event;
@@ -78,7 +82,10 @@ export function KanbanBoard({ initialTickets }: KanbanBoardProps) {
             startTransition(async () => {
               updateOptimistic({ code, status: previousStatus });
               const undo = await updateTicketStatus(code, previousStatus);
-              if (undo && 'error' in undo) toast.error(undo.error);
+              if (undo && 'error' in undo) {
+                updateOptimistic({ code, status: newStatus });
+                toast.error(undo.error);
+              }
             });
           },
         },
@@ -106,6 +113,7 @@ export function KanbanBoard({ initialTickets }: KanbanBoardProps) {
       id="helper-kanban"
       sensors={sensors}
       onDragStart={handleDragStart}
+      onDragCancel={handleDragCancel}
       onDragEnd={handleDragEnd}
     >
       <div className="-mx-4 flex min-h-[calc(100vh-240px)] snap-x gap-3 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 xl:gap-2">

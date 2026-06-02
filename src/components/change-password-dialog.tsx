@@ -69,19 +69,25 @@ export function ChangePasswordDialog({
     formData.append('userId', targetUserId);
 
     startTransition(async () => {
-      const result = await changePassword(formData);
-      if (result && 'error' in result) {
-        setError(result.error ?? copy.validation.passwordFailed);
-        return;
-      }
+      try {
+        const result = await changePassword(formData);
+        if (result && 'error' in result) {
+          setError(result.error ?? copy.validation.passwordFailed);
+          return;
+        }
 
-      toast.success(
-        isSelf ? copy.users.password.selfUpdated : copy.users.password.userUpdated(targetUserName),
-      );
-      onOpenChange(false);
-      onSuccess?.();
+        toast.success(
+          isSelf ? copy.users.password.selfUpdated : copy.users.password.userUpdated(targetUserName),
+        );
+        onOpenChange(false);
+        onSuccess?.();
+      } catch {
+        setError(copy.validation.passwordFailed);
+      }
     });
   };
+
+  const errorId = error ? 'password-change-error' : undefined;
 
   return (
     <Dialog
@@ -109,7 +115,7 @@ export function ChangePasswordDialog({
           </div>
         </DialogHeader>
 
-        <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+        <form ref={formRef} onSubmit={handleSubmit} aria-busy={isPending} className="space-y-4">
           {isSelf && (
             <div className="space-y-1.5">
               <Label htmlFor="currentPassword">{copy.users.password.currentPassword}</Label>
@@ -120,6 +126,7 @@ export function ChangePasswordDialog({
                 placeholder={copy.users.password.currentPlaceholder}
                 autoComplete="current-password"
                 required
+                aria-describedby={errorId}
                 disabled={isPending}
               />
             </div>
@@ -136,6 +143,7 @@ export function ChangePasswordDialog({
                 minLength={10}
                 autoComplete="new-password"
                 required
+                aria-describedby={errorId}
                 disabled={isPending}
                 className="pr-10"
               />
@@ -161,12 +169,17 @@ export function ChangePasswordDialog({
               minLength={10}
               autoComplete="new-password"
               required
+              aria-describedby={errorId}
               disabled={isPending}
             />
           </div>
 
           {error && (
-            <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg ring-1 ring-inset ring-destructive/20">
+            <p
+              id="password-change-error"
+              role="alert"
+              className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg ring-1 ring-inset ring-destructive/20"
+            >
               {error}
             </p>
           )}

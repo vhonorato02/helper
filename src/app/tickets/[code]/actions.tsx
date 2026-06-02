@@ -155,6 +155,7 @@ export function TicketActions({
       const statusResult = await updateTicketStatus(ticket.code, 'em_andamento');
       if (statusResult && 'error' in statusResult) {
         toast.error(statusResult.error);
+        router.refresh();
         return;
       }
 
@@ -379,7 +380,7 @@ export function TicketActions({
             <div className="flex justify-between gap-4">
               <span className="text-muted-foreground">{copy.tickets.detail.resolvedAt}</span>
               <span className="font-medium text-right">
-                {new Date(ticket.resolvedAt).toLocaleDateString('pt-BR')}
+                {formatPtBrDate(ticket.resolvedAt, DATE_FORMATS.tableCreated)}
               </span>
             </div>
           )}
