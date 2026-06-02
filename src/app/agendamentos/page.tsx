@@ -56,7 +56,7 @@ function ScheduleGroup({
       </h2>
       <div className="space-y-2.5">
         {schedules.map((s) => (
-          <div key={s.id} id={`sched-${s.id}`} className="transition-shadow rounded-xl">
+          <div key={s.id} id={`sched-${s.id}`} className="transition-shadow rounded-lg">
             <ScheduleItem
               schedule={{
                 id: s.id,
@@ -100,15 +100,15 @@ export default async function AgendamentosPage({
           </div>
           <p className="mt-1 text-sm text-muted-foreground">{copy.agendamentos.page.description}</p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="page-actions sm:items-center">
           <ViewToggle current={view} />
           <NewScheduleButton />
         </div>
       </div>
 
       {isEmpty && view !== 'calendar' ? (
-        <div className="surface-elevated rounded-xl py-20 text-center">
-          <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-muted/60">
+        <div className="surface-elevated rounded-lg py-20 text-center">
+          <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-lg bg-muted/60">
             <Inbox className="size-5 text-muted-foreground" />
           </div>
           <p className="font-semibold">{copy.agendamentos.empty}</p>

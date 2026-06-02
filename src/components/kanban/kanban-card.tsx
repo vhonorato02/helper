@@ -49,11 +49,11 @@ export function KanbanCard({ ticket, dragging = false }: KanbanCardProps) {
       ref={setNodeRef}
       style={style}
       className={cn(
-        'group select-none rounded-xl border bg-card p-3 shadow-xs',
+        'group select-none rounded-lg border bg-card p-3 shadow-xs',
         'transition-all duration-100',
         'hover:-translate-y-0.5 hover:shadow-md hover:border-foreground/15',
         isDragging && 'opacity-25 shadow-none',
-        dragging && 'rotate-1 cursor-grabbing shadow-2xl ring-2 ring-primary/40 border-primary/40 scale-[1.02]',
+        dragging && 'rotate-1 cursor-grabbing shadow-lg ring-2 ring-primary/40 border-primary/40 scale-[1.02]',
       )}
     >
       {/* Header: code + priority */}

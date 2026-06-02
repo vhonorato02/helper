@@ -65,7 +65,7 @@ export function KanbanColumn({ status, tickets }: KanbanColumnProps) {
   const config = columnConfig[status];
 
   return (
-    <div className="flex w-[82vw] max-w-[320px] shrink-0 snap-start flex-col sm:w-[300px]">
+    <div className="flex w-[82vw] max-w-[300px] shrink-0 snap-start flex-col sm:w-[285px] xl:w-[250px] 2xl:w-[270px]">
       {/* Column header */}
       <div className="mb-2 flex items-center justify-between rounded-lg px-1 py-1.5">
         <div className="flex items-center gap-2">
@@ -86,7 +86,7 @@ export function KanbanColumn({ status, tickets }: KanbanColumnProps) {
       <div
         ref={setNodeRef}
         className={cn(
-          'relative flex min-h-[200px] flex-1 flex-col gap-2 rounded-xl border-2 border-dashed p-2 transition-all duration-150',
+          'relative flex min-h-[200px] flex-1 flex-col gap-2 rounded-lg border-2 border-dashed p-2 transition-all duration-150',
           'border-border/50 bg-muted/20',
           isOver && ['border-solid', config.isOver, 'shadow-inner'],
         )}

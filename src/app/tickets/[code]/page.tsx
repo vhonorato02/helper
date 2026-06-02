@@ -70,7 +70,7 @@ export default async function TicketDetailPage({ params }: PageProps) {
         {copy.tickets.detail.back}
       </Link>
 
-      <header className="surface-elevated space-y-4 rounded-xl p-5 sm:p-6">
+      <header className="surface-elevated space-y-4 rounded-lg p-5 sm:p-6">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-mono text-xs text-muted-foreground/70 font-semibold bg-muted/60 px-2 py-0.5 rounded-md">
             {ticket.code}
@@ -144,7 +144,7 @@ export default async function TicketDetailPage({ params }: PageProps) {
                 <FileText className="size-3.5" />
                 {copy.tickets.detail.description}
               </h2>
-              <div className="rounded-xl border border-border/60 bg-card p-4 text-sm leading-relaxed shadow-xs whitespace-pre-wrap">
+              <div className="rounded-lg border border-border/60 bg-card p-4 text-sm leading-relaxed shadow-xs whitespace-pre-wrap">
                 {ticket.description}
               </div>
             </section>

@@ -61,7 +61,8 @@ export default async function AtividadePage() {
   return (
     <div className="space-y-7">
       <div className="page-hero">
-        <div className="flex items-center gap-2">
+        <p className="section-label">{copy.nav.links.activity}</p>
+        <div className="mt-1.5 flex items-center gap-2">
           <Activity className="size-5 text-primary" />
           <h1 className="text-2xl font-bold tracking-tight">Atividade</h1>
         </div>
@@ -71,14 +72,14 @@ export default async function AtividadePage() {
       </div>
 
       {feed.length === 0 ? (
-        <div className="surface-elevated rounded-xl py-20 text-center">
-          <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-muted/60">
+        <div className="surface-elevated rounded-lg py-20 text-center">
+          <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-lg bg-muted/60">
             <Inbox className="size-5 text-muted-foreground" />
           </div>
           <p className="font-semibold">Sem atividade recente</p>
         </div>
       ) : (
-        <div className="surface-elevated overflow-hidden rounded-xl divide-y divide-border/60">
+        <div className="surface-elevated overflow-hidden rounded-lg divide-y divide-border/60">
           {feed.map((item) => (
             <div key={item.id} className="p-4 hover:bg-muted/30 transition-colors">
               <div className="flex items-start gap-3">

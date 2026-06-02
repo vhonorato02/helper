@@ -23,7 +23,7 @@ function dayLabel(iso: string) {
 export function TrendChart({ data }: TrendChartProps) {
   if (data.length === 0) {
     return (
-      <div className="surface-elevated rounded-xl p-5 text-center text-sm text-muted-foreground">
+      <div className="surface-elevated rounded-lg p-5 text-center text-sm text-muted-foreground">
         Sem dados ainda
       </div>
     );
@@ -57,7 +57,7 @@ export function TrendChart({ data }: TrendChartProps) {
   const labelStep = Math.max(1, Math.ceil(data.length / 7));
 
   return (
-    <div className="surface-elevated rounded-xl p-5">
+    <div className="surface-elevated rounded-lg p-5">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 className="font-semibold text-sm">Atividade nos últimos {data.length} dias</h3>
@@ -168,7 +168,7 @@ export function AreaDistribution({ data }: AreaDistributionProps) {
 
   if (total === 0) {
     return (
-      <div className="surface-elevated rounded-xl p-5 text-center text-sm text-muted-foreground">
+      <div className="surface-elevated rounded-lg p-5 text-center text-sm text-muted-foreground">
         Nenhuma demanda ativa
       </div>
     );
@@ -187,7 +187,7 @@ export function AreaDistribution({ data }: AreaDistributionProps) {
   let offset = 0;
 
   return (
-    <div className="surface-elevated rounded-xl p-5">
+    <div className="surface-elevated rounded-lg p-5">
       <div className="mb-4">
         <h3 className="font-semibold text-sm">Demandas ativas por área</h3>
         <p className="text-xs text-muted-foreground mt-0.5">Total: {total}</p>

@@ -93,12 +93,14 @@ export default async function RecordingsPage() {
             {copy.marketing.recordings.description}
           </p>
         </div>
-        <NewRecordingButton users={users} />
+        <div className="page-actions">
+          <NewRecordingButton users={users} />
+        </div>
       </div>
 
       {isEmpty ? (
-        <div className="surface-elevated rounded-xl py-20 text-center">
-          <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-muted/60">
+        <div className="surface-elevated rounded-lg py-20 text-center">
+          <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-lg bg-muted/60">
             <Inbox className="size-5 text-muted-foreground" />
           </div>
           <p className="font-semibold">{copy.marketing.recordings.empty}</p>

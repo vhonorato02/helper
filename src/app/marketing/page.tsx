@@ -55,7 +55,7 @@ function StatCard({ label, value, hint, icon, href, tone = 'primary' }: Marketin
   return (
     <Link
       href={href}
-      className="group surface-panel rounded-xl p-4 transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-5"
+      className="group surface-panel rounded-lg p-4 transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-5"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
@@ -110,7 +110,7 @@ function OfficialHolidayCard({ holiday, now }: { holiday: InstitutionalHoliday; 
   const days = daysUntilInstitutionalDate(holiday.date, now);
 
   return (
-    <div className="surface-elevated rounded-xl p-3.5">
+    <div className="surface-elevated rounded-lg p-3.5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -180,7 +180,7 @@ export default async function MarketingHubPage() {
           </div>
           <p className="mt-1 text-sm text-muted-foreground">{copy.marketing.page.description}</p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="page-actions sm:items-center">
           <Button asChild variant="outline" size="sm">
             <Link href="/marketing/calendario">
               <CalendarRange className="size-4" />
@@ -254,7 +254,7 @@ export default async function MarketingHubPage() {
           </div>
 
           {upcomingTop.length === 0 && upcomingHolidays.length === 0 ? (
-            <div className="surface-elevated rounded-xl py-12 text-center">
+            <div className="surface-elevated rounded-lg py-12 text-center">
               <p className="text-sm text-muted-foreground">{copy.marketing.upcoming.empty}</p>
             </div>
           ) : (
@@ -292,7 +292,7 @@ export default async function MarketingHubPage() {
           </div>
 
           {recentRecordings.length === 0 ? (
-            <div className="surface-elevated rounded-xl py-12 text-center">
+            <div className="surface-elevated rounded-lg py-12 text-center">
               <p className="text-sm font-semibold">{copy.marketing.recordings.empty}</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 {copy.marketing.recordings.emptyHint}
@@ -329,11 +329,11 @@ export default async function MarketingHubPage() {
         </div>
 
         {mktTickets.length === 0 ? (
-          <div className="surface-elevated rounded-xl py-12 text-center">
+          <div className="surface-elevated rounded-lg py-12 text-center">
             <p className="text-sm text-muted-foreground">{copy.marketing.tickets.empty}</p>
           </div>
         ) : (
-          <div className="surface-elevated overflow-hidden rounded-xl">
+          <div className="surface-elevated overflow-hidden rounded-lg">
             <ul className="divide-y divide-border/60">
               {mktTickets.slice(0, 6).map((ticket) => (
                 <li key={ticket.id}>

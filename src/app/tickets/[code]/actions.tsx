@@ -207,7 +207,7 @@ export function TicketActions({
   return (
     <>
       <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
-        <div className="surface-elevated rounded-xl p-4 space-y-4">
+        <div className="surface-elevated rounded-lg p-4 space-y-4">
           <h3 className="section-label flex items-center gap-1.5">
             <Settings2 className="size-3.5" />
             {copy.tickets.detail.actionsTitle}
@@ -216,7 +216,7 @@ export function TicketActions({
           <Button
             variant="outline"
             size="sm"
-            className="w-full justify-start text-xs h-8"
+            className="h-9 w-full justify-start text-xs"
             disabled={isPending}
             onClick={() => setEditOpen(true)}
           >
@@ -228,7 +228,7 @@ export function TicketActions({
             <Button
               variant="default"
               size="sm"
-              className="w-full justify-start text-xs h-8"
+              className="h-9 w-full justify-start text-xs"
               disabled={isPending || !currentUserId}
               onClick={handleTakeAndStart}
             >
@@ -252,7 +252,7 @@ export function TicketActions({
                     variant={meta.variant}
                     size="sm"
                     className={cn(
-                      'justify-start text-xs h-8',
+                      'h-9 justify-start text-xs',
                       meta.variant === 'ghost' && 'text-muted-foreground',
                     )}
                     disabled={isPending}
@@ -277,7 +277,7 @@ export function TicketActions({
               onValueChange={handleAssigneeChange}
               disabled={isPending}
             >
-              <SelectTrigger className="text-xs h-8">
+              <SelectTrigger className="h-9 text-xs">
                 <SelectValue placeholder={copy.tickets.detail.noAssignee} />
               </SelectTrigger>
               <SelectContent>
@@ -294,7 +294,7 @@ export function TicketActions({
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full text-xs gap-1.5 h-7 text-muted-foreground"
+                className="h-8 w-full gap-1.5 text-xs text-muted-foreground"
                 disabled={isPending || !currentUserId}
                 onClick={() => handleAssigneeChange(currentUserId)}
               >
@@ -315,7 +315,7 @@ export function TicketActions({
               onValueChange={handlePriorityChange}
               disabled={isPending}
             >
-              <SelectTrigger className="text-xs h-8">
+              <SelectTrigger className="h-9 text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -334,7 +334,7 @@ export function TicketActions({
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-start text-xs h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                className="h-9 w-full justify-start text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
                 disabled={isPending}
                 onClick={() => setDeleteOpen(true)}
               >
@@ -345,7 +345,7 @@ export function TicketActions({
           )}
         </div>
 
-        <div className="surface-elevated rounded-xl p-4 space-y-2.5 text-xs">
+        <div className="surface-elevated rounded-lg p-4 space-y-2.5 text-xs">
           <h3 className="section-label mb-3">
             {copy.tickets.detail.metaTitle}
           </h3>

@@ -12,10 +12,10 @@ Este arquivo guarda contexto operacional para próximas versões do Helper.
 
 ## Regras de Versão
 
-- Patch atual: `0.1.6`.
-- Toda versão precisa atualizar `package.json`, `package-lock.json`, `src/lib/version.ts`, `CHANGELOG.md` e README quando houver mudança operacional.
+- Patch atual: `0.2.0`.
+- Toda versão precisa atualizar `package.json`, `pnpm-lock.yaml`, `src/lib/version.ts`, `CHANGELOG.md` e README quando houver mudança operacional.
 - Tags só devem ser criadas ou movidas com decisão explícita. Não mover tag antiga silenciosamente.
-- Antes de publicar: `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`, `npm run test:smoke`, `npm run test:e2e`.
+- Antes de publicar: `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build`, `pnpm test:smoke`, `pnpm test:e2e`.
 
 ## Pontos Sensíveis
 
@@ -24,7 +24,7 @@ Este arquivo guarda contexto operacional para próximas versões do Helper.
 - Contato externo é obrigatório para novos pedidos públicos.
 - Notificações internas devem ser best-effort: falha de notificação não pode quebrar criação já salva.
 - Banco é Neon/Postgres; nunca rodar scripts contra produção sem conferir env.
-- O runtime suportado é Node.js 24.x.
+- O runtime suportado é Node.js 24.16+ na linha LTS 24.x.
 
 ## Revisão Visual Obrigatória
 
@@ -49,4 +49,3 @@ Em toda versão, revisar no navegador:
 - `/notificacoes`
 - `/configuracoes`
 - `/atividade`
-

@@ -80,7 +80,7 @@ export default function PublicRequestHubPage() {
           </p>
         </section>
 
-        <section className="grid gap-3 sm:grid-cols-3">
+        <section className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
           {[
             {
               title: 'Protocolo no envio',
@@ -100,7 +100,7 @@ export default function PublicRequestHubPage() {
           ].map((item) => {
             const Icon = item.icon;
             return (
-              <div key={item.title} className="rounded-xl border border-border/70 bg-muted/25 p-3">
+              <div key={item.title} className="rounded-lg border border-border/70 bg-muted/25 p-3">
                 <div className="mb-2 flex items-center gap-2">
                   <Icon className="size-4 text-primary" />
                   <p className="text-sm font-semibold">{item.title}</p>
@@ -118,7 +118,7 @@ export default function PublicRequestHubPage() {
               <Link
                 key={option.href}
                 href={option.href}
-                className="surface-panel group flex min-h-[116px] items-start gap-3 rounded-xl p-4 transition-all hover:-translate-y-0.5 hover:shadow-md"
+                className="surface-panel group flex min-h-[116px] items-start gap-3 rounded-lg p-4 transition-all hover:-translate-y-0.5 hover:shadow-md"
               >
                 <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <Icon className="size-5" />

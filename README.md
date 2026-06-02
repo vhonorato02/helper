@@ -1,6 +1,6 @@
 # Helper
 
-Versão atual: `Helper 0.1.6`
+Versão atual: `Helper 0.2.0`
 
 Helper é uma central operacional para registrar, organizar e acompanhar demandas internas. O sistema reúne página pública de solicitações, tickets, Kanban, agenda, reservas de Chromebooks, notificações, rotinas administrativas e PWA em uma única aplicação.
 
@@ -45,8 +45,8 @@ Regras de trabalho:
 - Next.js 16 com App Router.
 - React 19.
 - TypeScript 6.
-- Node.js `>=24.14.0 <25`.
-- npm com `package-lock.json`.
+- Node.js `>=24.16.0 <25`.
+- pnpm `11.5.1` com `pnpm-lock.yaml`.
 - Tailwind CSS 4.3 com `@tailwindcss/postcss`.
 - Radix UI para primitivas acessíveis.
 - lucide-react para ícones.
@@ -57,9 +57,21 @@ Regras de trabalho:
 - Vercel para deploy e crons.
 - Neon PostgreSQL para dados.
 
-O runtime é estritamente Node 24.x. O projeto usa `.node-version`, `.nvmrc`, `engines` e `engine-strict=true` para evitar builds em Node 26, que emite warning de depreciação no plugin atual do Tailwind.
+O runtime é estritamente Node 24.x LTS. O projeto usa `.node-version`, `.nvmrc`, `engines` e `engine-strict=true` para evitar builds em Node Current.
 
 Tailwind 4 usa tema CSS-first em `src/app/globals.css`; não há mais `tailwind.config.js`. A variante `dark` é baseada na classe `.dark`, pois o Helper usa alternância manual de tema.
+
+## Mudanças da Versão 0.2.0
+
+- Migra oficialmente o projeto de npm para pnpm 11.5.1 via Corepack.
+- Remove `package-lock.json`, passa a versionar apenas `pnpm-lock.yaml` e ajusta CI/Vercel para `pnpm install --frozen-lockfile`.
+- Atualiza Node LTS para 24.16.0 e mantém a produção fora da linha Current.
+- Aplica patches estáveis em Next.js, React, React DOM, plugin ESLint do Next, tipos React e `typescript-eslint`.
+- Adiciona `@playwright/test` como dependência direta para testes reais em Chromium com pnpm.
+- Revisa o visual operacional com raio máximo de 8px em cards/superfícies e menos sombra decorativa.
+- Reforça CSP de produção removendo `unsafe-eval` e define cache control explícito para service worker e manifesto.
+- Força `postcss 8.5.15` no lock pnpm para eliminar a vulnerabilidade transitiva trazida pelo Next.
+- Atualiza PWA para cache `helper-static-v7`.
 
 ## Mudanças da Versão 0.1.6
 
@@ -107,20 +119,20 @@ Tailwind 4 usa tema CSS-first em `src/app/globals.css`; não há mais `tailwind.
 git clone https://github.com/vhonorato02/helper.git
 cd helper
 git checkout main
-npm ci
+pnpm install --frozen-lockfile
 ```
 
 Resultado esperado:
 
-- npm instala sem warning relevante.
-- Apenas `package-lock.json` existe como lockfile.
-- `npm audit` não encontra vulnerabilidades.
+- pnpm instala sem warning relevante.
+- Apenas `pnpm-lock.yaml` existe como lockfile.
+- `pnpm audit` não encontra vulnerabilidades.
 
 Se falhar:
 
 - Confirme que `node -v` retorna Node 24.x.
-- Apague `node_modules` e rode `npm ci` novamente.
-- Não troque o package manager sem decisão explícita de manutenção.
+- Apague `node_modules` e rode `pnpm install --frozen-lockfile` novamente.
+- Não volte para npm sem decisão explícita de manutenção.
 
 ## Variáveis de Ambiente
 
@@ -173,7 +185,7 @@ Separação recomendada:
 Validação de conexão:
 
 ```bash
-npm run db:setup
+pnpm db:setup
 ```
 
 Resultado esperado:
@@ -209,7 +221,7 @@ select total_chromebooks from chromebook_settings where id = 'default';
 ## Rodar Localmente
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 Acesse:
@@ -228,7 +240,7 @@ Resultado esperado:
 
 ## Scripts
 
-### `npm run dev`
+### `pnpm dev`
 
 Inicia o Next.js em modo desenvolvimento.
 
@@ -240,7 +252,7 @@ Se falhar:
 - Confirme se o banco responde.
 - Veja o terminal do Next.js e o console do navegador.
 
-### `npm run build`
+### `pnpm build`
 
 Executa `scripts/next-build.mjs`, limpa `.next` e roda `next build`.
 
@@ -255,17 +267,17 @@ Resultado esperado:
 Se falhar:
 
 - Leia o primeiro erro real, não apenas o último stack trace.
-- Rode `npm run typecheck`.
-- Rode `npm run lint`.
+- Rode `pnpm typecheck`.
+- Rode `pnpm lint`.
 - Confirme envs obrigatórias.
 
-### `npm run start`
+### `pnpm start`
 
 Sobe a build de produção local.
 
-Use depois de `npm run build` para validar comportamento próximo ao deploy.
+Use depois de `pnpm build` para validar comportamento próximo ao deploy.
 
-### `npm run lint`
+### `pnpm lint`
 
 Executa ESLint em todo o projeto.
 
@@ -279,7 +291,7 @@ Se falhar:
 - Corrija import não usado, código morto, acessibilidade e regras de React/Next.
 - Não use `eslint-disable` sem justificativa pontual.
 
-### `npm run typecheck`
+### `pnpm typecheck`
 
 Executa `tsc --noEmit`.
 
@@ -292,7 +304,7 @@ Se falhar:
 - Corrija o tipo na origem.
 - Não troque para `any` para esconder erro.
 
-### `npm test`
+### `pnpm test`
 
 Executa testes unitários com `tsx --test`.
 
@@ -304,13 +316,13 @@ Se falhar:
 
 - Corrija a regra de negócio ou atualize o teste quando o comportamento esperado mudou.
 
-### `npm run test:watch`
+### `pnpm test:watch`
 
 Roda testes em modo watch.
 
 Use durante desenvolvimento de regras de domínio.
 
-### `npm run test:smoke`
+### `pnpm test:smoke`
 
 Sobe um servidor local temporário e valida login público, manifesto, assets, rota pública, redirect de rota protegida e proteção do bootstrap.
 
@@ -324,7 +336,7 @@ Se falhar:
 - Confirme se a rota pública renderiza sem exigir banco indevido.
 - Corrija redirects quebrados antes de deploy.
 
-### `npm run test:e2e`
+### `pnpm test:e2e`
 
 Executa Playwright em Chromium desktop e mobile.
 
@@ -337,11 +349,11 @@ Resultado esperado:
 
 Se falhar:
 
-- Instale os navegadores com `npx playwright install`.
+- Instale os navegadores com `pnpm exec playwright install chromium`.
 - Confirme se a porta `3101` está livre ou configure `PLAYWRIGHT_PORT`.
-- Para testar um servidor já aberto, use `PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 npm run test:e2e`.
+- Para testar um servidor já aberto, use `PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 pnpm test:e2e`.
 
-### `npm run icons`
+### `pnpm icons`
 
 Gera ícones PWA, favicon e imagem Open Graph a partir dos scripts locais.
 
@@ -352,7 +364,7 @@ Resultado esperado:
 - Arquivos em `public` atualizados.
 - Manifesto e service worker continuam apontando para os assets existentes.
 
-### `npm run db:setup`
+### `pnpm db:setup`
 
 Aplica o schema SQL idempotente usando `.env`.
 
@@ -364,7 +376,7 @@ Se falhar:
 - Corrija a conexão ou o SQL idempotente.
 - Faça backup antes de qualquer ação arriscada.
 
-### `npm run db:seed`
+### `pnpm db:seed`
 
 Cria ou atualiza o admin inicial usando `.env`.
 
@@ -384,16 +396,16 @@ Se falhar:
 Antes de entregar:
 
 ```bash
-npm ci
-npm audit --audit-level=low
-npm ls --depth=0
-npm outdated --long
-npm run lint
-npm run typecheck
-npm test
-npm run test:smoke
-npm run test:e2e
-npm run build
+pnpm install --frozen-lockfile
+pnpm audit --audit-level=low
+pnpm list --depth=0
+pnpm outdated --long
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm test:smoke
+pnpm test:e2e
+pnpm build
 ```
 
 Buscas obrigatórias:
@@ -420,9 +432,9 @@ Configuração recomendada:
 
 - Framework: Next.js.
 - Production branch: `main`.
-- Node.js: 24.x, compatível com `>=24.14.0 <25`.
-- Build command: `npm run build`.
-- Install command: `npm ci`.
+- Node.js: 24.x, compatível com `>=24.16.0 <25`.
+- Build command: `pnpm build`.
+- Install command: `pnpm install --frozen-lockfile`.
 
 Ambientes:
 
@@ -677,7 +689,7 @@ Checklist:
 
 Erro de banco:
 
-1. Rode `npm run db:setup`.
+1. Rode `pnpm db:setup`.
 2. Consulte `select current_database(), current_user, now();`.
 3. Confirme SSL.
 4. Confirme ambiente correto.
@@ -697,17 +709,17 @@ Erro de env:
 
 Erro de build:
 
-1. Rode `npm run typecheck`.
-2. Rode `npm run lint`.
-3. Rode `npm test`.
-4. Rode `npm run build` novamente.
+1. Rode `pnpm typecheck`.
+2. Rode `pnpm lint`.
+3. Rode `pnpm test`.
+4. Rode `pnpm build` novamente.
 
 Nome, ícone ou logo antigo aparecendo:
 
 1. Rode a busca global de marca.
 2. Confira `src/lib/copy.ts`, `src/lib/brand.ts`, manifest e assets públicos.
 3. Limpe service worker e storage do navegador.
-4. Gere ícones novamente com `npm run icons` se necessário.
+4. Gere ícones novamente com `pnpm icons` se necessário.
 
 ## Limpeza do GitHub
 
@@ -732,19 +744,19 @@ Regras:
 Fluxo recomendado:
 
 ```bash
-npm ci
-npm audit --audit-level=low
-npm run lint
-npm run typecheck
-npm test
-npm run test:smoke
-npm run build
+pnpm install --frozen-lockfile
+pnpm audit --audit-level=low
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm test:smoke
+pnpm build
 git status
 git add .
-git commit -m "release: Helper 0.1.6"
+git commit -m "chore: release Helper 0.2.0"
 git push origin main
-git tag v0.1.6
-git push origin v0.1.6
+git tag v0.2.0
+git push origin v0.2.0
 ```
 
 Depois:
@@ -765,4 +777,4 @@ Depois:
 - Use Notificações para alertas internos.
 - Revise logs antes de mexer em banco ou env.
 
-Helper 0.1.6 deve permanecer limpo: sem warnings relevantes, sem marcas antigas, sem rotas quebradas, sem cache PWA antigo e sem Preview escrevendo em Production por acidente.
+Helper 0.2.0 deve permanecer limpo: sem warnings relevantes, sem marcas antigas, sem rotas quebradas, sem cache PWA antigo e sem Preview escrevendo em Production por acidente.

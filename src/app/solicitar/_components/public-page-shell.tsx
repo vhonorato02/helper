@@ -35,7 +35,7 @@ export function PublicPageShell({
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{description}</p>
         </section>
 
-        <section className="grid gap-2 rounded-xl border border-border/70 bg-muted/25 p-3 text-xs text-muted-foreground sm:grid-cols-3">
+        <section className="grid gap-2 rounded-lg border border-border/70 bg-muted/25 p-3 text-xs text-muted-foreground md:grid-cols-3">
           <p><span className="font-semibold text-foreground">Protocolo:</span> guarde o código exibido após o envio.</p>
           <p><span className="font-semibold text-foreground">Contato:</span> informe e-mail ou telefone para retorno.</p>
           <p><span className="font-semibold text-foreground">Triagem:</span> a equipe acompanha tudo na entrada externa.</p>

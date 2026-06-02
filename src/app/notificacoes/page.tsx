@@ -49,7 +49,7 @@ export default async function NotificationsPage() {
         </div>
       </section>
 
-      <section className="surface-elevated overflow-hidden rounded-xl">
+      <section className="surface-elevated overflow-hidden rounded-lg">
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
             <div className="mb-3 flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary">

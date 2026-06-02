@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 export default function NotFound() {
   return (
     <main className="mx-auto flex min-h-[70vh] max-w-xl flex-col items-center justify-center px-6 text-center">
-      <div className="mb-5 flex size-12 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+      <div className="mb-5 flex size-12 items-center justify-center rounded-lg bg-muted text-muted-foreground">
         <SearchX className="size-5" />
       </div>
       <p className="section-label">Página não encontrada</p>

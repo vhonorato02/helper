@@ -1,5 +1,17 @@
 # Changelog
 
+## Helper 0.2.0 - 2026-06-02
+
+- Migra oficialmente para pnpm 11.5.1 com `packageManager`, `pnpm-lock.yaml`, CI e Vercel usando `pnpm install --frozen-lockfile`.
+- Atualiza Node LTS para 24.16.0 e mantém a produção na linha LTS em vez de Node Current.
+- Aplica patches estáveis em Next.js 16.2.7, React 19.2.7, React DOM 19.2.7, `@next/eslint-plugin-next` 16.2.7, `@types/react` 19.2.16 e `typescript-eslint` 8.60.1.
+- Troca o E2E para `@playwright/test` como dependência direta compatível com pnpm.
+- Revisa superfícies, cards, dialogs, menus e estados vazios para raio máximo de 8px e sombras menos decorativas.
+- Endurece CSP de produção removendo `unsafe-eval` e adiciona cache control explícito para service worker e manifesto.
+- Força `postcss 8.5.15` no lock pnpm para remover vulnerabilidade transitiva de `postcss <8.5.10`.
+- Atualiza PWA para cache `helper-static-v7`.
+- Atualiza README, STACK, MEMORY, `.env.example`, CI e Vercel para a operação 0.2.0 com pnpm.
+
 ## Helper 0.1.6 - 2026-06-01
 
 - Adiciona fila de Entrada externa no dashboard, reunindo tickets públicos e reservas públicas de Chromebooks pendentes.

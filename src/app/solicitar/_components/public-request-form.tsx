@@ -87,7 +87,7 @@ export function PublicRequestForm({
   };
 
   return (
-    <form ref={formRef} onSubmit={submit} className="surface-elevated space-y-4 rounded-xl p-5 sm:p-6">
+    <form ref={formRef} onSubmit={submit} className="surface-elevated space-y-4 rounded-lg p-5 sm:p-6">
       <input type="hidden" name="kind" value={kind} />
       <input
         type="text"

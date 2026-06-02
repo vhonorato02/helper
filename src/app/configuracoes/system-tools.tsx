@@ -72,7 +72,7 @@ function StatusPanel() {
 
   if (loading && !status) {
     return (
-      <div className="surface-elevated rounded-xl p-5">
+      <div className="surface-elevated rounded-lg p-5">
         <Loader2 className="size-4 animate-spin text-muted-foreground" />
       </div>
     );
@@ -83,7 +83,7 @@ function StatusPanel() {
   const recipientsReady = status.email.recipients.general > 0;
 
   return (
-    <div className="surface-elevated rounded-xl p-5 space-y-4">
+    <div className="surface-elevated rounded-lg p-5 space-y-4">
       <div className="flex items-start gap-3">
         <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10">
           <Activity className="size-4 text-primary" />
@@ -214,7 +214,7 @@ export function SystemTools() {
   return (
     <div className="space-y-6">
     <StatusPanel />
-    <div className="surface-elevated rounded-xl p-5 space-y-4">
+    <div className="surface-elevated rounded-lg p-5 space-y-4">
       <div className="flex items-start gap-3">
         <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10">
           <Mail className="size-4 text-primary" />

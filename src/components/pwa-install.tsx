@@ -124,7 +124,7 @@ export function PwaInstallPrompt() {
         className="fixed bottom-4 left-4 right-4 z-50 sm:left-auto sm:right-4 sm:max-w-sm animate-in slide-in-from-bottom-2"
         role="status"
       >
-        <div className="surface-elevated flex items-start gap-3 rounded-xl border bg-card p-4 shadow-lg">
+        <div className="surface-elevated flex items-start gap-3 rounded-lg border bg-card p-4 shadow-lg">
           <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10">
             <RefreshCw className="size-4 text-primary" />
           </div>
@@ -154,7 +154,7 @@ export function PwaInstallPrompt() {
         role="dialog"
         aria-label="Instalar aplicativo no iOS"
       >
-        <div className="surface-elevated flex items-start gap-3 rounded-xl border bg-card p-4 shadow-lg">
+        <div className="surface-elevated flex items-start gap-3 rounded-lg border bg-card p-4 shadow-lg">
           <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10">
             <Share className="size-4 text-primary" />
           </div>
@@ -189,7 +189,7 @@ export function PwaInstallPrompt() {
       role="dialog"
       aria-label="Instalar aplicativo"
     >
-      <div className="surface-elevated rounded-xl border bg-card p-4 shadow-lg flex items-start gap-3">
+      <div className="surface-elevated rounded-lg border bg-card p-4 shadow-lg flex items-start gap-3">
         <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10">
           <Download className="size-4 text-primary" />
         </div>

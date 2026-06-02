@@ -213,7 +213,7 @@ export function CommentThread({
                       </div>
                     </div>
                   ) : (
-                    <div className="rounded-xl border border-border/60 bg-card px-3.5 py-3 text-sm leading-relaxed shadow-xs whitespace-pre-wrap">
+                    <div className="rounded-lg border border-border/60 bg-card px-3.5 py-3 text-sm leading-relaxed shadow-xs whitespace-pre-wrap">
                       {comment.body}
                     </div>
                   )}

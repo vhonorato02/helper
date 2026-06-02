@@ -84,7 +84,7 @@ export default function LoginPage() {
         <form
           ref={formRef}
           onSubmit={handleSubmit}
-          className="surface-panel space-y-4 rounded-xl p-5 sm:p-6"
+          className="surface-panel space-y-4 rounded-lg p-5 sm:p-6"
           aria-busy={isSubmitting}
         >
           <div className="space-y-1.5">

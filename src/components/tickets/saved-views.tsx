@@ -97,7 +97,7 @@ export function SavedViews() {
   if (!mounted) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex max-w-full flex-wrap items-center gap-1.5">
       {views.length > 0 && (
         <>
           <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wide flex items-center gap-1.5">
@@ -105,18 +105,18 @@ export function SavedViews() {
             Visões
           </span>
           {views.map((view) => (
-            <div key={view.id} className="group inline-flex items-center">
+            <div key={view.id} className="group inline-flex max-w-full items-center">
               <button
                 onClick={() => applyView(view)}
                 className={cn(
-                  'h-7 pl-2.5 pr-1.5 rounded-l-md border border-r-0 text-xs font-medium transition-colors flex items-center gap-1.5',
+                  'h-7 max-w-48 rounded-l-md border border-r-0 pl-2.5 pr-1.5 text-xs font-medium transition-colors flex items-center gap-1.5',
                   isCurrentView(view)
                     ? 'bg-primary/10 text-primary border-primary/30'
                     : 'bg-card hover:bg-accent text-foreground border-border',
                 )}
               >
                 {isCurrentView(view) && <Star className="size-3 fill-current" />}
-                {view.name}
+                <span className="truncate">{view.name}</span>
               </button>
               <button
                 onClick={() => handleDelete(view.id)}

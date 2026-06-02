@@ -142,7 +142,7 @@ export function UserList({ users, currentUserId }: UserListProps) {
 
   return (
     <>
-      <div className="surface-elevated overflow-hidden rounded-xl divide-y divide-border/60">
+      <div className="surface-elevated overflow-hidden rounded-lg divide-y divide-border/60">
         {users.map((user) => {
           const isSelf = user.id === currentUserId;
           return (

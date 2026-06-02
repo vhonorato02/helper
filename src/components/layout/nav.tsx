@@ -140,7 +140,7 @@ export function Nav({ user, users }: NavProps) {
   return (
     <>
       <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/90 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80">
-        <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:px-6">
+        <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-4 sm:gap-3 sm:px-6">
           <Link
             href="/"
             className="group flex min-w-0 shrink-0 items-center gap-2.5 rounded-lg pr-1 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -157,7 +157,7 @@ export function Nav({ user, users }: NavProps) {
             </div>
           </Link>
 
-          <nav className="ml-3 hidden items-center gap-0.5 rounded-lg border border-border/70 bg-card/80 p-1 shadow-xs md:flex">
+          <nav className="ml-3 hidden items-center gap-0.5 rounded-lg border border-border/70 bg-card/80 p-1 shadow-xs xl:flex">
             {NAV_LINKS.map(({ href, label, icon: Icon }) => {
               const active = isActiveLink(href);
               return (
@@ -181,7 +181,7 @@ export function Nav({ user, users }: NavProps) {
           <div className="ml-auto flex items-center gap-1.5">
             <button
               onClick={() => setPaletteOpen(true)}
-              className="hidden h-8 items-center gap-2 rounded-md border border-border/80 bg-card/90 px-3 text-xs font-medium text-muted-foreground shadow-xs transition-all hover:border-foreground/20 hover:bg-accent hover:text-foreground lg:inline-flex"
+              className="hidden h-8 items-center gap-2 rounded-md border border-border/80 bg-card/90 px-3 text-xs font-medium text-muted-foreground shadow-xs transition-all hover:border-foreground/20 hover:bg-accent hover:text-foreground 2xl:inline-flex"
               aria-label={copy.commandPalette.title}
             >
               <Search className="size-3.5" />
@@ -192,10 +192,11 @@ export function Nav({ user, users }: NavProps) {
             <Button
               size="sm"
               onClick={openTicketForm}
-              className="gap-1.5 h-9 px-3 shadow-sm shadow-primary/20"
+              className="h-9 gap-1.5 px-2.5 shadow-sm shadow-primary/20 sm:px-3"
+              aria-label={copy.nav.newTicket}
             >
               <Plus className="size-4" />
-              <span>{copy.nav.newTicket}</span>
+              <span className="hidden sm:inline">{copy.nav.newTicket}</span>
             </Button>
 
             <ThemeToggle />
@@ -204,7 +205,7 @@ export function Nav({ user, users }: NavProps) {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
-                  className="hidden h-10 items-center gap-2 rounded-md border border-transparent pl-1.5 pr-2 transition-colors hover:border-border hover:bg-card md:flex"
+                  className="hidden h-10 items-center gap-2 rounded-md border border-transparent pl-1.5 pr-2 transition-colors hover:border-border hover:bg-card lg:flex"
                   aria-label={copy.auth.menu.userMenu}
                 >
                   <Avatar className="size-8">
@@ -257,7 +258,7 @@ export function Nav({ user, users }: NavProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden"
+              className="xl:hidden"
               onClick={() => setMobileOpen((open) => !open)}
               aria-label={copy.nav.mobileMenu}
               aria-expanded={mobileOpen}
@@ -268,7 +269,7 @@ export function Nav({ user, users }: NavProps) {
         </div>
 
         {mobileOpen && (
-          <div className="border-t border-border/70 bg-background/95 px-4 py-3 shadow-lg md:hidden">
+          <div className="border-t border-border/70 bg-background/95 px-4 py-3 shadow-lg xl:hidden">
             <div className="mb-3 flex items-center gap-3 rounded-lg border bg-card p-3">
               <Avatar className="size-9">
                 <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
@@ -284,6 +285,17 @@ export function Nav({ user, users }: NavProps) {
               </div>
             </div>
             <div className="space-y-1">
+            <button
+              type="button"
+              onClick={() => {
+                setMobileOpen(false);
+                setPaletteOpen(true);
+              }}
+              className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <Search className="size-4" />
+              {copy.nav.search}
+            </button>
             {NAV_LINKS.map(({ href, label, icon: Icon }) => (
               <Link
                 key={href}

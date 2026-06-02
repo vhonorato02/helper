@@ -73,7 +73,7 @@ function StatCard({ label, value, icon, href, accent = 'default', empty }: StatC
     <Link
       href={href}
       className={cn(
-        'group surface-panel rounded-xl p-4 transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-5',
+        'group surface-panel rounded-lg p-4 transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-5',
         borderAccent,
         accent === 'default' && 'hover:border-foreground/18',
       )}
@@ -152,7 +152,7 @@ function MobileOpsSummary({
         : `${(avgHours / 24).toFixed(1)}d`;
 
   return (
-    <section className="surface-elevated rounded-xl p-4 md:hidden">
+    <section className="surface-elevated rounded-lg p-4 md:hidden">
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
           <h2 className="text-sm font-bold tracking-tight">Resumo da operação</h2>
@@ -209,8 +209,8 @@ function AttentionQueue({ tickets }: { tickets: AttentionTicket[] }) {
       </div>
 
       {tickets.length === 0 ? (
-        <div className="surface-elevated rounded-xl px-5 py-12 text-center">
-          <div className="mx-auto mb-4 flex size-11 items-center justify-center rounded-xl bg-green-500/10 ring-1 ring-inset ring-green-500/15">
+        <div className="surface-elevated rounded-lg px-5 py-12 text-center">
+          <div className="mx-auto mb-4 flex size-11 items-center justify-center rounded-lg bg-green-500/10 ring-1 ring-inset ring-green-500/15">
             <CheckCircle2 className="size-5 text-green-600 dark:text-green-400" />
           </div>
           <p className="font-semibold">{copy.dashboard.attention.emptyTitle}</p>
@@ -219,7 +219,7 @@ function AttentionQueue({ tickets }: { tickets: AttentionTicket[] }) {
           </p>
         </div>
       ) : (
-        <div className="surface-elevated overflow-hidden rounded-xl divide-y divide-border/60">
+        <div className="surface-elevated overflow-hidden rounded-lg divide-y divide-border/60">
           {tickets.map((ticket) => (
             <Link
               key={ticket.id}
@@ -290,14 +290,14 @@ function ExternalIntakeQueue({ summary }: { summary: ExternalIntakeSummary }) {
       </div>
 
       {summary.items.length === 0 ? (
-        <div className="surface-elevated rounded-xl px-5 py-6">
+        <div className="surface-elevated rounded-lg px-5 py-6">
           <p className="font-semibold">Sem entrada externa pendente</p>
           <p className="mt-1 text-sm text-muted-foreground">
             Novos pedidos públicos e reservas de Chromebook aparecerão aqui.
           </p>
         </div>
       ) : (
-        <div className="surface-elevated overflow-hidden rounded-xl divide-y divide-border/60">
+        <div className="surface-elevated overflow-hidden rounded-lg divide-y divide-border/60">
           <div className="grid grid-cols-3 gap-0 divide-x divide-border/60 bg-muted/35 text-center text-xs">
             <div className="px-3 py-2">
               <p className="font-bold tabular-nums">{summary.publicTicketCount}</p>
@@ -368,7 +368,7 @@ function MyQueue({ tickets, href }: { tickets: TicketRow[]; href: string }) {
       </div>
 
       {tickets.length === 0 ? (
-        <div className="surface-elevated rounded-xl px-5 py-6">
+        <div className="surface-elevated rounded-lg px-5 py-6">
           <p className="font-semibold">{copy.dashboard.myQueue.emptyTitle}</p>
           <p className="text-sm text-muted-foreground mt-1">
             {copy.dashboard.myQueue.emptyHint}
@@ -383,7 +383,7 @@ function MyQueue({ tickets, href }: { tickets: TicketRow[]; href: string }) {
               <Link
                 key={ticket.id}
                 href={`/tickets/${ticket.code}`}
-                className="surface-elevated rounded-xl p-3.5 transition-all hover:shadow-md hover:border-foreground/15 hover:-translate-y-0.5"
+                className="surface-elevated rounded-lg p-3.5 transition-all hover:shadow-md hover:border-foreground/15 hover:-translate-y-0.5"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -465,7 +465,7 @@ export default async function DashboardPage() {
             {getGreeting(userName)}
           </h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="page-actions sm:items-center">
           <Button asChild className="flex-1 sm:flex-none">
             <Link href="/tickets?novo=1">
               <Plus className="size-4" />
@@ -588,8 +588,8 @@ export default async function DashboardPage() {
             </div>
 
             {recent.length === 0 ? (
-              <div className="surface-elevated rounded-xl py-16 text-center">
-                <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-muted/60">
+              <div className="surface-elevated rounded-lg py-16 text-center">
+                <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-lg bg-muted/60">
                   <Inbox className="size-5 text-muted-foreground" />
                 </div>
                 <p className="font-semibold">{copy.dashboard.recent.emptyTitle}</p>
@@ -598,7 +598,7 @@ export default async function DashboardPage() {
                 </p>
               </div>
             ) : (
-              <div className="surface-elevated overflow-hidden rounded-xl">
+              <div className="surface-elevated overflow-hidden rounded-lg">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>

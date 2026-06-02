@@ -107,7 +107,7 @@ export function RecordingItem({ recording, users }: RecordingItemProps) {
     <>
       <div
         className={cn(
-          'surface-elevated rounded-xl p-4 transition-all',
+          'surface-elevated rounded-lg p-4 transition-all',
           dim && 'opacity-70',
         )}
       >

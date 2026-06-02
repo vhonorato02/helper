@@ -108,7 +108,7 @@ export function KanbanBoard({ initialTickets }: KanbanBoardProps) {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="-mx-4 flex min-h-[calc(100vh-240px)] snap-x gap-3 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6">
+      <div className="-mx-4 flex min-h-[calc(100vh-240px)] snap-x gap-3 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 xl:gap-2">
         {BOARD_STATUSES.map((status) => (
           <KanbanColumn
             key={status}

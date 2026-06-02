@@ -125,18 +125,20 @@ export default async function CalendarPage() {
             {copy.marketing.calendar.description}
           </p>
         </div>
-        {canEdit ? (
-          <NewEventButton />
-        ) : (
-          <p className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Lock className="size-3" />
-            {copy.marketing.calendar.adminOnly}
-          </p>
-        )}
+        <div className="page-actions sm:items-center">
+          {canEdit ? (
+            <NewEventButton />
+          ) : (
+            <p className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Lock className="size-3" />
+              {copy.marketing.calendar.adminOnly}
+            </p>
+          )}
+        </div>
       </div>
 
       {isEmpty ? (
-        <div className="surface-elevated rounded-xl py-20 text-center">
+        <div className="surface-elevated rounded-lg py-20 text-center">
           <p className="font-semibold">{copy.marketing.calendar.empty}</p>
         </div>
       ) : (

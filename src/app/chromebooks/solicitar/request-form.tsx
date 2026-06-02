@@ -102,7 +102,7 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
   };
 
   return (
-    <section className="surface-elevated rounded-xl p-5 sm:p-6">
+    <section className="surface-elevated rounded-lg p-5 sm:p-6">
       <div className="mb-5 flex items-start justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold">Dados do agendamento</h2>

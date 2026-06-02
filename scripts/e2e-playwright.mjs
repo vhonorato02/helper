@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import { setTimeout as sleep } from 'node:timers/promises';
-import { chromium, devices } from 'playwright';
+import { chromium, devices } from '@playwright/test';
 
 const port = Number.parseInt(process.env.PLAYWRIGHT_PORT ?? '3101', 10);
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${port}`;
@@ -67,6 +67,14 @@ async function expectNoHorizontalOverflow(page, message) {
   assert(!hasOverflow, message);
 }
 
+function isNavigationFontAbort(request) {
+  const failure = request.failure()?.errorText ?? '';
+  if (failure !== 'net::ERR_ABORTED') return false;
+
+  const url = new URL(request.url());
+  return url.pathname.startsWith('/__nextjs_font/') || /\.(woff2?|otf|ttf)$/i.test(url.pathname);
+}
+
 async function expectPublicRoutes(page, name) {
   const routes = [
     ['/solicitar/ti', 'Solicitar suporte de TI'],
@@ -121,6 +129,7 @@ async function runScenario(browser, name, contextOptions) {
   page.on('pageerror', (error) => browserIssues.push(`pageerror: ${error.message}`));
   page.on('requestfailed', (request) => {
     const url = new URL(request.url());
+    if (isNavigationFontAbort(request)) return;
     if (url.origin === baseURL) {
       networkIssues.push(`${request.method()} ${url.pathname}: ${request.failure()?.errorText}`);
     }

@@ -109,7 +109,7 @@ export function CalendarView({ schedules }: CalendarViewProps) {
   const today = new Date();
 
   return (
-    <div className="surface-elevated rounded-xl overflow-hidden">
+    <div className="surface-elevated overflow-hidden rounded-lg">
       <div className="flex items-center justify-between border-b p-3">
         <Button variant="outline" size="sm" onClick={() => setCursor((c) => addMonths(c, -1))}>
           <ChevronLeft className="size-3.5" />

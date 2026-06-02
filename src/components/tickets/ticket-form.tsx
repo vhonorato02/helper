@@ -337,7 +337,7 @@ export function TicketForm({ open, onClose, users }: TicketFormProps) {
           </button>
 
           {showExtra && (
-            <div className="space-y-4 rounded-xl border border-border/60 bg-muted/20 p-4">
+            <div className="space-y-4 rounded-lg border border-border/60 bg-muted/20 p-4">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="origin">{copy.tickets.form.fields.origin}</Label>

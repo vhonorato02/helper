@@ -112,7 +112,7 @@ function SummaryCard({
   }[tone];
 
   return (
-    <div className="surface-panel rounded-xl p-4">
+    <div className="surface-panel rounded-lg p-4">
       <p className="section-label">{label}</p>
       <div className="mt-2 flex items-end justify-between gap-3">
         <p className="text-2xl font-bold tabular-nums">{value}</p>
@@ -341,7 +341,7 @@ function SettingsForm({ total, isAdmin }: { total: number; isAdmin: boolean }) {
   };
 
   return (
-    <form onSubmit={submit} className="surface-elevated rounded-xl p-4">
+    <form onSubmit={submit} className="surface-elevated rounded-lg p-4">
       <div className="mb-3 flex items-center gap-2">
         <Settings className="size-4 text-primary" />
         <h2 className="font-semibold">Disponibilidade total</h2>
@@ -458,7 +458,7 @@ export function ChromebookAdminClient({
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1fr_320px]">
-        <section className="surface-elevated overflow-hidden rounded-xl">
+        <section className="surface-elevated overflow-hidden rounded-lg">
           <div className="border-b p-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div>
@@ -473,7 +473,7 @@ export function ChromebookAdminClient({
               </Button>
             </div>
 
-            <form action="/chromebooks" className="mt-4 grid gap-2 md:grid-cols-[160px_150px_1fr_150px_auto]">
+            <form action="/chromebooks" className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-[160px_150px_minmax(180px,1fr)_150px_auto]">
               <Input name="date" type="date" defaultValue={filters.date ?? ''} aria-label="Filtrar por data" />
               <Select name="status" defaultValue={filters.status ?? 'all'}>
                 <SelectTrigger aria-label="Filtrar por status">
@@ -503,7 +503,7 @@ export function ChromebookAdminClient({
 
           {bookings.length === 0 ? (
             <div className="px-5 py-16 text-center">
-              <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-muted/60">
+              <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-lg bg-muted/60">
                 <CalendarClock className="size-5 text-muted-foreground" />
               </div>
               <p className="font-semibold">Nenhum agendamento encontrado.</p>
@@ -515,7 +515,7 @@ export function ChromebookAdminClient({
             <>
             <div className="grid gap-3 p-4 md:hidden">
               {bookings.map((booking) => (
-                <article key={booking.id} className="rounded-xl border bg-card/70 p-4 shadow-xs">
+                <article key={booking.id} className="rounded-lg border bg-card/70 p-4 shadow-xs">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="font-semibold">{formatChromebookPeriod(booking.startAt, booking.endAt)}</p>
@@ -685,7 +685,7 @@ export function ChromebookAdminClient({
         <aside className="space-y-4">
           <SettingsForm total={settings.totalChromebooks} isAdmin={isAdmin} />
 
-          <div className="surface-elevated rounded-xl p-4">
+          <div className="surface-elevated rounded-lg p-4">
             <div className="mb-3 flex items-center gap-2">
               <AlertTriangle className="size-4 text-amber-600 dark:text-amber-400" />
               <h2 className="font-semibold">Regras de bloqueio</h2>

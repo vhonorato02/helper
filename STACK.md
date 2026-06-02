@@ -2,8 +2,8 @@
 
 ## Runtime
 
-- Node.js `>=24.14.0 <25`
-- npm com `package-lock.json`
+- Node.js `>=24.16.0 <25`
+- pnpm `11.5.1` com `pnpm-lock.yaml`
 - Next.js 16 App Router
 - React 19
 - TypeScript 6
@@ -48,15 +48,14 @@
 
 - Schema principal em `src/db/schema.ts`.
 - SQL de recuperação/setup em `database/schema.sql`.
-- Scripts: `npm run db:setup`, `npm run db:seed`.
+- Scripts: `pnpm db:setup`, `pnpm db:seed`.
 - Separar Production, Preview e Development em branches/bancos diferentes no Neon.
 
 ## Qualidade
 
-- Unitários: `npm test`
-- Tipos: `npm run typecheck`
-- Lint: `npm run lint`
-- Build: `npm run build`
-- Smoke: `npm run test:smoke`
-- E2E: `npm run test:e2e`
-
+- Unitários: `pnpm test`
+- Tipos: `pnpm typecheck`
+- Lint: `pnpm lint`
+- Build: `pnpm build`
+- Smoke: `pnpm test:smoke`
+- E2E: `pnpm test:e2e`

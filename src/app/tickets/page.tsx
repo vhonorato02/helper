@@ -88,7 +88,7 @@ export default async function TicketsPage({ searchParams }: PageProps) {
             {copy.tickets.page.description}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="page-actions">
           <Button variant="outline" asChild className="w-fit">
             <Link href="/tickets?origin=public&status=ativas">
               <FileInput className="size-4" />

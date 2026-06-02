@@ -49,9 +49,11 @@ export default async function ChromebooksPage({ searchParams }: PageProps) {
             Empréstimos, disponibilidade por horário e conflitos de sala ou quantidade.
           </p>
         </div>
-        <Button variant="outline" asChild>
-          <Link href="/chromebooks/solicitar">Página pública de solicitação</Link>
-        </Button>
+        <div className="page-actions">
+          <Button variant="outline" asChild>
+            <Link href="/chromebooks/solicitar">Página pública de solicitação</Link>
+          </Button>
+        </div>
       </div>
 
       <ChromebookAdminClient

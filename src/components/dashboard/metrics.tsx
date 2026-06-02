@@ -18,7 +18,7 @@ export function ResolutionTimeCard({ data }: { data: ResolutionStats }) {
   }
 
   return (
-    <div className="surface-elevated rounded-xl p-5">
+    <div className="surface-elevated rounded-lg p-5">
       <div className="mb-3 flex items-center gap-2">
         <Clock className="size-4 text-primary" />
         <h3 className="font-semibold text-sm">Tempo médio de resolução</h3>
@@ -87,7 +87,7 @@ export function ReminderChecklistCard({
   ];
 
   return (
-    <div className="surface-elevated rounded-xl p-5">
+    <div className="surface-elevated rounded-lg p-5">
       <div className="mb-3 flex items-center gap-2">
         <BellRing className="size-4 text-primary" />
         <h3 className="font-semibold text-sm">Lembretes operacionais</h3>
