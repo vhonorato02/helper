@@ -3,7 +3,7 @@
 ## Helper 0.2.0 - 2026-06-02
 
 - Migra oficialmente para pnpm 11.5.1 com `packageManager`, `pnpm-lock.yaml`, CI e Vercel usando `pnpm install --frozen-lockfile`.
-- Atualiza Node LTS para 24.16.0 e mantém a produção na linha LTS em vez de Node Current.
+- Atualiza Node LTS para 24.15.0+ e mantém a produção na linha LTS em vez de Node Current.
 - Aplica patches estáveis em Next.js 16.2.7, React 19.2.7, React DOM 19.2.7, `@next/eslint-plugin-next` 16.2.7, `@types/react` 19.2.16 e `typescript-eslint` 8.60.1.
 - Troca o E2E para `@playwright/test` como dependência direta compatível com pnpm.
 - Revisa superfícies, cards, dialogs, menus e estados vazios para raio máximo de 8px e sombras menos decorativas.

@@ -45,7 +45,7 @@ Regras de trabalho:
 - Next.js 16 com App Router.
 - React 19.
 - TypeScript 6.
-- Node.js `>=24.16.0 <25`.
+- Node.js `>=24.15.0 <25`.
 - pnpm `11.5.1` com `pnpm-lock.yaml`.
 - Tailwind CSS 4.3 com `@tailwindcss/postcss`.
 - Radix UI para primitivas acessíveis.
@@ -65,7 +65,7 @@ Tailwind 4 usa tema CSS-first em `src/app/globals.css`; não há mais `tailwind.
 
 - Migra oficialmente o projeto de npm para pnpm 11.5.1 via Corepack.
 - Remove `package-lock.json`, passa a versionar apenas `pnpm-lock.yaml` e ajusta CI/Vercel para `pnpm install --frozen-lockfile`.
-- Atualiza Node LTS para 24.16.0 e mantém a produção fora da linha Current.
+- Atualiza Node LTS para 24.15.0+ e mantém a produção fora da linha Current.
 - Aplica patches estáveis em Next.js, React, React DOM, plugin ESLint do Next, tipos React e `typescript-eslint`.
 - Adiciona `@playwright/test` como dependência direta para testes reais em Chromium com pnpm.
 - Revisa o visual operacional com raio máximo de 8px em cards/superfícies e menos sombra decorativa.
@@ -432,7 +432,7 @@ Configuração recomendada:
 
 - Framework: Next.js.
 - Production branch: `main`.
-- Node.js: 24.x, compatível com `>=24.16.0 <25`.
+- Node.js: 24.x, compatível com `>=24.15.0 <25`.
 - Build command: `pnpm build`.
 - Install command: `pnpm install --frozen-lockfile`.
 

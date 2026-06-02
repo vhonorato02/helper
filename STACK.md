@@ -2,7 +2,7 @@
 
 ## Runtime
 
-- Node.js `>=24.16.0 <25`
+- Node.js `>=24.15.0 <25`
 - pnpm `11.5.1` com `pnpm-lock.yaml`
 - Next.js 16 App Router
 - React 19
