@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { copy } from '@/lib/copy';
+import { APP_TIMEZONE } from '@/lib/timezone';
 import {
   MARKETING_EVENT_CATEGORIES,
   type MarketingEventCategory,
@@ -55,13 +56,22 @@ const MONTHS = [
   'Dezembro',
 ];
 
+function currentAppMonth() {
+  return Number(
+    new Intl.DateTimeFormat('pt-BR', {
+      timeZone: APP_TIMEZONE,
+      month: 'numeric',
+    }).format(new Date()),
+  );
+}
+
 export function EventFormDialog({ open, onOpenChange, initial }: EventFormDialogProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [category, setCategory] = useState<MarketingEventCategory>(
     (initial?.category as MarketingEventCategory) ?? 'comemorativa',
   );
-  const [month, setMonth] = useState<string>(String(initial?.month ?? new Date().getMonth() + 1));
+  const [month, setMonth] = useState<string>(String(initial?.month ?? currentAppMonth()));
 
   const isEdit = !!initial;
 

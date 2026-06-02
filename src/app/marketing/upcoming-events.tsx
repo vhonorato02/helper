@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { copy } from '@/lib/copy';
 import { cn } from '@/lib/utils';
+import { APP_TIMEZONE } from '@/lib/timezone';
 import { MARKETING_EVENT_CATEGORIES, type MarketingEventCategory } from '@/lib/constants';
 import { promoteEventToSchedule } from '@/actions/marketing-events';
 
@@ -30,6 +31,7 @@ const categoryTone: Record<MarketingEventCategory, string> = {
 };
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
+  timeZone: APP_TIMEZONE,
   day: '2-digit',
   month: 'short',
 });

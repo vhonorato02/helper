@@ -27,6 +27,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { RecordingFormDialog } from './recording-form';
 import { copy } from '@/lib/copy';
 import { cn } from '@/lib/utils';
+import { APP_TIMEZONE } from '@/lib/timezone';
 import { RECORDING_STATUS_META, RECORDING_STATUS_ORDER } from '@/lib/constants';
 import { deleteRecording, setRecordingStatus } from '@/actions/recordings';
 import type { Recording } from '@/db/schema';
@@ -60,6 +61,7 @@ const statusBadgeVariant: Record<
 };
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
+  timeZone: APP_TIMEZONE,
   weekday: 'short',
   day: '2-digit',
   month: '2-digit',

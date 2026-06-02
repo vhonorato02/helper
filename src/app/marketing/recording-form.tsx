@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { copy } from '@/lib/copy';
+import { APP_TIMEZONE } from '@/lib/timezone';
 import { createRecording, updateRecording } from '@/actions/recordings';
 import type { Recording } from '@/db/schema';
 
@@ -50,8 +51,17 @@ interface RecordingFormDialogProps {
 }
 
 function formatDatetimeLocal(date: Date) {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  const parts = new Intl.DateTimeFormat('pt-BR', {
+    timeZone: APP_TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(date);
+  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${value.year}-${value.month}-${value.day}T${value.hour}:${value.minute}`;
 }
 
 export function RecordingFormDialog({
