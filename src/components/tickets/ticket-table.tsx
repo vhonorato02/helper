@@ -289,7 +289,7 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
     <div className="space-y-4">
       <SavedViews />
       <div className="surface-elevated rounded-lg p-3 sm:p-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+        <div className="grid gap-3 lg:grid-cols-[minmax(18rem,1fr)_auto] lg:items-center">
           <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -310,7 +310,7 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
             )}
           </div>
 
-          <div className="flex items-center justify-between gap-2 lg:justify-end">
+          <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 lg:justify-end">
             <span className="text-xs tabular-nums text-muted-foreground">
               {copy.tickets.table.count(total)}
             </span>
@@ -327,130 +327,138 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
           </div>
         </div>
 
-        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 2xl:grid-cols-[9rem_10rem_9rem_minmax(12rem,1fr)_9rem_auto_auto_auto_10rem_auto]">
-          <Select value={activeArea} onValueChange={(value) => updateParam('area', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder={copy.tickets.table.headers.area} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{copy.tickets.table.allAreas}</SelectItem>
-              {AREA_OPTIONS.map((area) => (
-                <SelectItem key={area.value} value={area.value}>
-                  {area.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="mt-3 grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
+          <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+            <Select value={activeArea} onValueChange={(value) => updateParam('area', value)}>
+              <SelectTrigger>
+                <SelectValue placeholder={copy.tickets.table.headers.area} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{copy.tickets.table.allAreas}</SelectItem>
+                {AREA_OPTIONS.map((area) => (
+                  <SelectItem key={area.value} value={area.value}>
+                    {area.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          <Select value={activeStatus} onValueChange={(value) => updateParam('status', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder={copy.tickets.table.headers.status} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{copy.tickets.table.allStatuses}</SelectItem>
-              <SelectItem value="ativas">{copy.tickets.table.activeStatuses}</SelectItem>
-              {STATUS_ORDER.map((status) => (
-                <SelectItem key={status} value={status}>
-                  {STATUS_LABELS[status]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <Select value={activeStatus} onValueChange={(value) => updateParam('status', value)}>
+              <SelectTrigger>
+                <SelectValue placeholder={copy.tickets.table.headers.status} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{copy.tickets.table.allStatuses}</SelectItem>
+                <SelectItem value="ativas">{copy.tickets.table.activeStatuses}</SelectItem>
+                {STATUS_ORDER.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {STATUS_LABELS[status]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          <Select value={activePriority} onValueChange={(value) => updateParam('priority', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder={copy.tickets.table.headers.priority} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{copy.tickets.table.allPriorities}</SelectItem>
-              {PRIORITY_ORDER.map((priority) => (
-                <SelectItem key={priority} value={priority}>
-                  {PRIORITY_LABELS[priority]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <Select value={activePriority} onValueChange={(value) => updateParam('priority', value)}>
+              <SelectTrigger>
+                <SelectValue placeholder={copy.tickets.table.headers.priority} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{copy.tickets.table.allPriorities}</SelectItem>
+                {PRIORITY_ORDER.map((priority) => (
+                  <SelectItem key={priority} value={priority}>
+                    {PRIORITY_LABELS[priority]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          <Select value={activeAssignee} onValueChange={(value) => updateParam('assigneeId', value)}>
-            <SelectTrigger className="sm:col-span-2 lg:col-span-1">
-              <SelectValue placeholder={copy.tickets.detail.assigneeTitle} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{copy.tickets.table.allAssignees}</SelectItem>
-              <SelectItem value="unassigned">{copy.tickets.table.unassigned}</SelectItem>
-              {users.map((user) => (
-                <SelectItem key={user.id} value={user.id}>
-                  {user.displayName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <div className="sm:col-span-2 lg:col-span-1 2xl:col-span-2">
+              <Select value={activeAssignee} onValueChange={(value) => updateParam('assigneeId', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder={copy.tickets.detail.assigneeTitle} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{copy.tickets.table.allAssignees}</SelectItem>
+                  <SelectItem value="unassigned">{copy.tickets.table.unassigned}</SelectItem>
+                  {users.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.displayName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <Select value={activeOrigin} onValueChange={(value) => updateParam('origin', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder={copy.tickets.table.headers.origin} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{copy.tickets.table.allOrigins}</SelectItem>
-              <SelectItem value="public">{copy.tickets.table.publicOrigin}</SelectItem>
-              <SelectItem value="internal">{copy.tickets.table.internalOrigin}</SelectItem>
-            </SelectContent>
-          </Select>
+            <Select value={activeOrigin} onValueChange={(value) => updateParam('origin', value)}>
+              <SelectTrigger>
+                <SelectValue placeholder={copy.tickets.table.headers.origin} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{copy.tickets.table.allOrigins}</SelectItem>
+                <SelectItem value="public">{copy.tickets.table.publicOrigin}</SelectItem>
+                <SelectItem value="internal">{copy.tickets.table.internalOrigin}</SelectItem>
+              </SelectContent>
+            </Select>
 
-          {currentUserId && (
+            <div className="sm:col-span-2 lg:col-span-1">
+              <Select value={activeSort} onValueChange={(value) => updateParam('sort', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder={copy.tickets.table.sort.label} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="created_desc">{copy.tickets.table.sort.createdDesc}</SelectItem>
+                  <SelectItem value="updated_desc">{copy.tickets.table.sort.updatedDesc}</SelectItem>
+                  <SelectItem value="priority">{copy.tickets.table.sort.priority}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex min-w-0 flex-wrap gap-2 xl:max-w-[28rem] xl:justify-end">
+            {currentUserId && (
+              <Button
+                variant={showingMine ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => updateParam('assigneeId', showingMine ? 'all' : currentUserId)}
+                className="h-10 min-w-[9.5rem] flex-1 gap-1.5 px-2.5 xl:flex-none"
+              >
+                <UserRound className="size-3.5" />
+                {copy.tickets.table.myTickets}
+              </Button>
+            )}
+
             <Button
-              variant={showingMine ? 'default' : 'outline'}
+              variant={activeAttention ? 'default' : 'outline'}
               size="sm"
-              onClick={() => updateParam('assigneeId', showingMine ? 'all' : currentUserId)}
-              className="h-10 min-w-0 gap-1.5 px-2.5"
+              onClick={() => updateParam('attention', activeAttention ? 'all' : 'true')}
+              className="h-10 min-w-[9.5rem] flex-1 gap-1.5 px-2.5 xl:flex-none"
             >
-              <UserRound className="size-3.5" />
-              {copy.tickets.table.myTickets}
+              <AlertTriangle className="size-3.5" />
+              {copy.tickets.table.attentionOnly}
             </Button>
-          )}
 
-          <Button
-            variant={activeAttention ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => updateParam('attention', activeAttention ? 'all' : 'true')}
-            className="h-10 min-w-0 gap-1.5 px-2.5"
-          >
-            <AlertTriangle className="size-3.5" />
-            {copy.tickets.table.attentionOnly}
-          </Button>
-
-          <Button
-            variant={activeDue === 'overdue' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => updateParam('due', activeDue === 'overdue' ? 'all' : 'overdue')}
-            className="h-10 min-w-0 gap-1.5 px-2.5"
-          >
-            <CalendarClock className="size-3.5" />
-            {copy.tickets.table.overdueOnly}
-          </Button>
-
-          <Select value={activeSort} onValueChange={(value) => updateParam('sort', value)}>
-            <SelectTrigger className="sm:col-span-2 lg:col-span-1">
-              <SelectValue placeholder={copy.tickets.table.sort.label} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="created_desc">{copy.tickets.table.sort.createdDesc}</SelectItem>
-              <SelectItem value="updated_desc">{copy.tickets.table.sort.updatedDesc}</SelectItem>
-              <SelectItem value="priority">{copy.tickets.table.sort.priority}</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {hasActiveFilters && (
             <Button
-              variant="ghost"
+              variant={activeDue === 'overdue' ? 'default' : 'outline'}
               size="sm"
-              onClick={clearFilters}
-              className="h-10 gap-1.5 text-muted-foreground"
+              onClick={() => updateParam('due', activeDue === 'overdue' ? 'all' : 'overdue')}
+              className="h-10 min-w-[9.5rem] flex-1 gap-1.5 px-2.5 xl:flex-none"
             >
-              <FilterX className="size-3.5" />
-              {copy.common.clear}
+              <CalendarClock className="size-3.5" />
+              {copy.tickets.table.overdueOnly}
             </Button>
-          )}
+
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="h-10 min-w-[8rem] flex-1 gap-1.5 text-muted-foreground xl:flex-none"
+              >
+                <FilterX className="size-3.5" />
+                {copy.common.clear}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

@@ -75,84 +75,86 @@ export function KanbanFilters({ users }: Props) {
     activeArea !== 'all' || activeAssignee !== 'all' || activePriority !== 'all' || !!search;
 
   return (
-    <div className="grid w-full gap-2 sm:grid-cols-2 lg:w-auto lg:grid-cols-[16rem_9rem_9rem_12rem_auto]">
-      <div className="relative sm:col-span-2 lg:col-span-1">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder={copy.kanban.filters.searchPlaceholder}
-          className="h-9 pl-8 pr-8 text-xs"
-        />
-        {search && (
-          <button
-            type="button"
-            onClick={() => setSearch('')}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 rounded-md transition-colors"
-            aria-label={copy.kanban.filters.clearSearch}
+    <div className="w-full min-w-0 lg:max-w-[48rem]">
+      <div className="grid w-full gap-2 sm:grid-cols-2 xl:grid-cols-[minmax(16rem,1fr)_minmax(8.5rem,0.7fr)_minmax(9rem,0.7fr)_minmax(11rem,0.9fr)_auto]">
+        <div className="relative sm:col-span-2 xl:col-span-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder={copy.kanban.filters.searchPlaceholder}
+            className="h-10 pl-8 pr-8 text-sm"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground transition-colors hover:text-foreground"
+              aria-label={copy.kanban.filters.clearSearch}
+            >
+              <X className="size-3.5" />
+            </button>
+          )}
+        </div>
+
+        <Select value={activeArea} onValueChange={(value) => update('area', value)}>
+          <SelectTrigger className="h-10 text-sm">
+            <SelectValue placeholder={copy.kanban.filters.area} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{copy.kanban.filters.allAreas}</SelectItem>
+            {AREA_OPTIONS.map((area) => (
+              <SelectItem key={area.value} value={area.value}>
+                {area.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={activePriority} onValueChange={(value) => update('priority', value)}>
+          <SelectTrigger className="h-10 text-sm">
+            <SelectValue placeholder={copy.kanban.filters.priority} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{copy.kanban.filters.allPriorities}</SelectItem>
+            {PRIORITY_ORDER.map((priority) => (
+              <SelectItem key={priority} value={priority}>
+                {PRIORITY_LABELS[priority]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={activeAssignee} onValueChange={(value) => update('assigneeId', value)}>
+          <SelectTrigger className="h-10 text-sm">
+            <SelectValue placeholder={copy.kanban.filters.assignee} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{copy.kanban.filters.allAssignees}</SelectItem>
+            <SelectItem value="unassigned">{copy.tickets.table.unassigned}</SelectItem>
+            {users.map((user) => (
+              <SelectItem key={user.id} value={user.id}>
+                {user.displayName}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {hasActive && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSearch('');
+              router.push(pathname);
+            }}
+            className="h-10 min-w-[8rem] gap-1.5 text-muted-foreground sm:col-span-2 xl:col-span-1"
           >
-            <X className="size-3.5" />
-          </button>
+            <FilterX className="size-3.5" />
+            {copy.common.clear}
+          </Button>
         )}
       </div>
-
-      <Select value={activeArea} onValueChange={(value) => update('area', value)}>
-        <SelectTrigger className="h-9 text-xs">
-          <SelectValue placeholder={copy.kanban.filters.area} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">{copy.kanban.filters.allAreas}</SelectItem>
-          {AREA_OPTIONS.map((area) => (
-            <SelectItem key={area.value} value={area.value}>
-              {area.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      <Select value={activePriority} onValueChange={(value) => update('priority', value)}>
-        <SelectTrigger className="h-9 text-xs">
-          <SelectValue placeholder={copy.kanban.filters.priority} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">{copy.kanban.filters.allPriorities}</SelectItem>
-          {PRIORITY_ORDER.map((priority) => (
-            <SelectItem key={priority} value={priority}>
-              {PRIORITY_LABELS[priority]}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      <Select value={activeAssignee} onValueChange={(value) => update('assigneeId', value)}>
-        <SelectTrigger className="h-9 text-xs">
-          <SelectValue placeholder={copy.kanban.filters.assignee} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">{copy.kanban.filters.allAssignees}</SelectItem>
-          <SelectItem value="unassigned">{copy.tickets.table.unassigned}</SelectItem>
-          {users.map((user) => (
-            <SelectItem key={user.id} value={user.id}>
-              {user.displayName}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      {hasActive && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            setSearch('');
-            router.push(pathname);
-          }}
-          className="h-9 gap-1.5 text-xs text-muted-foreground"
-        >
-          <FilterX className="size-3.5" />
-          {copy.common.clear}
-        </Button>
-      )}
     </div>
   );
 }

@@ -107,11 +107,22 @@ export default async function TicketsPage({ searchParams }: PageProps) {
       <Suspense
         fallback={
           <div className="space-y-3">
-            <div className="flex flex-wrap gap-2">
-              <Skeleton className="h-9 flex-1 min-w-[220px] max-w-md" />
-              <Skeleton className="h-9 w-32" />
-              <Skeleton className="h-9 w-36" />
-              <Skeleton className="h-9 w-32" />
+            <div className="surface-elevated rounded-lg p-3 sm:p-4">
+              <div className="grid gap-3 lg:grid-cols-[minmax(18rem,1fr)_auto]">
+                <Skeleton className="h-10 min-w-0" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-10 w-24" />
+                  <Skeleton className="h-10 w-10" />
+                </div>
+              </div>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                <Skeleton className="h-10" />
+                <Skeleton className="h-10" />
+                <Skeleton className="h-10" />
+                <Skeleton className="h-10 sm:col-span-2 lg:col-span-1 xl:col-span-2" />
+                <Skeleton className="h-10" />
+                <Skeleton className="h-10" />
+              </div>
             </div>
             <Skeleton className="h-72 w-full rounded-lg" />
           </div>

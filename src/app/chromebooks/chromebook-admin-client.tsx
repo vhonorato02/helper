@@ -475,37 +475,74 @@ export function ChromebookAdminClient({
               </Button>
             </div>
 
-            <form action="/chromebooks" className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-[160px_150px_minmax(180px,1fr)_150px_auto]">
-              <Input name="date" type="date" defaultValue={filters.date ?? ''} aria-label="Filtrar por data" />
-              <Select name="status" defaultValue={filters.status ?? 'all'}>
-                <SelectTrigger aria-label="Filtrar por status">
-                  <SelectValue placeholder="Todos status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos status</SelectItem>
-                  <SelectItem value="pendente">Pendente</SelectItem>
-                  <SelectItem value="confirmado">Confirmado</SelectItem>
-                  <SelectItem value="cancelado">Cancelado</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input
-                name="room"
-                placeholder="Sala"
-                defaultValue={filters.room ?? ''}
-                aria-label="Filtrar por sala"
-              />
-              <Input
-                name="quantity"
-                type="number"
-                min={1}
-                placeholder="Qtd. mínima"
-                defaultValue={filters.quantity ?? ''}
-                aria-label="Filtrar por quantidade mínima"
-              />
-              <Button type="submit" variant="outline">
-                <Search className="size-4" />
-                Filtrar
-              </Button>
+            <form
+              action="/chromebooks"
+              className="mt-4 rounded-lg border bg-muted/25 p-3"
+            >
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(9rem,0.75fr)_minmax(10rem,0.8fr)_minmax(12rem,1fr)_minmax(10rem,0.8fr)_auto] xl:items-end">
+                <div className="space-y-1.5">
+                  <Label htmlFor="chromebook-filter-date" className="text-xs text-muted-foreground">
+                    Data
+                  </Label>
+                  <Input
+                    id="chromebook-filter-date"
+                    name="date"
+                    type="date"
+                    defaultValue={filters.date ?? ''}
+                    aria-label="Filtrar por data"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="chromebook-filter-status" className="text-xs text-muted-foreground">
+                    Status
+                  </Label>
+                  <Select name="status" defaultValue={filters.status ?? 'all'}>
+                    <SelectTrigger id="chromebook-filter-status" aria-label="Filtrar por status">
+                      <SelectValue placeholder="Todos status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos status</SelectItem>
+                      <SelectItem value="pendente">Pendente</SelectItem>
+                      <SelectItem value="confirmado">Confirmado</SelectItem>
+                      <SelectItem value="cancelado">Cancelado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="chromebook-filter-room" className="text-xs text-muted-foreground">
+                    Sala
+                  </Label>
+                  <Input
+                    id="chromebook-filter-room"
+                    name="room"
+                    placeholder="Sala"
+                    defaultValue={filters.room ?? ''}
+                    aria-label="Filtrar por sala"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="chromebook-filter-quantity" className="text-xs text-muted-foreground">
+                    Quantidade mínima
+                  </Label>
+                  <Input
+                    id="chromebook-filter-quantity"
+                    name="quantity"
+                    type="number"
+                    min={1}
+                    placeholder="Qtd. mínima"
+                    defaultValue={filters.quantity ?? ''}
+                    aria-label="Filtrar por quantidade mínima"
+                  />
+                </div>
+
+                <Button type="submit" variant="outline" className="h-10 w-full xl:w-auto">
+                  <Search className="size-4" />
+                  Filtrar
+                </Button>
+              </div>
             </form>
           </div>
 
