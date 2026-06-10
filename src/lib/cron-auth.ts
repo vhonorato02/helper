@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { hasValidBearerToken } from '@/lib/bearer-token';
 
 /**
  * Verifica se a chamada veio do cron da Vercel.
@@ -10,8 +11,7 @@ export function assertCron(req: Request): NextResponse | null {
   if (!secret) {
     return NextResponse.json({ ok: false, error: 'cron_secret_not_configured' }, { status: 500 });
   }
-  const auth = req.headers.get('authorization');
-  if (auth !== `Bearer ${secret}`) {
+  if (!hasValidBearerToken(req.headers.get('authorization'), secret)) {
     return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
   }
   return null;

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { db } from '@/db';
 import { users } from '@/db/schema';
+import { hasValidBearerToken } from '@/lib/bearer-token';
 import { copy } from '@/lib/copy';
 import { displayNameSchema, passwordSchema, usernameSchema } from '@/lib/validation';
 
@@ -40,8 +41,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: copy.api.bootstrapSecretNotConfigured }, { status: 503 });
   }
 
-  const auth = req.headers.get('authorization');
-  if (auth !== `Bearer ${bootstrapSecret}`) {
+  if (!hasValidBearerToken(req.headers.get('authorization'), bootstrapSecret)) {
     return NextResponse.json({ error: copy.api.unauthorized }, { status: 401 });
   }
 
