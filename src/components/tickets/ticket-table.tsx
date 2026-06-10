@@ -22,6 +22,7 @@ import {
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { FilterField } from '@/components/ui/filter-field';
 import { AreaBadge, PriorityBadge, StatusBadge } from './ticket-badge';
 import {
   Select,
@@ -289,29 +290,31 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
     <div className="space-y-4">
       <SavedViews />
       <div className="surface-elevated rounded-lg p-3 sm:p-4">
-        <div className="grid gap-3 lg:grid-cols-[minmax(18rem,1fr)_auto] lg:items-center">
-          <div className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder={copy.tickets.table.searchPlaceholder}
-              className="pl-9 pr-9"
-              value={search}
-              onChange={(event) => handleSearch(event.target.value)}
-              id="search-input"
-            />
-            {search && (
-              <button
-                onClick={() => handleSearch('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground transition-colors hover:text-foreground"
-                aria-label={copy.tickets.table.clearSearch}
-              >
-                <X className="size-3.5" />
-              </button>
-            )}
-          </div>
+        <div className="grid gap-3 xl:grid-cols-[minmax(18rem,1fr)_auto] xl:items-end">
+          <FilterField label={copy.nav.search} htmlFor="search-input">
+            <div className="relative min-w-0">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder={copy.tickets.table.searchPlaceholder}
+                className="pl-9 pr-9"
+                value={search}
+                onChange={(event) => handleSearch(event.target.value)}
+                id="search-input"
+              />
+              {search && (
+                <button
+                  onClick={() => handleSearch('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground transition-colors hover:text-foreground"
+                  aria-label={copy.tickets.table.clearSearch}
+                >
+                  <X className="size-3.5" />
+                </button>
+              )}
+            </div>
+          </FilterField>
 
-          <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 lg:justify-end">
-            <span className="text-xs tabular-nums text-muted-foreground">
+          <div className="flex min-w-0 items-center justify-between gap-2 xl:justify-end">
+            <span className="flex h-10 min-w-0 items-center rounded-md border border-border/70 bg-muted/35 px-3 text-xs tabular-nums text-muted-foreground">
               {copy.tickets.table.count(total)}
             </span>
             <Button
@@ -327,54 +330,70 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
           </div>
         </div>
 
-        <div className="mt-3 grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
-          <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
-            <Select value={activeArea} onValueChange={(value) => updateParam('area', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder={copy.tickets.table.headers.area} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{copy.tickets.table.allAreas}</SelectItem>
-                {AREA_OPTIONS.map((area) => (
-                  <SelectItem key={area.value} value={area.value}>
-                    {area.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(14rem,auto)] xl:items-end">
+          <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+            <FilterField label={copy.tickets.table.headers.area} htmlFor="ticket-filter-area">
+              <Select value={activeArea} onValueChange={(value) => updateParam('area', value)}>
+                <SelectTrigger id="ticket-filter-area">
+                  <SelectValue placeholder={copy.tickets.table.headers.area} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{copy.tickets.table.allAreas}</SelectItem>
+                  {AREA_OPTIONS.map((area) => (
+                    <SelectItem key={area.value} value={area.value}>
+                      {area.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FilterField>
 
-            <Select value={activeStatus} onValueChange={(value) => updateParam('status', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder={copy.tickets.table.headers.status} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{copy.tickets.table.allStatuses}</SelectItem>
-                <SelectItem value="ativas">{copy.tickets.table.activeStatuses}</SelectItem>
-                {STATUS_ORDER.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {STATUS_LABELS[status]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <FilterField label={copy.tickets.table.headers.status} htmlFor="ticket-filter-status">
+              <Select value={activeStatus} onValueChange={(value) => updateParam('status', value)}>
+                <SelectTrigger id="ticket-filter-status">
+                  <SelectValue placeholder={copy.tickets.table.headers.status} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{copy.tickets.table.allStatuses}</SelectItem>
+                  <SelectItem value="ativas">{copy.tickets.table.activeStatuses}</SelectItem>
+                  {STATUS_ORDER.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {STATUS_LABELS[status]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FilterField>
 
-            <Select value={activePriority} onValueChange={(value) => updateParam('priority', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder={copy.tickets.table.headers.priority} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{copy.tickets.table.allPriorities}</SelectItem>
-                {PRIORITY_ORDER.map((priority) => (
-                  <SelectItem key={priority} value={priority}>
-                    {PRIORITY_LABELS[priority]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <FilterField
+              label={copy.tickets.table.headers.priority}
+              htmlFor="ticket-filter-priority"
+            >
+              <Select
+                value={activePriority}
+                onValueChange={(value) => updateParam('priority', value)}
+              >
+                <SelectTrigger id="ticket-filter-priority">
+                  <SelectValue placeholder={copy.tickets.table.headers.priority} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{copy.tickets.table.allPriorities}</SelectItem>
+                  {PRIORITY_ORDER.map((priority) => (
+                    <SelectItem key={priority} value={priority}>
+                      {PRIORITY_LABELS[priority]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FilterField>
 
-            <div className="sm:col-span-2 lg:col-span-1 2xl:col-span-2">
+            <FilterField
+              label={copy.tickets.detail.assigneeTitle}
+              htmlFor="ticket-filter-assignee"
+              className="sm:col-span-2 lg:col-span-1 2xl:col-span-2"
+            >
               <Select value={activeAssignee} onValueChange={(value) => updateParam('assigneeId', value)}>
-                <SelectTrigger>
+                <SelectTrigger id="ticket-filter-assignee">
                   <SelectValue placeholder={copy.tickets.detail.assigneeTitle} />
                 </SelectTrigger>
                 <SelectContent>
@@ -387,22 +406,28 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </FilterField>
 
-            <Select value={activeOrigin} onValueChange={(value) => updateParam('origin', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder={copy.tickets.table.headers.origin} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{copy.tickets.table.allOrigins}</SelectItem>
-                <SelectItem value="public">{copy.tickets.table.publicOrigin}</SelectItem>
-                <SelectItem value="internal">{copy.tickets.table.internalOrigin}</SelectItem>
-              </SelectContent>
-            </Select>
+            <FilterField label={copy.tickets.table.headers.origin} htmlFor="ticket-filter-origin">
+              <Select value={activeOrigin} onValueChange={(value) => updateParam('origin', value)}>
+                <SelectTrigger id="ticket-filter-origin">
+                  <SelectValue placeholder={copy.tickets.table.headers.origin} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{copy.tickets.table.allOrigins}</SelectItem>
+                  <SelectItem value="public">{copy.tickets.table.publicOrigin}</SelectItem>
+                  <SelectItem value="internal">{copy.tickets.table.internalOrigin}</SelectItem>
+                </SelectContent>
+              </Select>
+            </FilterField>
 
-            <div className="sm:col-span-2 lg:col-span-1">
+            <FilterField
+              label={copy.tickets.table.sort.label}
+              htmlFor="ticket-filter-sort"
+              className="sm:col-span-2 lg:col-span-1"
+            >
               <Select value={activeSort} onValueChange={(value) => updateParam('sort', value)}>
-                <SelectTrigger>
+                <SelectTrigger id="ticket-filter-sort">
                   <SelectValue placeholder={copy.tickets.table.sort.label} />
                 </SelectTrigger>
                 <SelectContent>
@@ -411,16 +436,16 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
                   <SelectItem value="priority">{copy.tickets.table.sort.priority}</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </FilterField>
           </div>
 
-          <div className="flex min-w-0 flex-wrap gap-2 xl:max-w-[28rem] xl:justify-end">
+          <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 xl:flex xl:max-w-[30rem] xl:flex-wrap xl:justify-end">
             {currentUserId && (
               <Button
                 variant={showingMine ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => updateParam('assigneeId', showingMine ? 'all' : currentUserId)}
-                className="h-10 min-w-[9.5rem] flex-1 gap-1.5 px-2.5 xl:flex-none"
+                className="h-10 w-full gap-1.5 px-3 sm:min-w-[9.5rem] xl:w-auto xl:flex-none"
               >
                 <UserRound className="size-3.5" />
                 {copy.tickets.table.myTickets}
@@ -431,7 +456,7 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
               variant={activeAttention ? 'default' : 'outline'}
               size="sm"
               onClick={() => updateParam('attention', activeAttention ? 'all' : 'true')}
-              className="h-10 min-w-[9.5rem] flex-1 gap-1.5 px-2.5 xl:flex-none"
+              className="h-10 w-full gap-1.5 px-3 sm:min-w-[9.5rem] xl:w-auto xl:flex-none"
             >
               <AlertTriangle className="size-3.5" />
               {copy.tickets.table.attentionOnly}
@@ -441,7 +466,7 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
               variant={activeDue === 'overdue' ? 'default' : 'outline'}
               size="sm"
               onClick={() => updateParam('due', activeDue === 'overdue' ? 'all' : 'overdue')}
-              className="h-10 min-w-[9.5rem] flex-1 gap-1.5 px-2.5 xl:flex-none"
+              className="h-10 w-full gap-1.5 px-3 sm:min-w-[9.5rem] xl:w-auto xl:flex-none"
             >
               <CalendarClock className="size-3.5" />
               {copy.tickets.table.overdueOnly}
@@ -452,7 +477,7 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
                 variant="ghost"
                 size="sm"
                 onClick={clearFilters}
-                className="h-10 min-w-[8rem] flex-1 gap-1.5 text-muted-foreground xl:flex-none"
+                className="h-10 w-full gap-1.5 text-muted-foreground sm:min-w-[8rem] xl:w-auto xl:flex-none"
               >
                 <FilterX className="size-3.5" />
                 {copy.common.clear}

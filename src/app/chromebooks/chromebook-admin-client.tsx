@@ -8,6 +8,7 @@ import {
   CalendarClock,
   CheckCircle2,
   Circle,
+  FilterX,
   Loader2,
   Pencil,
   Plus,
@@ -28,6 +29,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { FilterField } from '@/components/ui/filter-field';
 import {
   Dialog,
   DialogContent,
@@ -393,6 +395,12 @@ export function ChromebookAdminClient({
   const [confirmCancel, setConfirmCancel] = useState<ChromebookBookingRow | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<ChromebookBookingRow | null>(null);
   const [isPending, startTransition] = useTransition();
+  const hasActiveFilters = Boolean(
+    filters.date ||
+      (filters.status && filters.status !== 'all') ||
+      filters.room ||
+      filters.quantity,
+  );
 
   const activeCount = useMemo(
     () => bookings.filter((booking) => booking.status !== 'cancelado').length,
@@ -477,13 +485,10 @@ export function ChromebookAdminClient({
 
             <form
               action="/chromebooks"
-              className="mt-4 rounded-lg border bg-muted/25 p-3"
+              className="mt-4 rounded-lg border border-border/70 bg-card/80 p-3 shadow-xs sm:p-4"
             >
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(9rem,0.75fr)_minmax(10rem,0.8fr)_minmax(12rem,1fr)_minmax(10rem,0.8fr)_auto] xl:items-end">
-                <div className="space-y-1.5">
-                  <Label htmlFor="chromebook-filter-date" className="text-xs text-muted-foreground">
-                    Data
-                  </Label>
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-[minmax(9rem,0.75fr)_minmax(10rem,0.8fr)_minmax(12rem,1fr)_minmax(10rem,0.8fr)_auto] 2xl:items-end">
+                <FilterField label="Data" htmlFor="chromebook-filter-date">
                   <Input
                     id="chromebook-filter-date"
                     name="date"
@@ -491,12 +496,9 @@ export function ChromebookAdminClient({
                     defaultValue={filters.date ?? ''}
                     aria-label="Filtrar por data"
                   />
-                </div>
+                </FilterField>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="chromebook-filter-status" className="text-xs text-muted-foreground">
-                    Status
-                  </Label>
+                <FilterField label="Status" htmlFor="chromebook-filter-status">
                   <Select name="status" defaultValue={filters.status ?? 'all'}>
                     <SelectTrigger id="chromebook-filter-status" aria-label="Filtrar por status">
                       <SelectValue placeholder="Todos status" />
@@ -508,12 +510,9 @@ export function ChromebookAdminClient({
                       <SelectItem value="cancelado">Cancelado</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                </FilterField>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="chromebook-filter-room" className="text-xs text-muted-foreground">
-                    Sala
-                  </Label>
+                <FilterField label="Sala" htmlFor="chromebook-filter-room">
                   <Input
                     id="chromebook-filter-room"
                     name="room"
@@ -521,12 +520,9 @@ export function ChromebookAdminClient({
                     defaultValue={filters.room ?? ''}
                     aria-label="Filtrar por sala"
                   />
-                </div>
+                </FilterField>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="chromebook-filter-quantity" className="text-xs text-muted-foreground">
-                    Quantidade mínima
-                  </Label>
+                <FilterField label="Quantidade mínima" htmlFor="chromebook-filter-quantity">
                   <Input
                     id="chromebook-filter-quantity"
                     name="quantity"
@@ -536,12 +532,25 @@ export function ChromebookAdminClient({
                     defaultValue={filters.quantity ?? ''}
                     aria-label="Filtrar por quantidade mínima"
                   />
-                </div>
+                </FilterField>
 
-                <Button type="submit" variant="outline" className="h-10 w-full xl:w-auto">
-                  <Search className="size-4" />
-                  Filtrar
-                </Button>
+                <div className="grid gap-2 sm:col-span-2 sm:grid-cols-2 xl:col-span-4 2xl:col-span-1 2xl:flex">
+                  <Button type="submit" variant="outline" className="h-10 w-full 2xl:w-auto">
+                    <Search className="size-4" />
+                    Filtrar
+                  </Button>
+                  {hasActiveFilters && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => router.push('/chromebooks')}
+                      className="h-10 w-full text-muted-foreground 2xl:w-auto"
+                    >
+                      <FilterX className="size-4" />
+                      Limpar
+                    </Button>
+                  )}
+                </div>
               </div>
             </form>
           </div>
