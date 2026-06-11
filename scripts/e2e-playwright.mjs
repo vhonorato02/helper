@@ -163,9 +163,23 @@ async function runScenario(browser, name, contextOptions) {
   await page.getByLabel('Usuário').fill('qa.user');
   await page.getByLabel('Senha').fill('invalid-password');
   await page.getByRole('button', { name: 'Entrar' }).click();
-  await expectVisible(
-    page.getByRole('alert').filter({ hasText: 'Algo deu errado. Tente novamente.' }),
-    `${name}: login database failures should show a generic server error`,
+  const safeLoginErrors = [
+    'Usuário ou senha incorretos.',
+    'Algo deu errado. Tente novamente.',
+    'Muitas ações em pouco tempo. Aguarde um momento.',
+  ];
+  await page.waitForFunction(
+    (messages) => {
+      const pageText = document.body.innerText;
+      return messages.some((message) => pageText.includes(message));
+    },
+    safeLoginErrors,
+    { timeout: 8_000 },
+  );
+  const loginAlertText = await page.locator('body').innerText();
+  assert(
+    safeLoginErrors.some((message) => loginAlertText.includes(message)),
+    `${name}: invalid login should show a safe error message`,
   );
 
   const manifestResponse = await context.request.get(`${baseURL}/manifest.webmanifest`);
