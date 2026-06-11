@@ -79,20 +79,36 @@ export async function loginAction(input: { username: string; password: string })
     return { error: copy.validation.rateLimited };
   }
 
-  const [user] = await db
-    .select({
-      id: users.id,
-      username: users.username,
-      displayName: users.displayName,
-      passwordHash: users.passwordHash,
-      isAdmin: users.isAdmin,
-      isActive: users.isActive,
-      mustChangePassword: users.mustChangePassword,
-    })
-    .from(users)
-    .where(eq(users.username, username))
-    .limit(1)
-    .catch(() => [null]);
+  let user:
+    | {
+        id: string;
+        username: string;
+        displayName: string;
+        passwordHash: string;
+        isAdmin: boolean;
+        isActive: boolean;
+        mustChangePassword: boolean;
+      }
+    | undefined;
+
+  try {
+    [user] = await db
+      .select({
+        id: users.id,
+        username: users.username,
+        displayName: users.displayName,
+        passwordHash: users.passwordHash,
+        isAdmin: users.isAdmin,
+        isActive: users.isActive,
+        mustChangePassword: users.mustChangePassword,
+      })
+      .from(users)
+      .where(eq(users.username, username))
+      .limit(1);
+  } catch (error) {
+    logger.error('auth_user_lookup_failed', { username, error: String(error) });
+    return { error: copy.validation.serverError };
+  }
 
   if (!user || !user.isActive) {
     await recordAuthEvent({

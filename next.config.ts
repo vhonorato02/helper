@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next';
 
 const isProd = process.env.NODE_ENV === 'production';
+const isSecureDeployment = isProd && process.env.VERCEL === '1';
 
 const csp = [
   "default-src 'self'",
@@ -15,7 +16,7 @@ const csp = [
   "base-uri 'self'",
   "form-action 'self'",
   "object-src 'none'",
-  ...(isProd ? ['upgrade-insecure-requests'] : []),
+  ...(isSecureDeployment ? ['upgrade-insecure-requests'] : []),
 ].join('; ');
 
 const securityHeaders = [
@@ -26,7 +27,7 @@ const securityHeaders = [
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
   { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
   { key: 'X-DNS-Prefetch-Control', value: 'on' },
-  ...(isProd
+  ...(isSecureDeployment
     ? [{ key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' }]
     : []),
 ];

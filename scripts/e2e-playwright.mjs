@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { chromium, devices } from '@playwright/test';
 
@@ -31,9 +31,8 @@ function startServerIfNeeded() {
 
   const env = {
     ...process.env,
-    DATABASE_URL:
-      process.env.DATABASE_URL ??
-      'postgresql://user:password@example.neon.tech/dbname?sslmode=require',
+    DATABASE_URL: process.env.PLAYWRIGHT_DATABASE_URL ?? '',
+    DATABASE_URL_UNPOOLED: process.env.PLAYWRIGHT_DATABASE_URL_UNPOOLED ?? '',
     DATABASE_TIMEOUT_MS: process.env.DATABASE_TIMEOUT_MS ?? '1000',
     AUTH_SECRET: process.env.AUTH_SECRET ?? 'playwright-local-secret-with-32-characters',
     BOOTSTRAP_SECRET: process.env.BOOTSTRAP_SECRET ?? 'playwright-bootstrap-secret',
@@ -44,9 +43,18 @@ function startServerIfNeeded() {
   delete env.FORCE_COLOR;
   delete env.NO_COLOR;
 
+  const build = spawnSync(process.execPath, ['scripts/next-build.mjs'], {
+    cwd: process.cwd(),
+    env,
+    stdio: 'inherit',
+  });
+  if (build.status !== 0) {
+    throw new Error(`next build failed before Playwright E2E with code ${build.status ?? 1}`);
+  }
+
   return spawn(
     process.execPath,
-    ['node_modules/next/dist/bin/next', 'dev', '--hostname', '127.0.0.1', '--port', String(port)],
+    ['node_modules/next/dist/bin/next', 'start', '--hostname', '127.0.0.1', '--port', String(port)],
     {
       cwd: process.cwd(),
       env,
@@ -128,7 +136,9 @@ async function runScenario(browser, name, contextOptions) {
 
   page.on('console', (message) => {
     if (message.type() === 'error' || message.type() === 'warning') {
-      browserIssues.push(`${message.type()}: ${message.text()}`);
+      const location = message.location();
+      const source = location.url ? ` (${location.url}:${location.lineNumber})` : '';
+      browserIssues.push(`${message.type()}: ${message.text()}${source}`);
     }
   });
   page.on('pageerror', (error) => browserIssues.push(`pageerror: ${error.message}`));
@@ -150,6 +160,13 @@ async function runScenario(browser, name, contextOptions) {
   await expectVisible(page.getByRole('heading', { name: 'Helper' }), `${name}: login heading`);
   await expectVisible(page.getByLabel('Usuário'), `${name}: username field`);
   await expectVisible(page.getByLabel('Senha'), `${name}: password field`);
+  await page.getByLabel('Usuário').fill('qa.user');
+  await page.getByLabel('Senha').fill('invalid-password');
+  await page.getByRole('button', { name: 'Entrar' }).click();
+  await expectVisible(
+    page.getByRole('alert').filter({ hasText: 'Algo deu errado. Tente novamente.' }),
+    `${name}: login database failures should show a generic server error`,
+  );
 
   const manifestResponse = await context.request.get(`${baseURL}/manifest.webmanifest`);
   assert(manifestResponse.ok(), `${name}: manifest should be public`);
