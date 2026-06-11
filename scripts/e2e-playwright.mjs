@@ -78,9 +78,11 @@ async function expectNoHorizontalOverflow(page, message) {
 function isBenignAbort(request) {
   const failure = request.failure()?.errorText ?? '';
   if (failure !== 'net::ERR_ABORTED') return false;
-  if (request.method() === 'GET') return true;
-
   const url = new URL(request.url());
+  if (request.method() === 'GET') return true;
+  // Next can abort the login server-action request after the client receives a safe error state.
+  if (request.method() === 'POST' && url.pathname === '/login') return true;
+
   return (
     request.isNavigationRequest() ||
     url.pathname.startsWith('/__nextjs_font/') ||
