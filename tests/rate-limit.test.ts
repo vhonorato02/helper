@@ -25,4 +25,15 @@ describe('rate limit (sliding window)', () => {
     assert.equal(result.ok, false);
     assert.ok(result.retryAfterMs > 30_000);
   });
+
+  it('normalizes oversized and control-character keys consistently', () => {
+    const key = `test:long:\r\n${'a'.repeat(300)}`;
+    resetRateLimit(key);
+
+    assert.equal(checkRateLimit({ key, limit: 1, windowMs: 60_000 }).ok, true);
+    assert.equal(checkRateLimit({ key, limit: 1, windowMs: 60_000 }).ok, false);
+
+    resetRateLimit(key);
+    assert.equal(checkRateLimit({ key, limit: 1, windowMs: 60_000 }).ok, true);
+  });
 });

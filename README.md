@@ -1,6 +1,6 @@
 # Helper
 
-Versão atual: `Helper 0.2.0`
+Versão atual: `Helper 0.2.2`
 
 Helper é uma central operacional para registrar, organizar e acompanhar demandas internas. O sistema reúne página pública de solicitações, tickets, Kanban, agenda, reservas de Chromebooks, notificações, rotinas administrativas e PWA em uma única aplicação.
 
@@ -60,6 +60,16 @@ Regras de trabalho:
 O runtime é estritamente Node 24.x LTS. O projeto usa `.node-version`, `.nvmrc`, `engines` e `engine-strict=true` para evitar builds em Node Current.
 
 Tailwind 4 usa tema CSS-first em `src/app/globals.css`; não há mais `tailwind.config.js`. A variante `dark` é baseada na classe `.dark`, pois o Helper usa alternância manual de tema.
+
+## Mudanças da Versão 0.2.2
+
+- Rate limit das solicitações públicas agora acontece antes das validações de contato e agenda, reduzindo envio repetido inválido.
+- Agenda pública rejeita horário já passado no mesmo dia em `America/Sao_Paulo`.
+- Formulários públicos marcam contato, data e horários obrigatórios diretamente no HTML quando o backend já exige esses dados.
+- Logs estruturados redigem campos sensíveis, tokens e strings de conexão antes de escrever no console.
+- Rate limit normaliza chaves longas ou com caracteres de controle para evitar crescimento abusivo de buckets.
+- Versionamento operacional alinhado em `package.json`, `src/lib/version.ts`, README, MEMORY, CHANGELOG, `.env.example` e PWA.
+- Service worker atualizado para cache `helper-static-v8`.
 
 ## Mudanças da Versão 0.2.0
 
@@ -753,10 +763,10 @@ pnpm test:smoke
 pnpm build
 git status
 git add .
-git commit -m "chore: release Helper 0.2.0"
+git commit -m "chore: release Helper 0.2.2"
 git push origin main
-git tag v0.2.0
-git push origin v0.2.0
+git tag v0.2.2
+git push origin v0.2.2
 ```
 
 Depois:
@@ -777,4 +787,4 @@ Depois:
 - Use Notificações para alertas internos.
 - Revise logs antes de mexer em banco ou env.
 
-Helper 0.2.0 deve permanecer limpo: sem warnings relevantes, sem marcas antigas, sem rotas quebradas, sem cache PWA antigo e sem Preview escrevendo em Production por acidente.
+Helper 0.2.2 deve permanecer limpo: sem warnings relevantes, sem marcas antigas, sem rotas quebradas, sem cache PWA antigo e sem Preview escrevendo em Production por acidente.

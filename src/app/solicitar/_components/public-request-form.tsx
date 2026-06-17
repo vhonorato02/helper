@@ -98,6 +98,7 @@ export function PublicRequestForm({
       ref={formRef}
       onSubmit={submit}
       aria-busy={isPending}
+      noValidate
       className="surface-elevated space-y-4 rounded-lg p-5 sm:p-6"
     >
       <input type="hidden" name="kind" value={kind} />
@@ -132,6 +133,7 @@ export function PublicRequestForm({
             autoComplete="email"
             minLength={3}
             maxLength={120}
+            required
             aria-required="true"
             aria-describedby={formError ? 'public-contact-help public-form-error' : 'public-contact-help'}
             disabled={isPending}

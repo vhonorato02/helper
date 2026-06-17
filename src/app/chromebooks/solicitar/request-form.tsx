@@ -112,7 +112,7 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
         </div>
       </div>
 
-      <form ref={formRef} onSubmit={submit} className="space-y-4">
+      <form ref={formRef} onSubmit={submit} noValidate className="space-y-4">
         <input
           type="text"
           name="website"
@@ -132,6 +132,7 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
               value={date}
               min={minDate}
               onChange={(event) => setDate(event.target.value)}
+              required
               disabled={isPending}
             />
           </div>
@@ -143,6 +144,7 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
               type="time"
               value={startTime}
               onChange={(event) => setStartTime(event.target.value)}
+              required
               disabled={isPending}
             />
           </div>
@@ -154,6 +156,7 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
               type="time"
               value={endTime}
               onChange={(event) => setEndTime(event.target.value)}
+              required
               disabled={isPending}
             />
           </div>
@@ -216,9 +219,15 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
             placeholder="E-mail ou telefone"
             minLength={3}
             maxLength={120}
+            required
+            aria-describedby={
+              formError
+                ? 'public-chromebook-contact-help public-chromebook-form-error'
+                : 'public-chromebook-contact-help'
+            }
             disabled={isPending}
           />
-          <p className="text-xs text-muted-foreground">
+          <p id="public-chromebook-contact-help" className="text-xs text-muted-foreground">
             Obrigatório para confirmar detalhes, avisar conflito e devolver o protocolo.
           </p>
         </div>
@@ -241,6 +250,7 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
 
         {formError && (
           <div
+            id="public-chromebook-form-error"
             role="alert"
             className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive ring-1 ring-inset ring-destructive/20"
           >

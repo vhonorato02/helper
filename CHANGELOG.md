@@ -1,5 +1,16 @@
 # Changelog
 
+## Helper 0.2.2 - 2026-06-17
+
+- Endurece solicitações públicas aplicando rate limit antes das validações de contato e agenda.
+- Corrige validação de agenda pública para rejeitar horários já passados no dia atual em `America/Sao_Paulo`.
+- Marca contatos públicos e campos obrigatórios de reserva de Chromebooks como `required` no HTML, alinhando navegador e backend.
+- Redige campos sensíveis e tokens em logs estruturados antes de escrever no console.
+- Normaliza chaves longas ou com caracteres de controle no rate limit para reduzir crescimento abusivo de buckets.
+- Adiciona testes unitários para agenda pública, logger seguro e normalização do rate limit.
+- Corrige o versionamento operacional para alinhar `package.json`, `src/lib/version.ts`, README, MEMORY, CHANGELOG, `.env.example` e PWA.
+- Atualiza o service worker para cache `helper-static-v8`, forçando clientes PWA a perceberem a nova versão.
+
 ## Helper 0.2.0 - 2026-06-02
 
 - Migra oficialmente para pnpm 11.5.1 com `packageManager`, `pnpm-lock.yaml`, CI e Vercel usando `pnpm install --frozen-lockfile`.

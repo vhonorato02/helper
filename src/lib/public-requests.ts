@@ -35,6 +35,20 @@ function dateInputInTimeZone(date: Date, timeZone = SAO_PAULO_TIME_ZONE) {
   return `${year}-${month}-${day}`;
 }
 
+function timeMinutesInTimeZone(date: Date, timeZone = SAO_PAULO_TIME_ZONE) {
+  const parts = new Intl.DateTimeFormat('pt-BR', {
+    timeZone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(date);
+
+  const hour = Number(parts.find((part) => part.type === 'hour')?.value);
+  const minute = Number(parts.find((part) => part.type === 'minute')?.value);
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null;
+  return hour * 60 + minute;
+}
+
 function parseDateInput(value: string) {
   const match = DATE_RE.exec(value);
   if (!match) return null;
@@ -101,6 +115,13 @@ export function validatePublicRequestSchedule(
 
   if (endMinutes <= startMinutes) {
     return { ok: false, error: 'O horário de término precisa ser maior que o início.' };
+  }
+
+  if (parsedDate === today) {
+    const nowMinutes = timeMinutesInTimeZone(options.now ?? new Date());
+    if (nowMinutes !== null && startMinutes < nowMinutes) {
+      return { ok: false, error: 'Escolha um horário de início que ainda não passou.' };
+    }
   }
 
   return { ok: true };

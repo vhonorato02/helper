@@ -1,0 +1,701 @@
+diff --git a/.codex-runs/reparo-20260617-134319.log b/.codex-runs/reparo-20260617-134319.log
+index e69de29..78e5ef6 100644
+--- a/.codex-runs/reparo-20260617-134319.log
++++ b/.codex-runs/reparo-20260617-134319.log
+@@ -0,0 +1,64 @@
++**********************
++PowerShell transcript start
++Start time: 20260617134319
++Username: TIMKT\Anglo
++RunAs User: TIMKT\Anglo
++Configuration Name:
++Machine: TIMKT (Microsoft Windows NT 10.0.26200.0)
++Host Application: C:\Program Files\WindowsApps\Microsoft.PowerShell_7.6.3.0_x64__8wekyb3d8bbwe\pwsh.dll -NoLogo -NoProfile -ExecutionPolicy Bypass -NoExit -File D:\helper\run-helper-codex.ps1 -Routine reparo
++Process ID: 4532
++PSVersion: 7.6.3
++PSEdition: Core
++GitCommitId: 7.6.3
++OS: Microsoft Windows 10.0.26200
++Platform: Win32NT
++PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1, 6.0, 7.0
++PSRemotingProtocolVersion: 2.4
++SerializationVersion: 1.1.0.1
++WSManStackVersion: 3.0
++**********************
++
++=== Reparo profundo diario do Helper ===
++Projeto: D:\helper
++Modelo: gpt-5.5
++Modo: MAIN DIRETO + COMMIT + PUSH
++Log: D:\helper\.codex-runs\reparo-20260617-134319.log
++
++Ha alteracoes locais antes da rotina. Vou commitar e subir antes para manter GitHub/local sincronizados.
++warning: in the working copy of '.codex-runs/01_reparo_profundo-20260617-120256.log', CRLF will be replaced by LF the ne
++xt time Git touches it
++[main a360ee5] chore(sync): salva alteracoes locais antes de reparo 20260617-134319
++ 22 files changed, 710 insertions(+), 1651 deletions(-)
++ create mode 100644 .codex-runs/reparo-20260617-134319.log
++ delete mode 100644 00_CORRIGIR_SCRIPTS_JA_COPIADOS_EM_D_HELPER.cmd
++ create mode 100644 01_ABRIR_REPARO_PROFUNDO.cmd
++ delete mode 100644 01_ABRIR_reparo_profundo_main.cmd
++ delete mode 100644 01_reparo_profundo_main.ps1
++ create mode 100644 02_ABRIR_REVISAO_FEATURES.cmd
++ delete mode 100644 02_ABRIR_revisao_features_main.cmd
++ delete mode 100644 02_revisao_features_main.ps1
++ create mode 100644 03_ABRIR_REVISAO_UI_UX.cmd
++ delete mode 100644 03_ABRIR_revisao_ui_ux_main.cmd
++ delete mode 100644 03_revisao_ui_ux_main.ps1
++ create mode 100644 04_ABRIR_FEATURE_NOVA.cmd
++ delete mode 100644 04_ABRIR_feature_nova_main.cmd
++ delete mode 100644 04_feature_nova_main.ps1
++ create mode 100644 README_MAIN_COMMIT_PUSH.txt
++ delete mode 100644 README_rotinas_main_direto.md
++ create mode 100644 prompts/01_reparo_profundo.txt
++ create mode 100644 prompts/02_revisao_features.txt
++ create mode 100644 prompts/03_revisao_ui_ux.txt
++ create mode 100644 prompts/04_feature_nova.txt
++ create mode 100644 run-helper-codex.ps1
++
++[Antes do Codex] Sincronizando main com GitHub...
++From https://github.com/vhonorato02/helper
++ * branch            main       -> FETCH_HEAD
++error: cannot pull with rebase: You have unstaged changes.
++error: Please commit or stash them.
++
++git pull --rebase origin main falhou. Resolva conflito no D:\helper e rode de novo.
++**********************
++PowerShell transcript end
++End time: 20260617134322
++**********************
+diff --git a/.env.example b/.env.example
+index 0b7b48f..0a0eb1a 100644
+--- a/.env.example
++++ b/.env.example
+@@ -1,4 +1,4 @@
+-# Helper 0.2.0 usa pnpm/Corepack para comandos locais. Docker nao e necessario.
++# Helper 0.2.2 usa pnpm/Corepack para comandos locais. Docker nao e necessario.
+
+ # Database
+ DATABASE_URL="postgresql://user:password@host.neon.tech/dbname?sslmode=require"
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 9d5cbc2..fed8f13 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -1,5 +1,16 @@
+ # Changelog
+
++## Helper 0.2.2 - 2026-06-17
++
++- Endurece solicitações públicas aplicando rate limit antes das validações de contato e agenda.
++- Corrige validação de agenda pública para rejeitar horários já passados no dia atual em `America/Sao_Paulo`.
++- Marca contatos públicos e campos obrigatórios de reserva de Chromebooks como `required` no HTML, alinhando navegador e backend.
++- Redige campos sensíveis e tokens em logs estruturados antes de escrever no console.
++- Normaliza chaves longas ou com caracteres de controle no rate limit para reduzir crescimento abusivo de buckets.
++- Adiciona testes unitários para agenda pública, logger seguro e normalização do rate limit.
++- Corrige o versionamento operacional para alinhar `package.json`, `src/lib/version.ts`, README, MEMORY, CHANGELOG, `.env.example` e PWA.
++- Atualiza o service worker para cache `helper-static-v8`, forçando clientes PWA a perceberem a nova versão.
++
+ ## Helper 0.2.0 - 2026-06-02
+
+ - Migra oficialmente para pnpm 11.5.1 com `packageManager`, `pnpm-lock.yaml`, CI e Vercel usando `pnpm install --frozen-lockfile`.
+diff --git a/MEMORY.md b/MEMORY.md
+index 1de56c9..7a2eaf5 100644
+--- a/MEMORY.md
++++ b/MEMORY.md
+@@ -12,10 +12,14 @@ Este arquivo guarda contexto operacional para próximas versões do Helper.
+
+ ## Regras de Versão
+
+-- Patch atual: `0.2.0`.
+-- Toda versão precisa atualizar `package.json`, `pnpm-lock.yaml`, `src/lib/version.ts`, `CHANGELOG.md` e README quando houver mudança operacional.
++- Patch atual: `0.2.2`.
++- Toda versão precisa atualizar `package.json`, `src/lib/version.ts`, `CHANGELOG.md`, README, MEMORY e `.env.example` quando houver mudança operacional.
++- Atualize `pnpm-lock.yaml` somente quando `pnpm install` alterar dependências, overrides, package manager ou metadata realmente representada no lockfile. O lockfile pnpm v9 não replica a versão do pacote raiz.
++- Atualize `public/sw.js` quando uma versão precisar forçar atualização PWA ou quando assets estáticos cacheados mudarem.
+ - Tags só devem ser criadas ou movidas com decisão explícita. Não mover tag antiga silenciosamente.
+ - Antes de publicar: `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build`, `pnpm test:smoke`, `pnpm test:e2e`.
++- Em 0.2.2, solicitações públicas passaram a limitar tentativas antes das validações finais e a agenda pública rejeita horário já passado no dia atual de São Paulo.
++- Logs estruturados devem continuar redigindo campos sensíveis, tokens e strings de conexão antes de escrever no console.
+
+ ## Pontos Sensíveis
+
+diff --git a/README.md b/README.md
+index 45b1558..6cb352c 100644
+--- a/README.md
++++ b/README.md
+@@ -1,6 +1,6 @@
+ # Helper
+
+-Versão atual: `Helper 0.2.0`
++Versão atual: `Helper 0.2.2`
+
+ Helper é uma central operacional para registrar, organizar e acompanhar demandas internas. O sistema reúne página pública de solicitações, tickets, Kanban, agenda, reservas de Chromebooks, notificações, rotinas administrativas e PWA em uma única aplicação.
+
+@@ -61,6 +61,16 @@ O runtime é estritamente Node 24.x LTS. O projeto usa `.node-version`, `.nvmrc`
+
+ Tailwind 4 usa tema CSS-first em `src/app/globals.css`; não há mais `tailwind.config.js`. A variante `dark` é baseada na classe `.dark`, pois o Helper usa alternância manual de tema.
+
++## Mudanças da Versão 0.2.2
++
++- Rate limit das solicitações públicas agora acontece antes das validações de contato e agenda, reduzindo envio repetido inválido.
++- Agenda pública rejeita horário já passado no mesmo dia em `America/Sao_Paulo`.
++- Formulários públicos marcam contato, data e horários obrigatórios diretamente no HTML quando o backend já exige esses dados.
++- Logs estruturados redigem campos sensíveis, tokens e strings de conexão antes de escrever no console.
++- Rate limit normaliza chaves longas ou com caracteres de controle para evitar crescimento abusivo de buckets.
++- Versionamento operacional alinhado em `package.json`, `src/lib/version.ts`, README, MEMORY, CHANGELOG, `.env.example` e PWA.
++- Service worker atualizado para cache `helper-static-v8`.
++
+ ## Mudanças da Versão 0.2.0
+
+ - Migra oficialmente o projeto de npm para pnpm 11.5.1 via Corepack.
+@@ -753,10 +763,10 @@ pnpm test:smoke
+ pnpm build
+ git status
+ git add .
+-git commit -m "chore: release Helper 0.2.0"
++git commit -m "chore: release Helper 0.2.2"
+ git push origin main
+-git tag v0.2.0
+-git push origin v0.2.0
++git tag v0.2.2
++git push origin v0.2.2
+ ```
+
+ Depois:
+@@ -777,4 +787,4 @@ Depois:
+ - Use Notificações para alertas internos.
+ - Revise logs antes de mexer em banco ou env.
+
+-Helper 0.2.0 deve permanecer limpo: sem warnings relevantes, sem marcas antigas, sem rotas quebradas, sem cache PWA antigo e sem Preview escrevendo em Production por acidente.
++Helper 0.2.2 deve permanecer limpo: sem warnings relevantes, sem marcas antigas, sem rotas quebradas, sem cache PWA antigo e sem Preview escrevendo em Production por acidente.
+diff --git a/package.json b/package.json
+index 70ce962..e267f7e 100644
+--- a/package.json
++++ b/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "helper",
+-  "version": "0.2.0",
++  "version": "0.2.2",
+   "private": true,
+   "packageManager": "pnpm@11.5.1",
+   "engines": {
+diff --git a/prompts/01_reparo_profundo.txt b/prompts/01_reparo_profundo.txt
+index d863f65..2b904dc 100644
+--- a/prompts/01_reparo_profundo.txt
++++ b/prompts/01_reparo_profundo.txt
+@@ -2,14 +2,9 @@ REGRAS ABSOLUTAS:
+ - Trabalhe somente em D:\helper.
+ - Trabalhe diretamente na branch main.
+ - Não crie branch.
+-- Não crie pull request.
+ - Não crie worktree.
+-- Não clone o repositório.
+ - Não use workspace temporário.
+ - Não use npm. Use pnpm.
+-- Não faça git commit.
+-- Não faça git push.
+-- O script PowerShell fará commit, patch, versionamento e push no final.
+ - Faça todas as alterações direto no working tree real de D:\helper.
+ - Atualize versionamento quando fizer sentido:
+   - package.json version se a mudança for relevante;
+@@ -69,4 +64,4 @@ VALIDAÇÃO FINAL:
+ pnpm lint, pnpm typecheck, pnpm test, pnpm test:smoke, pnpm test:e2e, pnpm build, git diff --check, git status --short.
+
+ ENTREGA:
+-Liste arquivos alterados, problemas, correções, testes, comandos, pendências bloqueadas, teste manual e risco de regressão.
++Liste arquivos alterados, problemas, correções, testes, comandos, pendências bloqueadas, teste manual e risco de regressão. Aplicar versionamento no estilo padrão, sempre entendendo que esse prompt é um novo patch, sempre
+diff --git a/prompts/02_revisao_features.txt b/prompts/02_revisao_features.txt
+index 6d080db..2e1a6df 100644
+--- a/prompts/02_revisao_features.txt
++++ b/prompts/02_revisao_features.txt
+@@ -2,14 +2,9 @@ REGRAS ABSOLUTAS:
+ - Trabalhe somente em D:\helper.
+ - Trabalhe diretamente na branch main.
+ - Não crie branch.
+-- Não crie pull request.
+ - Não crie worktree.
+-- Não clone o repositório.
+ - Não use workspace temporário.
+ - Não use npm. Use pnpm.
+-- Não faça git commit.
+-- Não faça git push.
+-- O script PowerShell fará commit, patch, versionamento e push no final.
+ - Faça todas as alterações direto no working tree real de D:\helper.
+ - Atualize versionamento quando fizer sentido:
+   - package.json version se a mudança for relevante;
+@@ -34,7 +29,7 @@ RODE E CORRIJA:
+ pnpm install --frozen-lockfile, pnpm lint, pnpm typecheck, pnpm test, pnpm test:smoke, pnpm test:e2e, pnpm build.
+
+ COBERTURA:
+-Melhore e2e/smoke para rotas obrigatórias sem fragilizar. Verifique renderização, console error, proteção de rotas, rotas públicas, mobile, formulário inválido, PWA, Chromebooks, Kanban e tickets.
++Melhore e2e/smoke para rotas obrigatórias sem fragilizar. Verifique renderização, console error, proteção de rotas, rotas públicas, mobile, formulário inválido, PWA, Chromebooks, Kanban, notificações (navegador, pwa, e-mail, etc) e tickets.
+
+ CORRIJA FLUXOS:
+ Login, solicitações públicas, tickets, Kanban, agenda, marketing, Chromebooks, notificações e PWA.
+@@ -43,4 +38,4 @@ VALIDAÇÃO FINAL:
+ pnpm lint, pnpm typecheck, pnpm test, pnpm test:smoke, pnpm test:e2e, pnpm build, git diff --check, git status --short.
+
+ ENTREGA:
+-Fluxos revisados, regressões, correções, testes, comandos, limitações, validação manual e risco.
++Fluxos revisados, regressões, correções, testes, comandos, limitações, validação manual e risco.  Aplicar versionamento no estilo padrão, sempre entendendo que esse prompt é um novo patch, sempre
+diff --git a/prompts/03_revisao_ui_ux.txt b/prompts/03_revisao_ui_ux.txt
+index 36ba998..3a4d53c 100644
+--- a/prompts/03_revisao_ui_ux.txt
++++ b/prompts/03_revisao_ui_ux.txt
+@@ -2,14 +2,9 @@ REGRAS ABSOLUTAS:
+ - Trabalhe somente em D:\helper.
+ - Trabalhe diretamente na branch main.
+ - Não crie branch.
+-- Não crie pull request.
+ - Não crie worktree.
+-- Não clone o repositório.
+ - Não use workspace temporário.
+ - Não use npm. Use pnpm.
+-- Não faça git commit.
+-- Não faça git push.
+-- O script PowerShell fará commit, patch, versionamento e push no final.
+ - Faça todas as alterações direto no working tree real de D:\helper.
+ - Atualize versionamento quando fizer sentido:
+   - package.json version se a mudança for relevante;
+@@ -46,4 +41,4 @@ VALIDAÇÃO:
+ pnpm lint, pnpm typecheck, pnpm test, pnpm test:smoke, pnpm test:e2e, pnpm build, git diff --check, git status --short.
+
+ ENTREGA:
+-Rotas revisadas, visual, acessibilidade, mobile, componentes, screenshots se houver, comandos e validação manual.
++Rotas revisadas, visual, acessibilidade, mobile, componentes, screenshots se houver, comandos e validação manual.  Aplicar versionamento no estilo padrão, sempre entendendo que esse prompt é um novo patch, sempre
+diff --git a/prompts/04_feature_nova.txt b/prompts/04_feature_nova.txt
+index 09cc922..43cc262 100644
+--- a/prompts/04_feature_nova.txt
++++ b/prompts/04_feature_nova.txt
+@@ -2,14 +2,9 @@ REGRAS ABSOLUTAS:
+ - Trabalhe somente em D:\helper.
+ - Trabalhe diretamente na branch main.
+ - Não crie branch.
+-- Não crie pull request.
+ - Não crie worktree.
+-- Não clone o repositório.
+ - Não use workspace temporário.
+ - Não use npm. Use pnpm.
+-- Não faça git commit.
+-- Não faça git push.
+-- O script PowerShell fará commit, patch, versionamento e push no final.
+ - Faça todas as alterações direto no working tree real de D:\helper.
+ - Atualize versionamento quando fizer sentido:
+   - package.json version se a mudança for relevante;
+@@ -49,4 +44,4 @@ VALIDAÇÃO:
+ pnpm lint, pnpm typecheck, pnpm test, pnpm build, e se tocar navegador pnpm test:smoke e pnpm test:e2e.
+
+ ENTREGA:
+-Feature, motivo, arquivos, implementação, encaixe, testes, comandos, teste manual, riscos e rollback.
++Feature, motivo, arquivos, implementação, encaixe, testes, comandos, teste manual, riscos e rollback.  Aplicar versionamento no estilo padrão, sempre entendendo que esse prompt é um novo patch, sempre
+diff --git a/public/sw.js b/public/sw.js
+index e944159..ead96ed 100644
+--- a/public/sw.js
++++ b/public/sw.js
+@@ -1,8 +1,8 @@
+-// Helper Service Worker - v7
++// Helper Service Worker - v8
+ // Keep authenticated pages network-only. Older versions cached HTML and could
+ // serve stale Next.js payloads after deploys.
+
+-const CACHE = 'helper-static-v7';
++const CACHE = 'helper-static-v8';
+ const STATIC_URLS = [
+   '/favicon.svg',
+   '/icon-192.png',
+diff --git a/src/actions/public-requests.ts b/src/actions/public-requests.ts
+index 675c887..650d6eb 100644
+--- a/src/actions/public-requests.ts
++++ b/src/actions/public-requests.ts
+@@ -153,6 +153,10 @@ export async function createPublicRequest(formData: FormData) {
+     return { ok: true, protocol: fakeProtocol(meta.protocolPrefix) };
+   }
+
++  const ip = await getClientIp();
++  const rate = checkRateLimit({ key: `public-request:${rawInput.kind}:${ip}`, ...PUBLIC_LIMIT });
++  if (!rate.ok) return { error: copy.validation.rateLimited };
++
+   const contact = validatePublicContact(rawInput.requesterContact);
+   if (!contact.ok) return { error: contact.error };
+
+@@ -160,10 +164,6 @@ export async function createPublicRequest(formData: FormData) {
+   const schedule = validatePublicRequestSchedule(input);
+   if (!schedule.ok) return { error: schedule.error };
+
+-  const ip = await getClientIp();
+-  const rate = checkRateLimit({ key: `public-request:${input.kind}:${ip}`, ...PUBLIC_LIMIT });
+-  if (!rate.ok) return { error: copy.validation.rateLimited };
+-
+   const title = `${meta.titlePrefix}: ${input.title}`;
+   const description = buildDescription(input);
+   const origin = 'Pagina publica';
+diff --git a/src/app/chromebooks/solicitar/request-form.tsx b/src/app/chromebooks/solicitar/request-form.tsx
+index 7ff70d3..7033e86 100644
+--- a/src/app/chromebooks/solicitar/request-form.tsx
++++ b/src/app/chromebooks/solicitar/request-form.tsx
+@@ -112,7 +112,7 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
+         </div>
+       </div>
+
+-      <form ref={formRef} onSubmit={submit} className="space-y-4">
++      <form ref={formRef} onSubmit={submit} noValidate className="space-y-4">
+         <input
+           type="text"
+           name="website"
+@@ -132,6 +132,7 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
+               value={date}
+               min={minDate}
+               onChange={(event) => setDate(event.target.value)}
++              required
+               disabled={isPending}
+             />
+           </div>
+@@ -143,6 +144,7 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
+               type="time"
+               value={startTime}
+               onChange={(event) => setStartTime(event.target.value)}
++              required
+               disabled={isPending}
+             />
+           </div>
+@@ -154,6 +156,7 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
+               type="time"
+               value={endTime}
+               onChange={(event) => setEndTime(event.target.value)}
++              required
+               disabled={isPending}
+             />
+           </div>
+@@ -216,9 +219,15 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
+             placeholder="E-mail ou telefone"
+             minLength={3}
+             maxLength={120}
++            required
++            aria-describedby={
++              formError
++                ? 'public-chromebook-contact-help public-chromebook-form-error'
++                : 'public-chromebook-contact-help'
++            }
+             disabled={isPending}
+           />
+-          <p className="text-xs text-muted-foreground">
++          <p id="public-chromebook-contact-help" className="text-xs text-muted-foreground">
+             Obrigatório para confirmar detalhes, avisar conflito e devolver o protocolo.
+           </p>
+         </div>
+@@ -241,6 +250,7 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
+
+         {formError && (
+           <div
++            id="public-chromebook-form-error"
+             role="alert"
+             className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive ring-1 ring-inset ring-destructive/20"
+           >
+diff --git a/src/app/solicitar/_components/public-request-form.tsx b/src/app/solicitar/_components/public-request-form.tsx
+index d6126e7..7a021fc 100644
+--- a/src/app/solicitar/_components/public-request-form.tsx
++++ b/src/app/solicitar/_components/public-request-form.tsx
+@@ -98,6 +98,7 @@ export function PublicRequestForm({
+       ref={formRef}
+       onSubmit={submit}
+       aria-busy={isPending}
++      noValidate
+       className="surface-elevated space-y-4 rounded-lg p-5 sm:p-6"
+     >
+       <input type="hidden" name="kind" value={kind} />
+@@ -132,6 +133,7 @@ export function PublicRequestForm({
+             autoComplete="email"
+             minLength={3}
+             maxLength={120}
++            required
+             aria-required="true"
+             aria-describedby={formError ? 'public-contact-help public-form-error' : 'public-contact-help'}
+             disabled={isPending}
+diff --git a/src/lib/logger.ts b/src/lib/logger.ts
+index 4b8c1ff..04bfcd8 100644
+--- a/src/lib/logger.ts
++++ b/src/lib/logger.ts
+@@ -4,19 +4,69 @@
+ type Level = 'debug' | 'info' | 'warn' | 'error';
+ type Fields = Record<string, unknown>;
+
++const SENSITIVE_KEY_RE = /authorization|bearer|cookie|database[_-]?url|password|secret|token/i;
++const MAX_LOG_STRING_LENGTH = 2000;
++
++function redactString(value: string) {
++  return value
++    .replace(/(postgres(?:ql)?:\/\/)[^\s"']+/gi, '$1[REDACTED]')
++    .replace(/(bearer\s+)[^\s"']+/gi, '$1[REDACTED]')
++    .replace(
++      /\b(DATABASE_URL|AUTH_SECRET|CRON_SECRET|GMAIL_APP_PASSWORD|BOOTSTRAP_ADMIN_PASSWORD)\s*=\s*[^\s"']+/g,
++      '$1=[REDACTED]',
++    );
++}
++
++function truncateString(value: string) {
++  if (value.length <= MAX_LOG_STRING_LENGTH) return value;
++  return `${value.slice(0, MAX_LOG_STRING_LENGTH)}...[truncated]`;
++}
++
++function sanitizeLogValue(
++  value: unknown,
++  key = '',
++  depth = 0,
++  seen = new WeakSet<object>(),
++): unknown {
++  if (SENSITIVE_KEY_RE.test(key)) return '[REDACTED]';
++  if (typeof value === 'string') return truncateString(redactString(value));
++  if (value instanceof Error) {
++    return {
++      name: value.name,
++      message: truncateString(redactString(value.message)),
++      stack: value.stack ? truncateString(redactString(value.stack)) : undefined,
++    };
++  }
++  if (!value || typeof value !== 'object') return value;
++  if (seen.has(value)) return '[Circular]';
++  if (depth >= 4) return '[MaxDepth]';
++  seen.add(value);
++  if (Array.isArray(value)) {
++    return value.slice(0, 25).map((item) => sanitizeLogValue(item, key, depth + 1, seen));
++  }
++
++  return Object.fromEntries(
++    Object.entries(value as Record<string, unknown>).map(([childKey, childValue]) => [
++      childKey,
++      sanitizeLogValue(childValue, childKey, depth + 1, seen),
++    ]),
++  );
++}
++
++function sanitizeFields(fields?: Fields) {
++  if (!fields) return undefined;
++  return sanitizeLogValue(fields) as Fields;
++}
++
+ function emit(level: Level, message: string, fields?: Fields) {
+   if (level === 'debug' && process.env.NODE_ENV === 'production') return;
+   const payload = {
+     level,
+     msg: message,
+     ts: new Date().toISOString(),
+-    ...(fields ?? {}),
++    ...(sanitizeFields(fields) ?? {}),
+   };
+-  const line = JSON.stringify(payload, (_key, value) =>
+-    value instanceof Error
+-      ? { name: value.name, message: value.message, stack: value.stack }
+-      : value,
+-  );
++  const line = JSON.stringify(payload);
+   if (level === 'error' || level === 'warn') console.error(line);
+   else console.log(line);
+ }
+diff --git a/src/lib/public-requests.ts b/src/lib/public-requests.ts
+index 5984335..07da435 100644
+--- a/src/lib/public-requests.ts
++++ b/src/lib/public-requests.ts
+@@ -35,6 +35,20 @@ function dateInputInTimeZone(date: Date, timeZone = SAO_PAULO_TIME_ZONE) {
+   return `${year}-${month}-${day}`;
+ }
+
++function timeMinutesInTimeZone(date: Date, timeZone = SAO_PAULO_TIME_ZONE) {
++  const parts = new Intl.DateTimeFormat('pt-BR', {
++    timeZone,
++    hour: '2-digit',
++    minute: '2-digit',
++    hour12: false,
++  }).formatToParts(date);
++
++  const hour = Number(parts.find((part) => part.type === 'hour')?.value);
++  const minute = Number(parts.find((part) => part.type === 'minute')?.value);
++  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null;
++  return hour * 60 + minute;
++}
++
+ function parseDateInput(value: string) {
+   const match = DATE_RE.exec(value);
+   if (!match) return null;
+@@ -103,5 +117,12 @@ export function validatePublicRequestSchedule(
+     return { ok: false, error: 'O horário de término precisa ser maior que o início.' };
+   }
+
++  if (parsedDate === today) {
++    const nowMinutes = timeMinutesInTimeZone(options.now ?? new Date());
++    if (nowMinutes !== null && startMinutes < nowMinutes) {
++      return { ok: false, error: 'Escolha um horário de início que ainda não passou.' };
++    }
++  }
++
+   return { ok: true };
+ }
+diff --git a/src/lib/rate-limit.ts b/src/lib/rate-limit.ts
+index 8d789bd..c77c780 100644
+--- a/src/lib/rate-limit.ts
++++ b/src/lib/rate-limit.ts
+@@ -1,11 +1,23 @@
+ // Lightweight in-memory sliding-window rate limiter.
+ // Works for a single instance (good baseline; replace with Redis/Upstash for HA).
+
++import { createHash } from 'node:crypto';
++
+ type Entry = { hits: number[]; lockedUntil?: number };
+
+ const buckets = new Map<string, Entry>();
+
+ const HOUR = 60 * 60 * 1000;
++const MAX_KEY_LENGTH = 180;
++
++function normalizeKey(key: string) {
++  const normalized = key.replace(/[\r\n\t]+/g, ' ').trim();
++  if (!normalized) return 'unknown';
++  if (normalized.length <= MAX_KEY_LENGTH) return normalized;
++
++  const digest = createHash('sha256').update(normalized).digest('hex').slice(0, 16);
++  return `${normalized.slice(0, 80)}:${digest}`;
++}
+
+ // Eviction guard so the map doesn't grow unbounded.
+ function gc(now: number) {
+@@ -35,8 +47,9 @@ export interface RateLimitOptions {
+
+ export function checkRateLimit({ key, limit, windowMs, lockoutMs = 0 }: RateLimitOptions): RateLimitResult {
+   const now = Date.now();
++  const bucketKey = normalizeKey(key);
+   gc(now);
+-  const entry = buckets.get(key) ?? { hits: [] };
++  const entry = buckets.get(bucketKey) ?? { hits: [] };
+
+   if (entry.lockedUntil && entry.lockedUntil > now) {
+     return { ok: false, remaining: 0, retryAfterMs: entry.lockedUntil - now };
+@@ -46,7 +59,7 @@ export function checkRateLimit({ key, limit, windowMs, lockoutMs = 0 }: RateLimi
+
+   if (entry.hits.length >= limit) {
+     if (lockoutMs > 0) entry.lockedUntil = now + lockoutMs;
+-    buckets.set(key, entry);
++    buckets.set(bucketKey, entry);
+     return {
+       ok: false,
+       remaining: 0,
+@@ -56,10 +69,10 @@ export function checkRateLimit({ key, limit, windowMs, lockoutMs = 0 }: RateLimi
+
+   entry.hits.push(now);
+   entry.lockedUntil = undefined;
+-  buckets.set(key, entry);
++  buckets.set(bucketKey, entry);
+   return { ok: true, remaining: limit - entry.hits.length, retryAfterMs: 0 };
+ }
+
+ export function resetRateLimit(key: string) {
+-  buckets.delete(key);
++  buckets.delete(normalizeKey(key));
+ }
+diff --git a/src/lib/version.ts b/src/lib/version.ts
+index 5dd4b8b..91bae7a 100644
+--- a/src/lib/version.ts
++++ b/src/lib/version.ts
+@@ -1,4 +1,4 @@
+ export const APP_NAME = 'helper';
+ export const APP_DISPLAY_NAME = 'Helper';
+-export const APP_VERSION = '0.2.0';
++export const APP_VERSION = '0.2.2';
+ export const APP_VERSION_LABEL = `${APP_DISPLAY_NAME} ${APP_VERSION}`;
+diff --git a/tests/public-requests.test.ts b/tests/public-requests.test.ts
+index 00b730a..3a92d0f 100644
+--- a/tests/public-requests.test.ts
++++ b/tests/public-requests.test.ts
+@@ -51,6 +51,15 @@ describe('public request schedule validation', () => {
+     assert.equal(result.ok, false);
+   });
+
++  it('rejects past times for the current Sao Paulo day', () => {
++    const result = validatePublicRequestSchedule(
++      { desiredDate: '2026-06-01', startTime: '09:00', endTime: '10:00' },
++      { now },
++    );
++
++    assert.equal(result.ok, false);
++  });
++
+   it('accepts complete future schedules', () => {
+     const result = validatePublicRequestSchedule(
+       { desiredDate: '2026-06-02', startTime: '10:00', endTime: '11:00' },
+diff --git a/tests/rate-limit.test.ts b/tests/rate-limit.test.ts
+index 96e8aa2..c11ec1c 100644
+--- a/tests/rate-limit.test.ts
++++ b/tests/rate-limit.test.ts
+@@ -25,4 +25,15 @@ describe('rate limit (sliding window)', () => {
+     assert.equal(result.ok, false);
+     assert.ok(result.retryAfterMs > 30_000);
+   });
++
++  it('normalizes oversized and control-character keys consistently', () => {
++    const key = `test:long:\r\n${'a'.repeat(300)}`;
++    resetRateLimit(key);
++
++    assert.equal(checkRateLimit({ key, limit: 1, windowMs: 60_000 }).ok, true);
++    assert.equal(checkRateLimit({ key, limit: 1, windowMs: 60_000 }).ok, false);
++
++    resetRateLimit(key);
++    assert.equal(checkRateLimit({ key, limit: 1, windowMs: 60_000 }).ok, true);
++  });
+ });
+diff --git a/tests/logger.test.ts b/tests/logger.test.ts
+new file mode 100644
+index 0000000..e66c1ba
+--- /dev/null
++++ b/tests/logger.test.ts
+@@ -0,0 +1,52 @@
++import assert from 'node:assert/strict';
++import { describe, it } from 'node:test';
++import { logger } from '@/lib/logger';
++
++describe('structured logger', () => {
++  it('redacts sensitive fields and bearer values before writing', () => {
++    const sink = console;
++    const originalError = sink.error;
++    let output = '';
++    sink.error = (...args: unknown[]) => {
++      output = args.map(String).join(' ');
++    };
++
++    try {
++      logger.warn('redaction_test', {
++        authToken: 'pretend-token-value',
++        nested: { password: 'pretend-password-value' },
++        error: new Error('Request failed with Bearer pretend-bearer-value'),
++      });
++    } finally {
++      sink.error = originalError;
++    }
++
++    assert.match(output, /redaction_test/);
++    assert.match(output, /\[REDACTED\]/);
++    assert.doesNotMatch(output, /pretend-token-value/);
++    assert.doesNotMatch(output, /pretend-password-value/);
++    assert.doesNotMatch(output, /pretend-bearer-value/);
++  });
++
++  it('serializes circular fields without throwing', () => {
++    const sink = console;
++    const originalLog = sink.log;
++    let output = '';
++    sink.log = (...args: unknown[]) => {
++      output = args.map(String).join(' ');
++    };
++
++    type CircularField = { name: string; self?: CircularField };
++    const circular: CircularField = { name: 'loop' };
++    circular.self = circular;
++
++    try {
++      logger.info('circular_test', { circular });
++    } finally {
++      sink.log = originalLog;
++    }
++
++    assert.match(output, /circular_test/);
++    assert.match(output, /\[Circular\]/);
++  });
++});

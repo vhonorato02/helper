@@ -153,16 +153,16 @@ export async function createPublicRequest(formData: FormData) {
     return { ok: true, protocol: fakeProtocol(meta.protocolPrefix) };
   }
 
+  const ip = await getClientIp();
+  const rate = checkRateLimit({ key: `public-request:${rawInput.kind}:${ip}`, ...PUBLIC_LIMIT });
+  if (!rate.ok) return { error: copy.validation.rateLimited };
+
   const contact = validatePublicContact(rawInput.requesterContact);
   if (!contact.ok) return { error: contact.error };
 
   const input = { ...rawInput, requesterContact: contact.contact };
   const schedule = validatePublicRequestSchedule(input);
   if (!schedule.ok) return { error: schedule.error };
-
-  const ip = await getClientIp();
-  const rate = checkRateLimit({ key: `public-request:${input.kind}:${ip}`, ...PUBLIC_LIMIT });
-  if (!rate.ok) return { error: copy.validation.rateLimited };
 
   const title = `${meta.titlePrefix}: ${input.title}`;
   const description = buildDescription(input);

@@ -51,6 +51,15 @@ describe('public request schedule validation', () => {
     assert.equal(result.ok, false);
   });
 
+  it('rejects past times for the current Sao Paulo day', () => {
+    const result = validatePublicRequestSchedule(
+      { desiredDate: '2026-06-01', startTime: '09:00', endTime: '10:00' },
+      { now },
+    );
+
+    assert.equal(result.ok, false);
+  });
+
   it('accepts complete future schedules', () => {
     const result = validatePublicRequestSchedule(
       { desiredDate: '2026-06-02', startTime: '10:00', endTime: '11:00' },

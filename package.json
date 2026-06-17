@@ -1,6 +1,6 @@
 {
   "name": "helper",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "private": true,
   "packageManager": "pnpm@11.5.1",
   "engines": {

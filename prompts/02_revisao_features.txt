@@ -2,14 +2,9 @@ REGRAS ABSOLUTAS:
 - Trabalhe somente em D:\helper.
 - Trabalhe diretamente na branch main.
 - Não crie branch.
-- Não crie pull request.
 - Não crie worktree.
-- Não clone o repositório.
 - Não use workspace temporário.
 - Não use npm. Use pnpm.
-- Não faça git commit.
-- Não faça git push.
-- O script PowerShell fará commit, patch, versionamento e push no final.
 - Faça todas as alterações direto no working tree real de D:\helper.
 - Atualize versionamento quando fizer sentido:
   - package.json version se a mudança for relevante;
@@ -34,7 +29,7 @@ RODE E CORRIJA:
 pnpm install --frozen-lockfile, pnpm lint, pnpm typecheck, pnpm test, pnpm test:smoke, pnpm test:e2e, pnpm build.
 
 COBERTURA:
-Melhore e2e/smoke para rotas obrigatórias sem fragilizar. Verifique renderização, console error, proteção de rotas, rotas públicas, mobile, formulário inválido, PWA, Chromebooks, Kanban e tickets.
+Melhore e2e/smoke para rotas obrigatórias sem fragilizar. Verifique renderização, console error, proteção de rotas, rotas públicas, mobile, formulário inválido, PWA, Chromebooks, Kanban, notificações (navegador, pwa, e-mail, etc) e tickets.
 
 CORRIJA FLUXOS:
 Login, solicitações públicas, tickets, Kanban, agenda, marketing, Chromebooks, notificações e PWA.
@@ -43,4 +38,4 @@ VALIDAÇÃO FINAL:
 pnpm lint, pnpm typecheck, pnpm test, pnpm test:smoke, pnpm test:e2e, pnpm build, git diff --check, git status --short.
 
 ENTREGA:
-Fluxos revisados, regressões, correções, testes, comandos, limitações, validação manual e risco.
+Fluxos revisados, regressões, correções, testes, comandos, limitações, validação manual e risco.  Aplicar versionamento no estilo padrão, sempre entendendo que esse prompt é um novo patch, sempre

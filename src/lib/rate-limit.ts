@@ -1,11 +1,23 @@
 // Lightweight in-memory sliding-window rate limiter.
 // Works for a single instance (good baseline; replace with Redis/Upstash for HA).
 
+import { createHash } from 'node:crypto';
+
 type Entry = { hits: number[]; lockedUntil?: number };
 
 const buckets = new Map<string, Entry>();
 
 const HOUR = 60 * 60 * 1000;
+const MAX_KEY_LENGTH = 180;
+
+function normalizeKey(key: string) {
+  const normalized = key.replace(/[\r\n\t]+/g, ' ').trim();
+  if (!normalized) return 'unknown';
+  if (normalized.length <= MAX_KEY_LENGTH) return normalized;
+
+  const digest = createHash('sha256').update(normalized).digest('hex').slice(0, 16);
+  return `${normalized.slice(0, 80)}:${digest}`;
+}
 
 // Eviction guard so the map doesn't grow unbounded.
 function gc(now: number) {
@@ -35,8 +47,9 @@ export interface RateLimitOptions {
 
 export function checkRateLimit({ key, limit, windowMs, lockoutMs = 0 }: RateLimitOptions): RateLimitResult {
   const now = Date.now();
+  const bucketKey = normalizeKey(key);
   gc(now);
-  const entry = buckets.get(key) ?? { hits: [] };
+  const entry = buckets.get(bucketKey) ?? { hits: [] };
 
   if (entry.lockedUntil && entry.lockedUntil > now) {
     return { ok: false, remaining: 0, retryAfterMs: entry.lockedUntil - now };
@@ -46,7 +59,7 @@ export function checkRateLimit({ key, limit, windowMs, lockoutMs = 0 }: RateLimi
 
   if (entry.hits.length >= limit) {
     if (lockoutMs > 0) entry.lockedUntil = now + lockoutMs;
-    buckets.set(key, entry);
+    buckets.set(bucketKey, entry);
     return {
       ok: false,
       remaining: 0,
@@ -56,10 +69,10 @@ export function checkRateLimit({ key, limit, windowMs, lockoutMs = 0 }: RateLimi
 
   entry.hits.push(now);
   entry.lockedUntil = undefined;
-  buckets.set(key, entry);
+  buckets.set(bucketKey, entry);
   return { ok: true, remaining: limit - entry.hits.length, retryAfterMs: 0 };
 }
 
 export function resetRateLimit(key: string) {
-  buckets.delete(key);
+  buckets.delete(normalizeKey(key));
 }
