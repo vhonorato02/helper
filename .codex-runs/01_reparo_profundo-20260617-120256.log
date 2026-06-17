@@ -1,0 +1,41 @@
+**********************
+PowerShell transcript start
+Start time: 20260617120257
+Username: TIMKT\Anglo
+RunAs User: TIMKT\Anglo
+Configuration Name: 
+Machine: TIMKT (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\Program Files\WindowsApps\Microsoft.PowerShell_7.6.3.0_x64__8wekyb3d8bbwe\pwsh.dll -NoLogo -NoProfile -ExecutionPolicy Bypass -NoExit -File D:\helper\01_reparo_profundo_main.ps1
+Process ID: 19884
+PSVersion: 7.6.3
+PSEdition: Core
+GitCommitId: 7.6.3
+OS: Microsoft Windows 10.0.26200
+Platform: Win32NT
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1, 6.0, 7.0
+PSRemotingProtocolVersion: 2.4
+SerializationVersion: 1.1.0.1
+WSManStackVersion: 3.0
+**********************
+
+=== Helper Codex Routine: Reparo profundo diário do Helper ===
+Projeto: D:\helper
+Modelo: gpt-5.5
+Direto na main, sem branch, sem worktree
+Log: D:\helper\.codex-runs\01_reparo_profundo-20260617-120256.log
+
+?? .codex-routines/
+?? .codex-runs/
+?? 00_CORRIGIR_SCRIPTS_JA_COPIADOS_EM_D_HELPER.cmd
+?? 01_ABRIR_reparo_profundo_main.cmd
+?? 01_reparo_profundo_main.ps1
+?? 02_ABRIR_revisao_features_main.cmd
+?? 02_revisao_features_main.ps1
+?? 03_ABRIR_revisao_ui_ux_main.cmd
+?? 03_revisao_ui_ux_main.ps1
+?? 04_ABRIR_feature_nova_main.cmd
+?? 04_feature_nova_main.ps1
+?? README_rotinas_main_direto.md
+
+Sincronizando GitHub -> local e local -> GitHub antes da rotina...
+
