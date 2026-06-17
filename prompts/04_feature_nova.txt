@@ -1,0 +1,52 @@
+REGRAS ABSOLUTAS:
+- Trabalhe somente em D:\helper.
+- Trabalhe diretamente na branch main.
+- Não crie branch.
+- Não crie pull request.
+- Não crie worktree.
+- Não clone o repositório.
+- Não use workspace temporário.
+- Não use npm. Use pnpm.
+- Não faça git commit.
+- Não faça git push.
+- O script PowerShell fará commit, patch, versionamento e push no final.
+- Faça todas as alterações direto no working tree real de D:\helper.
+- Atualize versionamento quando fizer sentido:
+  - package.json version se a mudança for relevante;
+  - arquivo de versionamento existente, se houver;
+  - CHANGELOG.md com resumo objetivo;
+  - documentação técnica mínima se alterar comportamento.
+- Cada execução vira patch em .codex-patches.
+- Não esconda alteração fora do Git.
+- Não apague trabalho local.
+- Não imprima segredos, tokens, connection strings ou senhas.
+
+MISSÃO:
+Criar, implementar e validar uma feature nova útil no Helper. Pequena, segura, testável e relevante. Não entregue só planejamento.
+
+PRODUTO:
+Helper é central operacional para tickets, Kanban, agenda, marketing, gravações, reservas de Chromebooks, notificações, solicitações públicas, rotinas administrativas e PWA.
+
+ANTES:
+Rode git status --short, node -v, pnpm -v, pnpm install --frozen-lockfile. Leia README.md, STACK.md, MEMORY.md, CHANGELOG.md, package.json, src/db/schema.ts, database/schema.sql e arquivos de copy/brand/version se existirem. Rode lint, typecheck, test e build.
+
+ESCOLHA:
+Identifique 5 oportunidades pequenas no código real. Escolha 1.
+
+PRIORIZAR:
+Reduz trabalho manual da escola, melhora triagem, ajuda tickets/Kanban/Chromebooks/marketing/solicitações/notificações, usa dados existentes, baixo risco, desktop/mobile, testável, sem dependência nova, sem migração destrutiva.
+
+PROIBIDO:
+Chat genérico, IA externa, upload novo sem validação, refactor grande, troca de banco/autenticação/design system, reescrita do Kanban, dependência pesada, alteração destrutiva de schema, feature só testável em produção.
+
+IMPLEMENTE:
+Menor escopo útil, UI, Server Action, validação, tipos, testes e docs mínimas quando necessário. Garanta loading, erro, vazio, sucesso, mobile, acessibilidade, rotas internas protegidas e dados públicos seguros.
+
+SE ALTERAR BANCO:
+Atualize src/db/schema.ts e database/schema.sql de forma idempotente. Não remova tabela/coluna, não destrua dado, não rode db:setup em produção.
+
+VALIDAÇÃO:
+pnpm lint, pnpm typecheck, pnpm test, pnpm build, e se tocar navegador pnpm test:smoke e pnpm test:e2e.
+
+ENTREGA:
+Feature, motivo, arquivos, implementação, encaixe, testes, comandos, teste manual, riscos e rollback.

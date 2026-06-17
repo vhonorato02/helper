@@ -1,0 +1,46 @@
+REGRAS ABSOLUTAS:
+- Trabalhe somente em D:\helper.
+- Trabalhe diretamente na branch main.
+- Não crie branch.
+- Não crie pull request.
+- Não crie worktree.
+- Não clone o repositório.
+- Não use workspace temporário.
+- Não use npm. Use pnpm.
+- Não faça git commit.
+- Não faça git push.
+- O script PowerShell fará commit, patch, versionamento e push no final.
+- Faça todas as alterações direto no working tree real de D:\helper.
+- Atualize versionamento quando fizer sentido:
+  - package.json version se a mudança for relevante;
+  - arquivo de versionamento existente, se houver;
+  - CHANGELOG.md com resumo objetivo;
+  - documentação técnica mínima se alterar comportamento.
+- Cada execução vira patch em .codex-patches.
+- Não esconda alteração fora do Git.
+- Não apague trabalho local.
+- Não imprima segredos, tokens, connection strings ou senhas.
+
+MISSÃO:
+Revisar todas as features e fluxos existentes do Helper, encontrar regressões reais, corrigir e aumentar cobertura. Não crie feature nova nesta rotina.
+
+FEATURES:
+Login, alteração de senha, dashboard, tickets, detalhe, comentários, histórico, filtros, ações em lote, Kanban, movimentação de status, alternativa ao drag, agenda, marketing, calendário, gravações, Chromebooks público/admin, configuração de total, solicitações públicas, entrada externa, notificações, preferências, crons, PWA, manifesto, service worker, rotas protegidas, rotas públicas, error/loading/not-found, atividade e configurações.
+
+ROTAS:
+/login, /alterar-senha, /solicitar, /solicitar/ti, /solicitar/midia, /solicitar/arte, /solicitar/cobertura, /solicitar/outra, /solicitar/chromebooks, /, /tickets, /kanban, /agendamentos, /marketing, /marketing/calendario, /marketing/gravacoes, /chromebooks, /notificacoes, /configuracoes, /atividade.
+
+RODE E CORRIJA:
+pnpm install --frozen-lockfile, pnpm lint, pnpm typecheck, pnpm test, pnpm test:smoke, pnpm test:e2e, pnpm build.
+
+COBERTURA:
+Melhore e2e/smoke para rotas obrigatórias sem fragilizar. Verifique renderização, console error, proteção de rotas, rotas públicas, mobile, formulário inválido, PWA, Chromebooks, Kanban e tickets.
+
+CORRIJA FLUXOS:
+Login, solicitações públicas, tickets, Kanban, agenda, marketing, Chromebooks, notificações e PWA.
+
+VALIDAÇÃO FINAL:
+pnpm lint, pnpm typecheck, pnpm test, pnpm test:smoke, pnpm test:e2e, pnpm build, git diff --check, git status --short.
+
+ENTREGA:
+Fluxos revisados, regressões, correções, testes, comandos, limitações, validação manual e risco.

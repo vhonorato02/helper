@@ -1,0 +1,72 @@
+REGRAS ABSOLUTAS:
+- Trabalhe somente em D:\helper.
+- Trabalhe diretamente na branch main.
+- Não crie branch.
+- Não crie pull request.
+- Não crie worktree.
+- Não clone o repositório.
+- Não use workspace temporário.
+- Não use npm. Use pnpm.
+- Não faça git commit.
+- Não faça git push.
+- O script PowerShell fará commit, patch, versionamento e push no final.
+- Faça todas as alterações direto no working tree real de D:\helper.
+- Atualize versionamento quando fizer sentido:
+  - package.json version se a mudança for relevante;
+  - arquivo de versionamento existente, se houver;
+  - CHANGELOG.md com resumo objetivo;
+  - documentação técnica mínima se alterar comportamento.
+- Cada execução vira patch em .codex-patches.
+- Não esconda alteração fora do Git.
+- Não apague trabalho local.
+- Não imprima segredos, tokens, connection strings ou senhas.
+
+MISSÃO:
+Executar reparo profundo diário no Helper inteiro. Não é relatório. É correção real.
+
+REPOSITÓRIO:
+https://github.com/vhonorato02/helper
+
+STACK:
+Next.js 16 App Router, React 19, TypeScript 6, Node >=24.15 <25, pnpm 11.5.1, Tailwind CSS 4.3 CSS-first, Radix UI, lucide-react, sonner, Server Actions, Route Handlers, jose/JWT com cookie HTTP-only, Zod, Drizzle ORM, Neon PostgreSQL, date-fns/date-fns-tz America/Sao_Paulo, PWA e Vercel.
+
+MÓDULOS:
+Dashboard, tickets, detalhe de ticket, comentários, histórico, Kanban, agenda, marketing, calendário editorial, gravações, Chromebooks, solicitações públicas, entrada externa, notificações, configurações, atividade, login, alteração de senha, PWA, APIs, crons, banco e schema.
+
+ROTAS:
+/login, /alterar-senha, /solicitar, /solicitar/ti, /solicitar/midia, /solicitar/arte, /solicitar/cobertura, /solicitar/outra, /solicitar/chromebooks, /, /tickets, /kanban, /agendamentos, /marketing, /marketing/calendario, /marketing/gravacoes, /chromebooks, /notificacoes, /configuracoes, /atividade.
+
+INÍCIO:
+Rode pwd, git status --short, git branch --show-current, node -v, pnpm -v.
+Leia README.md, STACK.md, MEMORY.md, CHANGELOG.md, package.json, src/db/schema.ts e database/schema.sql se existirem.
+
+VALIDAÇÃO COM CORREÇÃO:
+Rode e corrija até passar:
+- pnpm install --frozen-lockfile
+- pnpm lint
+- pnpm typecheck
+- pnpm test
+- pnpm build
+- pnpm test:smoke
+- pnpm test:e2e
+
+Se Chromium faltar, rode pnpm exec playwright install chromium.
+
+BUSCAS OBRIGATÓRIAS:
+- rg -n "TODO|FIXME|HACK|deprecated|console\\.log|console\\.warn|console\\.error" src scripts tests public database
+- rg -n "any\\b|as unknown as|@ts-ignore|@ts-expect-error" src scripts tests
+- rg -n "window\\.|document\\.|localStorage|sessionStorage" src/app src/components src/lib
+- rg -n "dangerouslySetInnerHTML|innerHTML|eval\\(|new Function" src
+- rg -n "DATABASE_URL|AUTH_SECRET|CRON_SECRET|GMAIL_APP_PASSWORD|BOOTSTRAP_ADMIN_PASSWORD" src scripts public tests README.md STACK.md MEMORY.md CHANGELOG.md
+
+CORRIJA:
+tickets, Kanban, Chromebooks, solicitações públicas, marketing, agenda, notificações, PWA, autenticação, segurança, validações, loading, empty states, error states, mobile e testes.
+
+NÃO:
+Não esconda erro com any, não remova teste, não faça migração destrutiva, não rode db:setup se DATABASE_URL parecer produção.
+
+VALIDAÇÃO FINAL:
+pnpm lint, pnpm typecheck, pnpm test, pnpm test:smoke, pnpm test:e2e, pnpm build, git diff --check, git status --short.
+
+ENTREGA:
+Liste arquivos alterados, problemas, correções, testes, comandos, pendências bloqueadas, teste manual e risco de regressão.
