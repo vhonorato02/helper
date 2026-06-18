@@ -8,18 +8,24 @@ import { auth } from '@/auth';
 import { db } from '@/db';
 import { marketingEvents, schedules } from '@/db/schema';
 import { copy } from '@/lib/copy';
+import { isValidMonthDay } from '@/lib/validation';
 
 const categorySchema = z.enum(['comemorativa', 'civica', 'religiosa', 'escolar', 'campanha']);
 
-const eventSchema = z.object({
-  name: z.string().trim().min(1).max(120),
-  description: z.string().trim().max(500).optional(),
-  month: z.coerce.number().int().min(1).max(12),
-  day: z.coerce.number().int().min(1).max(31),
-  category: categorySchema.default('comemorativa'),
-  leadDays: z.coerce.number().int().min(0).max(180).default(7),
-  sortOrder: z.coerce.number().int().min(0).max(9999).default(100),
-});
+const eventSchema = z
+  .object({
+    name: z.string().trim().min(1).max(120),
+    description: z.string().trim().max(500).optional(),
+    month: z.coerce.number().int().min(1).max(12),
+    day: z.coerce.number().int().min(1).max(31),
+    category: categorySchema.default('comemorativa'),
+    leadDays: z.coerce.number().int().min(0).max(180).default(7),
+    sortOrder: z.coerce.number().int().min(0).max(9999).default(100),
+  })
+  .refine((data) => isValidMonthDay(data.month, data.day), {
+    path: ['day'],
+    message: copy.validation.invalidData,
+  });
 
 async function requireAuth() {
   const session = await auth();
@@ -173,7 +179,7 @@ export async function getUpcomingMarketingEvents(
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  const items = rows.map((r) => {
+  const items = rows.filter((r) => isValidMonthDay(r.month, r.day)).map((r) => {
     const date = nextOccurrence(r.month, r.day, now);
     const days = Math.round((date.getTime() - todayStart.getTime()) / (1000 * 60 * 60 * 24));
     return {

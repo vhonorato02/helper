@@ -1,6 +1,6 @@
 # Helper
 
-Versão atual: `Helper 0.2.3`
+Versão atual: `Helper 0.2.4`
 
 Helper é uma central operacional para registrar, organizar e acompanhar demandas internas. O sistema reúne página pública de solicitações, tickets, Kanban, agenda, reservas de Chromebooks, notificações, rotinas administrativas e PWA em uma única aplicação.
 
@@ -60,6 +60,14 @@ Regras de trabalho:
 O runtime é estritamente Node 24.x LTS. O projeto usa `.node-version`, `.nvmrc`, `engines` e `engine-strict=true` para evitar builds em Node Current.
 
 Tailwind 4 usa tema CSS-first em `src/app/globals.css`; não há mais `tailwind.config.js`. A variante `dark` é baseada na classe `.dark`, pois o Helper usa alternância manual de tema.
+
+## Mudanças da Versão 0.2.4
+
+- Formulários e ações assíncronas de Chromebooks, Agendamentos, Marketing e Gravações agora mostram erro claro quando a Server Action falha inesperadamente.
+- Botões de envio exibem estado de progresso como "Enviando...", "Salvando..." ou "Criando...".
+- Botões de ícone em agendamentos, calendário editorial e gravações ganharam nomes acessíveis e disabled durante ações pendentes.
+- Calendário editorial rejeita datas impossíveis, como 31/02, e o formulário limita o dia conforme o mês selecionado.
+- Service worker atualizado para cache `helper-static-v10`.
 
 ## Mudanças da Versão 0.2.3
 
@@ -769,10 +777,10 @@ pnpm test:smoke
 pnpm build
 git status
 git add .
-git commit -m "chore: release Helper 0.2.3"
+git commit -m "chore: release Helper 0.2.4"
 git push origin main
-git tag v0.2.3
-git push origin v0.2.3
+git tag v0.2.4
+git push origin v0.2.4
 ```
 
 Depois:
@@ -793,4 +801,4 @@ Depois:
 - Use Notificações para alertas internos.
 - Revise logs antes de mexer em banco ou env.
 
-Helper 0.2.3 deve permanecer limpo: sem warnings relevantes, sem marcas antigas, sem rotas quebradas, sem cache PWA antigo e sem Preview escrevendo em Production por acidente.
+Helper 0.2.4 deve permanecer limpo: sem warnings relevantes, sem marcas antigas, sem rotas quebradas, sem cache PWA antigo e sem Preview escrevendo em Production por acidente.

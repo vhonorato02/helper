@@ -50,40 +50,52 @@ export function EventRow({ event, canEdit }: EventRowProps) {
 
   const handleToggle = () => {
     startTransition(async () => {
-      const result = await toggleMarketingEvent(event.id);
-      if (!result || 'error' in result) {
-        toast.error(result?.error ?? copy.validation.invalidData);
-        return;
+      try {
+        const result = await toggleMarketingEvent(event.id);
+        if (!result || 'error' in result) {
+          toast.error(result?.error ?? copy.validation.invalidData);
+          return;
+        }
+        toast.success(
+          result.isActive
+            ? copy.marketing.calendar.activated
+            : copy.marketing.calendar.deactivated,
+        );
+        router.refresh();
+      } catch {
+        toast.error(copy.validation.serverError);
       }
-      toast.success(
-        result.isActive
-          ? copy.marketing.calendar.activated
-          : copy.marketing.calendar.deactivated,
-      );
-      router.refresh();
     });
   };
 
   const handlePromote = () => {
     startTransition(async () => {
-      const result = await promoteEventToSchedule(event.id);
-      if (result && 'error' in result) {
-        toast.error(result.error);
-        return;
+      try {
+        const result = await promoteEventToSchedule(event.id);
+        if (result && 'error' in result) {
+          toast.error(result.error);
+          return;
+        }
+        toast.success(copy.marketing.upcoming.promoted);
+        router.refresh();
+      } catch {
+        toast.error(copy.validation.serverError);
       }
-      toast.success(copy.marketing.upcoming.promoted);
-      router.refresh();
     });
   };
 
   const handleDelete = async () => {
-    const result = await deleteMarketingEvent(event.id);
-    if (result && 'error' in result) {
-      toast.error(result.error);
-      return;
+    try {
+      const result = await deleteMarketingEvent(event.id);
+      if (result && 'error' in result) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success(copy.marketing.calendar.deleted);
+      router.refresh();
+    } catch {
+      toast.error(copy.validation.serverError);
     }
-    toast.success(copy.marketing.calendar.deleted);
-    router.refresh();
   };
 
   return (
@@ -133,6 +145,8 @@ export function EventRow({ event, canEdit }: EventRowProps) {
             className="size-8 text-muted-foreground hover:text-foreground"
             onClick={handlePromote}
             title={copy.marketing.upcoming.promote}
+            aria-label={`${copy.marketing.upcoming.promote}: ${event.name}`}
+            disabled={isPending}
           >
             <CalendarPlus className="size-3.5" />
           </Button>
@@ -144,6 +158,8 @@ export function EventRow({ event, canEdit }: EventRowProps) {
                 className="size-8 text-muted-foreground hover:text-foreground"
                 onClick={handleToggle}
                 title={event.isActive ? 'Desativar' : 'Ativar'}
+                aria-label={`${event.isActive ? 'Desativar' : 'Ativar'}: ${event.name}`}
+                disabled={isPending}
               >
                 {event.isActive ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
               </Button>
@@ -153,6 +169,8 @@ export function EventRow({ event, canEdit }: EventRowProps) {
                 className="size-8 text-muted-foreground hover:text-foreground"
                 onClick={() => setEditOpen(true)}
                 title={copy.common.edit}
+                aria-label={`${copy.common.edit}: ${event.name}`}
+                disabled={isPending}
               >
                 <Pencil className="size-3.5" />
               </Button>
@@ -162,6 +180,8 @@ export function EventRow({ event, canEdit }: EventRowProps) {
                 className="size-8 text-muted-foreground hover:text-destructive"
                 onClick={() => setDeleteOpen(true)}
                 title={copy.common.delete}
+                aria-label={`${copy.common.delete}: ${event.name}`}
+                disabled={isPending}
               >
                 <Trash2 className="size-3.5" />
               </Button>

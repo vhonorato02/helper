@@ -96,19 +96,23 @@ export function ScheduleFormDialog({ open, onOpenChange, initial }: ScheduleForm
     else formData.delete('area');
 
     startTransition(async () => {
-      const result = isEdit
-        ? await updateSchedule(initial.id, formData)
-        : await createSchedule(formData);
+      try {
+        const result = isEdit
+          ? await updateSchedule(initial.id, formData)
+          : await createSchedule(formData);
 
-      if (result && 'error' in result) {
-        toast.error(result.error);
-        return;
+        if (result && 'error' in result) {
+          toast.error(result.error);
+          return;
+        }
+
+        toast.success(isEdit ? copy.agendamentos.updated : copy.agendamentos.created);
+        if ('warning' in result && result.warning) toast.warning(result.warning);
+        onOpenChange(false);
+        router.refresh();
+      } catch {
+        toast.error(copy.validation.serverError);
       }
-
-      toast.success(isEdit ? copy.agendamentos.updated : copy.agendamentos.created);
-      if ('warning' in result && result.warning) toast.warning(result.warning);
-      onOpenChange(false);
-      router.refresh();
     });
   };
 
@@ -210,7 +214,7 @@ export function ScheduleFormDialog({ open, onOpenChange, initial }: ScheduleForm
             </Button>
             <Button type="submit" disabled={isPending}>
               {isPending && <Loader2 className="animate-spin" />}
-              {copy.common.save}
+              {isPending ? 'Salvando...' : copy.common.save}
             </Button>
           </DialogFooter>
         </form>
@@ -254,28 +258,36 @@ export function ScheduleItem({ schedule }: ScheduleItemProps) {
 
   const handleToggle = () => {
     startTransition(async () => {
-      const result = await toggleScheduleStatus(schedule.id);
-      if (!result || 'error' in result) {
-        toast.error(result?.error ?? copy.validation.invalidData);
-        return;
+      try {
+        const result = await toggleScheduleStatus(schedule.id);
+        if (!result || 'error' in result) {
+          toast.error(result?.error ?? copy.validation.invalidData);
+          return;
+        }
+        const msg =
+          result.status === 'concluido'
+            ? copy.agendamentos.markedDone
+            : copy.agendamentos.markedPending;
+        toast.success(msg);
+        router.refresh();
+      } catch {
+        toast.error(copy.validation.serverError);
       }
-      const msg =
-        result.status === 'concluido'
-          ? copy.agendamentos.markedDone
-          : copy.agendamentos.markedPending;
-      toast.success(msg);
-      router.refresh();
     });
   };
 
   const handleDelete = async () => {
-    const result = await deleteSchedule(schedule.id);
-    if (result && 'error' in result) {
-      toast.error(result.error);
-      return;
+    try {
+      const result = await deleteSchedule(schedule.id);
+      if (result && 'error' in result) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success(copy.agendamentos.deleted);
+      router.refresh();
+    } catch {
+      toast.error(copy.validation.serverError);
     }
-    toast.success(copy.agendamentos.deleted);
-    router.refresh();
   };
 
   const dateLabel = new Intl.DateTimeFormat('pt-BR', {
@@ -300,6 +312,7 @@ export function ScheduleItem({ schedule }: ScheduleItemProps) {
             disabled={isPending || schedule.status === 'cancelado'}
             className="mt-0.5 shrink-0 transition-opacity hover:opacity-80 disabled:cursor-default"
             title={cfg.label}
+            aria-label={cfg.label}
           >
             {isPending ? <Loader2 className="size-4 animate-spin text-muted-foreground" /> : cfg.icon}
           </button>
@@ -336,6 +349,8 @@ export function ScheduleItem({ schedule }: ScheduleItemProps) {
               className="size-8 text-muted-foreground hover:text-foreground"
               onClick={() => setEditOpen(true)}
               title={copy.common.edit}
+              aria-label={`${copy.common.edit}: ${schedule.title}`}
+              disabled={isPending}
             >
               <Pencil className="size-3.5" />
             </Button>
@@ -345,6 +360,8 @@ export function ScheduleItem({ schedule }: ScheduleItemProps) {
               className="size-8 text-muted-foreground hover:text-destructive"
               onClick={() => setDeleteOpen(true)}
               title={copy.common.delete}
+              aria-label={`${copy.common.delete}: ${schedule.title}`}
+              disabled={isPending}
             >
               <Trash2 className="size-3.5" />
             </Button>

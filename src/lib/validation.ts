@@ -31,3 +31,12 @@ export const ticketCodeSchema = z
   .trim()
   .regex(/^(TI|MKT|PF)-\d{1,6}$/i, copy.validation.invalidTicket)
   .transform((value) => value.toUpperCase());
+
+export function isValidMonthDay(month: number, day: number) {
+  if (!Number.isInteger(month) || !Number.isInteger(day)) return false;
+  if (month < 1 || month > 12 || day < 1) return false;
+
+  // Leap year keeps 29/02 valid for recurring institutional dates.
+  const date = new Date(Date.UTC(2024, month - 1, day));
+  return date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}

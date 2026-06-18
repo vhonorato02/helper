@@ -1,5 +1,14 @@
 # Changelog
 
+## Helper 0.2.4 - 2026-06-18
+
+- Corrige tratamento de exceções em formulários e ações assíncronas de Chromebooks, Agendamentos, Marketing e Gravações para exibir erro claro sem travar a UI.
+- Reforça estados de loading em botões de envio para indicar salvamento, criação ou envio em andamento.
+- Adiciona nomes acessíveis e disabled em botões de ícone de agendamentos, calendário editorial e gravações.
+- Rejeita datas impossíveis no calendário editorial, como 31/02, e ajusta o formulário para limitar o dia conforme o mês.
+- Adiciona teste unitário para validação de dias reais em datas recorrentes.
+- Atualiza metadados operacionais para Helper 0.2.4 e service worker `helper-static-v10`.
+
 ## Helper 0.2.3 - 2026-06-18
 
 - Corrige o script `pnpm typecheck` para executar `tsc --noEmit --incremental false`, evitando travamento por cache incremental local durante validacoes.

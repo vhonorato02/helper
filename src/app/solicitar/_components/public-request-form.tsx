@@ -250,7 +250,7 @@ export function PublicRequestForm({
 
       <Button type="submit" className="min-h-11 w-full sm:w-auto" disabled={isPending}>
         {isPending && <Loader2 className="animate-spin" />}
-        Enviar solicitação
+        {isPending ? 'Enviando...' : 'Enviar solicitação'}
       </Button>
     </form>
   );

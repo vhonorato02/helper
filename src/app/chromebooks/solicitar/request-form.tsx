@@ -81,23 +81,30 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
     }
 
     startTransition(async () => {
-      const result = await createPublicChromebookBooking(formData);
-      submitLockRef.current = false;
-      if (result && 'error' in result) {
-        const message = result.error ?? 'Não foi possível registrar a solicitação.';
+      try {
+        const result = await createPublicChromebookBooking(formData);
+        if (result && 'error' in result) {
+          const message = result.error ?? 'Não foi possível registrar a solicitação.';
+          setFormError(message);
+          toast.error(message);
+          return;
+        }
+
+        const protocol = result?.protocol ? ` Protocolo: ${result.protocol}.` : '';
+        setSuccess(`Solicitação registrada.${protocol} Guarde esse protocolo para falar com a equipe.`);
+        toast.success(result?.protocol ? `Solicitação ${result.protocol} registrada.` : 'Solicitação registrada.');
+        formRef.current?.reset();
+        setDate('');
+        setStartTime('');
+        setEndTime('');
+        setNotesLength(0);
+      } catch {
+        const message = 'Não foi possível registrar a solicitação agora.';
         setFormError(message);
         toast.error(message);
-        return;
+      } finally {
+        submitLockRef.current = false;
       }
-
-      const protocol = result?.protocol ? ` Protocolo: ${result.protocol}.` : '';
-      setSuccess(`Solicitação registrada.${protocol} Guarde esse protocolo para falar com a equipe.`);
-      toast.success(result?.protocol ? `Solicitação ${result.protocol} registrada.` : 'Solicitação registrada.');
-      formRef.current?.reset();
-      setDate('');
-      setStartTime('');
-      setEndTime('');
-      setNotesLength(0);
     });
   };
 
@@ -112,7 +119,7 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
         </div>
       </div>
 
-      <form ref={formRef} onSubmit={submit} noValidate className="space-y-4">
+      <form ref={formRef} onSubmit={submit} noValidate aria-busy={isPending} className="space-y-4">
         <input
           type="text"
           name="website"
@@ -267,7 +274,7 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
 
         <Button type="submit" className="w-full sm:w-auto" disabled={isPending}>
           {isPending && <Loader2 className="animate-spin" />}
-          Solicitar agendamento
+          {isPending ? 'Enviando...' : 'Solicitar agendamento'}
         </Button>
       </form>
     </section>

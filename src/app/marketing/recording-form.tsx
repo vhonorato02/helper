@@ -83,18 +83,22 @@ export function RecordingFormDialog({
     else formData.delete('responsibleId');
 
     startTransition(async () => {
-      const result = isEdit
-        ? await updateRecording(initial.id, formData)
-        : await createRecording(formData);
+      try {
+        const result = isEdit
+          ? await updateRecording(initial.id, formData)
+          : await createRecording(formData);
 
-      if (result && 'error' in result) {
-        toast.error(result.error);
-        return;
+        if (result && 'error' in result) {
+          toast.error(result.error);
+          return;
+        }
+
+        toast.success(isEdit ? copy.marketing.recordings.updated : copy.marketing.recordings.created);
+        onOpenChange(false);
+        router.refresh();
+      } catch {
+        toast.error(copy.validation.serverError);
       }
-
-      toast.success(isEdit ? copy.marketing.recordings.updated : copy.marketing.recordings.created);
-      onOpenChange(false);
-      router.refresh();
     });
   };
 
@@ -268,7 +272,7 @@ export function RecordingFormDialog({
             </Button>
             <Button type="submit" disabled={isPending}>
               {isPending && <Loader2 className="animate-spin" />}
-              {copy.common.save}
+              {isPending ? 'Salvando...' : copy.common.save}
             </Button>
           </DialogFooter>
         </form>

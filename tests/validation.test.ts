@@ -5,6 +5,7 @@ import {
   PASSWORD_MIN_LENGTH,
   usernameSchema,
   ticketCodeSchema,
+  isValidMonthDay,
 } from '@/lib/validation';
 
 describe('validation schemas', () => {
@@ -24,5 +25,12 @@ describe('validation schemas', () => {
     assert.equal(ticketCodeSchema.parse(' ti-0042 '), 'TI-0042');
     assert.equal(ticketCodeSchema.safeParse('TI-').success, false);
     assert.equal(ticketCodeSchema.safeParse('XYZ-1').success, false);
+  });
+
+  it('validates real calendar days for recurring dates', () => {
+    assert.equal(isValidMonthDay(2, 29), true);
+    assert.equal(isValidMonthDay(2, 31), false);
+    assert.equal(isValidMonthDay(4, 31), false);
+    assert.equal(isValidMonthDay(12, 31), true);
   });
 });

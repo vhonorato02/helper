@@ -83,24 +83,32 @@ export function RecordingItem({ recording, users }: RecordingItemProps) {
   const handleStatus = (next: Recording['status']) => {
     if (next === recording.status) return;
     startTransition(async () => {
-      const result = await setRecordingStatus(recording.id, next);
-      if (!result || 'error' in result) {
-        toast.error(result?.error ?? copy.validation.invalidData);
-        return;
+      try {
+        const result = await setRecordingStatus(recording.id, next);
+        if (!result || 'error' in result) {
+          toast.error(result?.error ?? copy.validation.invalidData);
+          return;
+        }
+        toast.success(copy.marketing.recordings.statusChanged);
+        router.refresh();
+      } catch {
+        toast.error(copy.validation.serverError);
       }
-      toast.success(copy.marketing.recordings.statusChanged);
-      router.refresh();
     });
   };
 
   const handleDelete = async () => {
-    const result = await deleteRecording(recording.id);
-    if (result && 'error' in result) {
-      toast.error(result.error);
-      return;
+    try {
+      const result = await deleteRecording(recording.id);
+      if (result && 'error' in result) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success(copy.marketing.recordings.deleted);
+      router.refresh();
+    } catch {
+      toast.error(copy.validation.serverError);
     }
-    toast.success(copy.marketing.recordings.deleted);
-    router.refresh();
   };
 
   const dim = recording.status === 'cancelada' || recording.status === 'publicada';
@@ -205,6 +213,8 @@ export function RecordingItem({ recording, users }: RecordingItemProps) {
               className="size-8 text-muted-foreground hover:text-foreground"
               onClick={() => setEditOpen(true)}
               title={copy.common.edit}
+              aria-label={`${copy.common.edit}: ${recording.title}`}
+              disabled={isPending}
             >
               <Pencil className="size-3.5" />
             </Button>
@@ -214,6 +224,8 @@ export function RecordingItem({ recording, users }: RecordingItemProps) {
               className="size-8 text-muted-foreground hover:text-destructive"
               onClick={() => setDeleteOpen(true)}
               title={copy.common.delete}
+              aria-label={`${copy.common.delete}: ${recording.title}`}
+              disabled={isPending}
             >
               <Trash2 className="size-3.5" />
             </Button>

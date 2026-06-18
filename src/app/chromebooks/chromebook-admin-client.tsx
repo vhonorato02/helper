@@ -162,18 +162,22 @@ function BookingDialog({
     const formData = new FormData(event.currentTarget);
 
     startTransition(async () => {
-      const result = isEdit
-        ? await updateChromebookBooking(initial.id, formData)
-        : await createChromebookBooking(formData);
+      try {
+        const result = isEdit
+          ? await updateChromebookBooking(initial.id, formData)
+          : await createChromebookBooking(formData);
 
-      if (result && 'error' in result) {
-        toast.error(result.error);
-        return;
+        if (result && 'error' in result) {
+          toast.error(result.error);
+          return;
+        }
+
+        toast.success(isEdit ? 'Agendamento atualizado.' : 'Agendamento inserido.');
+        onOpenChange(false);
+        router.refresh();
+      } catch {
+        toast.error('Não foi possível salvar o agendamento agora.');
       }
-
-      toast.success(isEdit ? 'Agendamento atualizado.' : 'Agendamento inserido.');
-      onOpenChange(false);
-      router.refresh();
     });
   };
 
@@ -317,7 +321,7 @@ function BookingDialog({
             </Button>
             <Button type="submit" disabled={isPending}>
               {isPending && <Loader2 className="animate-spin" />}
-              Salvar
+              {isPending ? 'Salvando...' : 'Salvar'}
             </Button>
           </DialogFooter>
         </form>
@@ -334,13 +338,17 @@ function SettingsForm({ total, isAdmin }: { total: number; isAdmin: boolean }) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     startTransition(async () => {
-      const result = await updateChromebookSettings(formData);
-      if (result && 'error' in result) {
-        toast.error(result.error);
-        return;
+      try {
+        const result = await updateChromebookSettings(formData);
+        if (result && 'error' in result) {
+          toast.error(result.error);
+          return;
+        }
+        toast.success('Total de Chromebooks atualizado.');
+        router.refresh();
+      } catch {
+        toast.error('Não foi possível atualizar o total agora.');
       }
-      toast.success('Total de Chromebooks atualizado.');
-      router.refresh();
     });
   };
 
@@ -362,7 +370,7 @@ function SettingsForm({ total, isAdmin }: { total: number; isAdmin: boolean }) {
         />
         <Button type="submit" disabled={!isAdmin || isPending}>
           {isPending && <Loader2 className="animate-spin" />}
-          Alterar total
+          {isPending ? 'Salvando...' : 'Alterar total'}
         </Button>
       </div>
       {!isAdmin && (
@@ -420,31 +428,43 @@ export function ChromebookAdminClient({
   const runCancel = () => {
     if (!confirmCancel) return;
     startTransition(async () => {
-      const result = await cancelChromebookBooking(confirmCancel.id);
-      if (result && 'error' in result) toast.error(result.error);
-      else toast.success('Agendamento cancelado.');
-      setConfirmCancel(null);
-      router.refresh();
+      try {
+        const result = await cancelChromebookBooking(confirmCancel.id);
+        if (result && 'error' in result) toast.error(result.error);
+        else toast.success('Agendamento cancelado.');
+        setConfirmCancel(null);
+        router.refresh();
+      } catch {
+        toast.error('Não foi possível cancelar o agendamento agora.');
+      }
     });
   };
 
   const runConfirm = (booking: ChromebookBookingRow) => {
     startTransition(async () => {
-      const result = await confirmChromebookBooking(booking.id);
-      if (result && 'error' in result) toast.error(result.error);
-      else toast.success('Agendamento aprovado.');
-      router.refresh();
+      try {
+        const result = await confirmChromebookBooking(booking.id);
+        if (result && 'error' in result) toast.error(result.error);
+        else toast.success('Agendamento aprovado.');
+        router.refresh();
+      } catch {
+        toast.error('Não foi possível aprovar o agendamento agora.');
+      }
     });
   };
 
   const runDelete = () => {
     if (!confirmDelete) return;
     startTransition(async () => {
-      const result = await deleteChromebookBooking(confirmDelete.id);
-      if (result && 'error' in result) toast.error(result.error);
-      else toast.success('Agendamento excluído.');
-      setConfirmDelete(null);
-      router.refresh();
+      try {
+        const result = await deleteChromebookBooking(confirmDelete.id);
+        if (result && 'error' in result) toast.error(result.error);
+        else toast.success('Agendamento excluído.');
+        setConfirmDelete(null);
+        router.refresh();
+      } catch {
+        toast.error('Não foi possível excluir o agendamento agora.');
+      }
     });
   };
 
@@ -617,7 +637,7 @@ export function ChromebookAdminClient({
                         </Button>
                       </>
                     )}
-                    <Button variant="ghost" size="sm" onClick={() => openEdit(booking)}>
+                    <Button variant="ghost" size="sm" onClick={() => openEdit(booking)} disabled={isPending}>
                       <Pencil className="size-3.5" />
                       Editar
                     </Button>
@@ -627,6 +647,7 @@ export function ChromebookAdminClient({
                         size="sm"
                         className="text-destructive hover:text-destructive"
                         onClick={() => setConfirmDelete(booking)}
+                        disabled={isPending}
                       >
                         <Trash2 className="size-3.5" />
                         Excluir
@@ -709,6 +730,7 @@ export function ChromebookAdminClient({
                             onClick={() => openEdit(booking)}
                             title="Editar"
                             aria-label="Editar agendamento"
+                            disabled={isPending}
                           >
                             <Pencil className="size-3.5" />
                           </Button>
@@ -732,6 +754,7 @@ export function ChromebookAdminClient({
                               onClick={() => setConfirmDelete(booking)}
                               title="Excluir"
                               aria-label="Excluir agendamento"
+                              disabled={isPending}
                             >
                               <Trash2 className="size-3.5" />
                             </Button>

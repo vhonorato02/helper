@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { CalendarRange, Loader2 } from 'lucide-react';
@@ -65,6 +65,12 @@ function currentAppMonth() {
   );
 }
 
+function daysInMonth(month: string) {
+  const monthNumber = Number(month);
+  if (!Number.isInteger(monthNumber) || monthNumber < 1 || monthNumber > 12) return 31;
+  return new Date(Date.UTC(2024, monthNumber, 0)).getUTCDate();
+}
+
 export function EventFormDialog({ open, onOpenChange, initial }: EventFormDialogProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -72,30 +78,44 @@ export function EventFormDialog({ open, onOpenChange, initial }: EventFormDialog
     (initial?.category as MarketingEventCategory) ?? 'comemorativa',
   );
   const [month, setMonth] = useState<string>(String(initial?.month ?? currentAppMonth()));
+  const [day, setDay] = useState<string>(initial?.day ? String(initial.day) : '');
 
   const isEdit = !!initial;
+  const maxDay = daysInMonth(month);
+
+  useEffect(() => {
+    if (!open) return;
+    setCategory((initial?.category as MarketingEventCategory) ?? 'comemorativa');
+    setMonth(String(initial?.month ?? currentAppMonth()));
+    setDay(initial?.day ? String(initial.day) : '');
+  }, [initial, open]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     formData.set('category', category);
     formData.set('month', month);
+    formData.set('day', day);
 
     startTransition(async () => {
-      const result = isEdit
-        ? await updateMarketingEvent(initial.id, formData)
-        : await createMarketingEvent(formData);
+      try {
+        const result = isEdit
+          ? await updateMarketingEvent(initial.id, formData)
+          : await createMarketingEvent(formData);
 
-      if (result && 'error' in result) {
-        toast.error(result.error);
-        return;
+        if (result && 'error' in result) {
+          toast.error(result.error);
+          return;
+        }
+
+        toast.success(
+          isEdit ? copy.marketing.calendar.updated : copy.marketing.calendar.created,
+        );
+        onOpenChange(false);
+        router.refresh();
+      } catch {
+        toast.error(copy.validation.serverError);
       }
-
-      toast.success(
-        isEdit ? copy.marketing.calendar.updated : copy.marketing.calendar.created,
-      );
-      onOpenChange(false);
-      router.refresh();
     });
   };
 
@@ -142,11 +162,15 @@ export function EventFormDialog({ open, onOpenChange, initial }: EventFormDialog
                 name="day"
                 type="number"
                 min={1}
-                max={31}
-                defaultValue={initial?.day ?? ''}
+                max={maxDay}
+                value={day}
+                onChange={(event) => setDay(event.currentTarget.value)}
                 required
                 disabled={isPending}
               />
+              <p className="text-xs text-muted-foreground">
+                Dia 1 a {maxDay} para o mês selecionado.
+              </p>
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <Label>{copy.marketing.calendar.monthsLabel}</Label>
@@ -238,7 +262,7 @@ export function EventFormDialog({ open, onOpenChange, initial }: EventFormDialog
             </Button>
             <Button type="submit" disabled={isPending}>
               {isPending && <Loader2 className="animate-spin" />}
-              {copy.common.save}
+              {isPending ? 'Salvando...' : copy.common.save}
             </Button>
           </DialogFooter>
         </form>

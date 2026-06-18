@@ -1,108 +1,115 @@
-# Relatorio de Reparos Helper
+# Relatório de Reparos do Helper
 
 Data: 2026-06-18
 
 ## Resumo executivo
 
-Rotina de reparos concluida na branch `main`, com correcao do travamento em `pnpm typecheck`, atualizacao operacional para Helper 0.2.3, refresh do cache PWA e protecao contra novos logs locais em commits futuros.
+Rotina geral de reparos executada na branch `main`. Foram corrigidos papercuts e falhas reais de UX/estabilidade em formulários e ações assíncronas, reforçada a acessibilidade de botões de ícone, adicionada validação de datas reais no calendário editorial e atualizada a versão do Helper para `0.2.4`.
 
-## Problemas encontrados
+## Versão
 
-- `pnpm typecheck` ficava preso por mais de 5 minutos usando o cache incremental do TypeScript.
-- `pnpm version patch --no-git-tag-version` recusou executar com a working tree ja alterada (`ERR_PNPM_UNCLEAN_WORKING_TREE`).
-- Novos logs locais em `.codex-routines/logs/*.log` apareciam como arquivos nao rastreados e poderiam entrar em `git add -A`.
+- Versão anterior: `0.2.3`
+- Versão nova: `0.2.4`
 
-## Problemas corrigidos
+## GitHub
 
-- `package.json` agora executa `tsc --noEmit --incremental false` no script `typecheck`.
-- Versao atualizada de `0.2.2` para `0.2.3` em `package.json` e `src/lib/version.ts`.
-- `CHANGELOG.md`, `README.md` e `MEMORY.md` atualizados para Helper 0.2.3.
-- `public/sw.js` atualizado para `helper-static-v9`.
-- `.gitignore` passou a ignorar novos logs locais em `.codex-routines/logs/*.log`.
+- Branch de trabalho: `main`
+- Commit: `fix: rotina geral de reparos do Helper`
+- Tag: `v0.2.4`
+- Push para main: sim
+- PR: não
+- Link do PR, se houver: não aplicável
 
-## Prioridades
+## Prioridade alta
 
-Alta:
-- Restaurar confiabilidade do `pnpm typecheck`.
+| Problema | Área | Correção | Status |
+|---|---|---|---|
+| Formulário público de Chromebooks podia ficar travado se a Server Action lançasse exceção | `/solicitar/chromebooks` | Adicionado `try/catch/finally`, liberação garantida do lock, erro visível e toast | Corrigido |
+| Calendário editorial aceitava datas impossíveis como 31/02 | Marketing / calendário | Adicionada validação backend de dia real por mês e filtragem defensiva de eventos inválidos | Corrigido |
+| Ações assíncronas de Chromebooks, Agendamentos e Marketing não tinham fallback claro para exceções inesperadas | Fluxos internos | Adicionados `try/catch` com mensagens de erro claras | Corrigido |
 
-Media:
-- Manter metadados, documentacao e cache PWA alinhados com a versao 0.2.3.
+## Prioridade média
 
-Baixa:
-- Evitar versionamento acidental de novos logs locais.
+| Problema | Área | Correção | Status |
+|---|---|---|---|
+| Botões de envio mantinham texto estático durante processamento | Formulários públicos, tickets, Chromebooks, Agendamentos, Marketing e Gravações | Adicionados textos de progresso como `Enviando...`, `Salvando...` e `Criando...` | Corrigido |
+| Botões de ícone dependiam de `title` em pontos de Agendamentos, Calendário e Gravações | Acessibilidade | Adicionados `aria-label` contextuais e `disabled` durante ações pendentes | Corrigido |
+| Formulário do calendário editorial não ajustava limite do dia ao mês selecionado | Marketing / calendário | Campo de dia passou a usar limite dinâmico por mês | Corrigido |
+
+## Prioridade baixa
+
+| Problema | Área | Correção | Status |
+|---|---|---|---|
+| Metadados e documentação precisavam refletir a nova rotina | Produto / release | Atualizados README, MEMORY, CHANGELOG, versão do app e service worker | Corrigido |
+| Testes não cobriam validação de dia real em datas recorrentes | Testes | Adicionado teste unitário para `isValidMonthDay` | Corrigido |
 
 ## Arquivos alterados
 
-- `.gitignore`
 - `CHANGELOG.md`
 - `MEMORY.md`
 - `README.md`
 - `RELATORIO_REPAROS_HELPER.md`
 - `package.json`
 - `public/sw.js`
+- `src/actions/marketing-events.ts`
+- `src/app/agendamentos/schedule-client.tsx`
+- `src/app/chromebooks/chromebook-admin-client.tsx`
+- `src/app/chromebooks/solicitar/request-form.tsx`
+- `src/app/marketing/calendario/event-form.tsx`
+- `src/app/marketing/calendario/event-list.tsx`
+- `src/app/marketing/recording-form.tsx`
+- `src/app/marketing/recording-list.tsx`
+- `src/app/solicitar/_components/public-request-form.tsx`
+- `src/components/tickets/ticket-form.tsx`
+- `src/lib/validation.ts`
 - `src/lib/version.ts`
-
-## Versao
-
-- Versao anterior: `0.2.2`
-- Versao nova: `0.2.3`
-
-## Git e GitHub
-
-- Commit criado: sim, `fix: rotina de reparos do Helper`
-- Tag criada: sim, `v0.2.3`
-- Push direto para main: sim
-- PR criado: nao
+- `tests/validation.test.ts`
 
 ## Comandos executados
 
 - `pwd`
-- `git branch --show-current`
 - `git status --short`
+- `git branch --show-current`
 - `git fetch origin`
 - `git checkout main`
 - `git pull --rebase origin main`
+- `node -v`
+- `pnpm -v`
+- `pnpm install --frozen-lockfile`
+- Leituras obrigatórias de README, STACK, MEMORY, CHANGELOG, package, lockfile, schemas, configs e proxy
+- Buscas obrigatórias com `rg` para TODO/FIXME/console, `any`, browser APIs, HTML perigoso, nomes de envs, estados de UI e validações
 - `pnpm lint`
 - `pnpm typecheck`
-- `pnpm exec tsc --noEmit --incremental false --pretty false`
 - `pnpm test`
 - `pnpm build`
 - `pnpm test:smoke`
 - `pnpm test:e2e`
-- `git diff --check`
 - `pnpm version patch --no-git-tag-version`
-- `rg "0\\.2\\.2|helper-static-v8|Helper 0\\.2\\.2" -n`
+- `git diff --check`
+- `git status --short`
 
-## Resultado de lint
+## Resultado das validações
 
-- Inicial: passou.
-- Final: passou com `pnpm lint`.
+| Comando | Resultado |
+|---|---|
+| `pnpm install --frozen-lockfile` | Passou |
+| `pnpm lint` | Passou |
+| `pnpm typecheck` | Passou |
+| `pnpm test` | Passou, 50 testes |
+| `pnpm build` | Passou |
+| `pnpm test:smoke` | Passou |
+| `pnpm test:e2e` | Passou |
+| `git diff --check` | Passou |
 
-## Resultado de typecheck
+## Pendências
 
-- Inicial: `pnpm typecheck` excedeu 120s e depois 300s.
-- Diagnostico: `pnpm exec tsc --noEmit --incremental false --pretty false` passou.
-- Final: passou com `pnpm typecheck`.
+- Nenhuma pendência técnica identificada nesta rotina.
+- `pnpm version patch --no-git-tag-version` falhou com `ERR_PNPM_UNCLEAN_WORKING_TREE`; o patch foi incrementado manualmente conforme regra do prompt.
 
-## Resultado de tests
+## Risco de regressão
 
-- Unitarios: passou com 49 testes, 15 suites, 0 falhas.
-- Smoke: passou.
-- E2E: passou com Playwright.
+Baixo a médio. As mudanças são focadas em feedback de erro/loading, acessibilidade e validação de calendário. O maior ponto de atenção é o calendário editorial: datas inválidas deixam de ser aceitas, o que é a regra correta, mas pode bloquear registros antigos inconsistentes se forem editados.
 
-## Resultado de build
+## Próximo passo recomendado
 
-- Final: passou com Next.js 16.2.9 e Turbopack.
-
-## Pendencias
-
-- Nenhuma pendencia tecnica identificada nesta rotina.
-- O comando `pnpm version patch --no-git-tag-version` nao funcionou por arvore suja; o patch foi incrementado manualmente conforme regra do fluxo.
-
-## Risco de regressao
-
-Baixo. A mudanca funcional e restrita ao script de typecheck, sem alterar codigo de runtime. A atualizacao do service worker apenas troca o nome do cache estatico para forcar refresh PWA.
-
-## Proximo passo recomendado
-
-Monitorar o primeiro deploy da Vercel apos o push para confirmar build em producao e ativacao do novo service worker.
+Monitorar o deploy da Vercel após o push para confirmar build de produção e testar manualmente `/solicitar/chromebooks`, `/agendamentos`, `/marketing/calendario` e `/marketing/gravacoes`.

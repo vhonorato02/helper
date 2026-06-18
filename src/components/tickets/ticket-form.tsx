@@ -399,7 +399,7 @@ export function TicketForm({ open, onClose, users }: TicketFormProps) {
             </Button>
             <Button type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
               {isSubmitting && <Loader2 className="animate-spin" />}
-              {copy.tickets.form.actions.submit}
+              {isSubmitting ? 'Criando...' : copy.tickets.form.actions.submit}
             </Button>
           </div>
         </form>
