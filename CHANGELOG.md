@@ -1,5 +1,15 @@
 # Changelog
 
+## Helper 0.2.5 - 2026-06-18
+
+## Funcionalidades adicionadas
+
+- Adicionados filtros rápidos de hoje, amanhã, pendentes e confirmados na administração de Chromebooks.
+- Adicionada exportação CSV dos agendamentos de Chromebooks atualmente filtrados.
+- Adicionada ação para marcar uma notificação individual como lida, com feedback e atualização da inbox.
+- Adicionados filtros por área e status na agenda, com estado vazio específico para resultados filtrados.
+- Atualiza metadados operacionais para Helper 0.2.5 e service worker `helper-static-v11`.
+
 ## Helper 0.2.4 - 2026-06-18
 
 - Corrige tratamento de exceções em formulários e ações assíncronas de Chromebooks, Agendamentos, Marketing e Gravações para exibir erro claro sem travar a UI.

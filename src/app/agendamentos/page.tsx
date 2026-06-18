@@ -1,7 +1,18 @@
-import { CalendarDays, Inbox } from 'lucide-react';
+import Link from 'next/link';
+import { CalendarDays, FilterX, Inbox } from 'lucide-react';
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { getSchedules } from '@/actions/schedules';
+import { Button } from '@/components/ui/button';
+import { FilterField } from '@/components/ui/filter-field';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { AREA_OPTIONS } from '@/lib/constants';
 import { copy } from '@/lib/copy';
 import { appDayEnd, appDayStart } from '@/lib/timezone';
 import { NewScheduleButton, ScheduleItem } from './schedule-client';
@@ -79,15 +90,18 @@ function ScheduleGroup({
 export default async function AgendamentosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ view?: string }>;
+  searchParams: Promise<{ view?: string; area?: string; status?: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect('/login');
 
   const sp = await searchParams;
   const view: 'list' | 'calendar' = sp.view === 'calendar' ? 'calendar' : 'list';
+  const activeArea = sp.area ?? 'all';
+  const activeStatus = sp.status ?? 'all';
+  const hasActiveFilters = activeArea !== 'all' || activeStatus !== 'all';
 
-  const allSchedules = await getSchedules();
+  const allSchedules = await getSchedules({ area: activeArea, status: activeStatus });
   const { today, week, future, past } = groupSchedules(allSchedules);
   const isEmpty = allSchedules.length === 0;
 
@@ -107,13 +121,73 @@ export default async function AgendamentosPage({
         </div>
       </div>
 
-      {isEmpty && view !== 'calendar' ? (
+      <form action="/agendamentos" className="surface-elevated rounded-lg p-3 sm:p-4">
+        {view === 'calendar' && <input type="hidden" name="view" value="calendar" />}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(12rem,0.8fr)_minmax(12rem,0.8fr)_auto] lg:items-end">
+          <FilterField label={copy.agendamentos.form.area} htmlFor="schedule-filter-area">
+            <Select name="area" defaultValue={activeArea}>
+              <SelectTrigger id="schedule-filter-area" aria-label="Filtrar agendamentos por área">
+                <SelectValue placeholder={copy.agendamentos.form.areaPlaceholder} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as áreas</SelectItem>
+                {AREA_OPTIONS.map((area) => (
+                  <SelectItem key={area.value} value={area.value}>
+                    {area.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FilterField>
+
+          <FilterField label="Status" htmlFor="schedule-filter-status">
+            <Select name="status" defaultValue={activeStatus}>
+              <SelectTrigger id="schedule-filter-status" aria-label="Filtrar agendamentos por status">
+                <SelectValue placeholder="Todos status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos status</SelectItem>
+                <SelectItem value="pendente">{copy.agendamentos.status.pendente}</SelectItem>
+                <SelectItem value="concluido">{copy.agendamentos.status.concluido}</SelectItem>
+                <SelectItem value="cancelado">{copy.agendamentos.status.cancelado}</SelectItem>
+              </SelectContent>
+            </Select>
+          </FilterField>
+
+          <div className="flex flex-col gap-2 sm:col-span-2 sm:flex-row lg:col-span-1">
+            <Button type="submit" variant="outline" className="w-full lg:w-auto">
+              Filtrar agenda
+            </Button>
+            {hasActiveFilters && (
+              <Button asChild type="button" variant="ghost" className="w-full text-muted-foreground lg:w-auto">
+                <Link href={view === 'calendar' ? '/agendamentos?view=calendar' : '/agendamentos'}>
+                  <FilterX className="size-4" />
+                  Limpar
+                </Link>
+              </Button>
+            )}
+          </div>
+        </div>
+      </form>
+
+      {isEmpty ? (
         <div className="surface-elevated rounded-lg py-20 text-center">
           <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-lg bg-muted/60">
             <Inbox className="size-5 text-muted-foreground" />
           </div>
-          <p className="font-semibold">{copy.agendamentos.empty}</p>
-          <p className="mt-1.5 text-sm text-muted-foreground">{copy.agendamentos.emptyHint}</p>
+          <p className="font-semibold">
+            {hasActiveFilters ? 'Nenhum agendamento encontrado com esses filtros' : copy.agendamentos.empty}
+          </p>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            {hasActiveFilters ? 'Ajuste os filtros ou limpe a seleção para voltar à agenda completa.' : copy.agendamentos.emptyHint}
+          </p>
+          {hasActiveFilters && (
+            <Button asChild variant="outline" size="sm" className="mt-4">
+              <Link href={view === 'calendar' ? '/agendamentos?view=calendar' : '/agendamentos'}>
+                Limpar filtros
+              </Link>
+            </Button>
+          )}
         </div>
       ) : view === 'calendar' ? (
         <div className="space-y-6">

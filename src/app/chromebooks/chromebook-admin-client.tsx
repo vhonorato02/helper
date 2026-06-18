@@ -8,6 +8,7 @@ import {
   CalendarClock,
   CheckCircle2,
   Circle,
+  Download,
   FilterX,
   Loader2,
   Pencil,
@@ -57,6 +58,7 @@ import {
 } from '@/lib/chromebooks';
 import { getHolidaySchedulingNotice } from '@/lib/holidays';
 import { cn } from '@/lib/utils';
+import { CSV_BOM, csvDocument } from '@/lib/csv';
 
 type SettingsRow = {
   totalChromebooks: number;
@@ -77,6 +79,59 @@ type Filters = {
   room?: string;
   quantity?: string;
 };
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function formatCsvDateTime(value: Date | string) {
+  return new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: 'America/Sao_Paulo',
+  }).format(new Date(value));
+}
+
+function downloadBookingsCsv(bookings: ChromebookBookingRow[]) {
+  const headers = [
+    'Protocolo',
+    'Data e horário',
+    'Sala',
+    'Quantidade',
+    'Solicitante',
+    'Contato',
+    'Status',
+    'Responsável',
+    'Observações',
+    'Criado em',
+    'Atualizado em',
+  ];
+
+  const rows = bookings.map((booking) => [
+    booking.protocol ?? '',
+    formatChromebookPeriod(booking.startAt, booking.endAt),
+    booking.room,
+    String(booking.quantity),
+    booking.requesterName,
+    booking.requesterContact ?? '',
+    CHROMEBOOK_STATUS_LABELS[booking.status],
+    booking.responsibleName ?? '',
+    booking.notes ?? '',
+    formatCsvDateTime(booking.createdAt),
+    formatCsvDateTime(booking.updatedAt),
+  ]);
+
+  const csv = csvDocument(headers, rows);
+  const blob = new Blob([`${CSV_BOM}${csv}`], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `chromebooks-${dateInputInSaoPaulo(new Date())}.csv`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
 
 const STATUS_BADGE: Record<ChromebookBookingStatus, React.ComponentProps<typeof Badge>['variant']> =
   {
@@ -403,6 +458,9 @@ export function ChromebookAdminClient({
   const [confirmCancel, setConfirmCancel] = useState<ChromebookBookingRow | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<ChromebookBookingRow | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [isExporting, setIsExporting] = useState(false);
+  const today = dateInputInSaoPaulo(new Date());
+  const tomorrow = dateInputInSaoPaulo(addDays(new Date(), 1));
   const hasActiveFilters = Boolean(
     filters.date ||
       (filters.status && filters.status !== 'all') ||
@@ -423,6 +481,31 @@ export function ChromebookAdminClient({
   const openEdit = (booking: ChromebookBookingRow) => {
     setEditing(booking);
     setDialogOpen(true);
+  };
+
+  const pushFilters = (nextFilters: Filters) => {
+    const params = new URLSearchParams();
+    const merged = { ...filters, ...nextFilters };
+
+    for (const key of ['date', 'status', 'room', 'quantity'] as const) {
+      const value = merged[key]?.trim();
+      if (value && value !== 'all') params.set(key, value);
+    }
+
+    const qs = params.toString();
+    router.push(qs ? `/chromebooks?${qs}` : '/chromebooks');
+  };
+
+  const handleExport = () => {
+    setIsExporting(true);
+    try {
+      downloadBookingsCsv(bookings);
+      toast.success(`${bookings.length} agendamento(s) exportado(s).`);
+    } catch {
+      toast.error('Não foi possível exportar os agendamentos agora.');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const runCancel = () => {
@@ -497,16 +580,71 @@ export function ChromebookAdminClient({
                   Consulte, filtre, edite, cancele e acompanhe indisponibilidades.
                 </p>
               </div>
-              <Button onClick={openCreate}>
-                <Plus className="size-4" />
-                Inserir agendamento
-              </Button>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleExport}
+                  disabled={bookings.length === 0 || isExporting}
+                >
+                  {isExporting ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
+                  Exportar CSV
+                </Button>
+                <Button onClick={openCreate}>
+                  <Plus className="size-4" />
+                  Inserir agendamento
+                </Button>
+              </div>
             </div>
 
             <form
               action="/chromebooks"
               className="mt-4 rounded-lg border border-border/70 bg-card/80 p-3 shadow-xs sm:p-4"
             >
+              <div className="mb-3 flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant={filters.date === today ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => pushFilters({ date: filters.date === today ? undefined : today })}
+                >
+                  Hoje
+                </Button>
+                <Button
+                  type="button"
+                  variant={filters.date === tomorrow ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() =>
+                    pushFilters({ date: filters.date === tomorrow ? undefined : tomorrow })
+                  }
+                >
+                  Amanhã
+                </Button>
+                <Button
+                  type="button"
+                  variant={filters.status === 'pendente' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() =>
+                    pushFilters({
+                      status: filters.status === 'pendente' ? undefined : 'pendente',
+                    })
+                  }
+                >
+                  Pendentes
+                </Button>
+                <Button
+                  type="button"
+                  variant={filters.status === 'confirmado' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() =>
+                    pushFilters({
+                      status: filters.status === 'confirmado' ? undefined : 'confirmado',
+                    })
+                  }
+                >
+                  Confirmados
+                </Button>
+              </div>
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-[minmax(9rem,0.75fr)_minmax(10rem,0.8fr)_minmax(12rem,1fr)_minmax(10rem,0.8fr)_auto] 2xl:items-end">
                 <FilterField label="Data" htmlFor="chromebook-filter-date">
                   <Input

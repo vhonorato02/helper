@@ -1,98 +1,105 @@
-# Relatório de Reparos do Helper
+# Relatório de Evolução Diária do Helper
 
 Data: 2026-06-18
 
 ## Resumo executivo
 
-Rotina geral de reparos executada na branch `main`. Foram corrigidos papercuts e falhas reais de UX/estabilidade em formulários e ações assíncronas, reforçada a acessibilidade de botões de ícone, adicionada validação de datas reais no calendário editorial e atualizada a versão do Helper para `0.2.4`.
+Rotina diária de evolução executada na branch `main`. Foram entregues melhorias pequenas, reais e utilizáveis em Chromebooks, Notificações e Agenda, sem migração de banco e reaproveitando ações, filtros e componentes já existentes. A versão foi incrementada de `0.2.4` para `0.2.5`.
+
+## Funcionalidades escolhidas nesta rotina
+
+- Nome: Filtros rápidos de Chromebooks
+- Área: Chromebooks
+- Problema que resolve: reduz cliques para abrir os recortes mais usados da operação, como hoje, amanhã, pendentes e confirmados.
+- Critério de aceite: botões aplicam filtros reais na URL, preservam responsividade, indicam estado ativo e podem ser limpos.
+- Risco: baixo, pois usa os filtros já existentes sem alterar banco.
+- Arquivos prováveis: `src/app/chromebooks/chromebook-admin-client.tsx`.
+
+- Nome: Exportação CSV de agendamentos de Chromebooks
+- Área: Chromebooks
+- Problema que resolve: permite compartilhar ou conferir a lista filtrada de reservas sem copiar tabela manualmente.
+- Critério de aceite: botão exporta os agendamentos atualmente listados, mostra loading, sucesso/erro e fica desabilitado sem dados.
+- Risco: baixo, pois usa dados já carregados e helper CSV existente.
+- Arquivos prováveis: `src/app/chromebooks/chromebook-admin-client.tsx`.
+
+- Nome: Marcar notificação individual como lida
+- Área: Notificações
+- Problema que resolve: evita que o usuário precise marcar todas as notificações quando quer limpar apenas uma pendência.
+- Critério de aceite: cada notificação não lida oferece ação real, com loading, feedback e atualização da lista.
+- Risco: baixo, pois a Server Action `markNotificationRead` já existe.
+- Arquivos prováveis: `src/app/notificacoes/page.tsx`, `src/app/notificacoes/notifications-client.tsx`.
+
+- Nome: Filtros de agenda por área e status
+- Área: Agendamentos
+- Problema que resolve: facilita achar compromissos pendentes, concluídos, cancelados ou de uma área específica.
+- Critério de aceite: filtros aparecem na tela, alteram dados reais vindos do backend, têm botão limpar e empty state filtrado.
+- Risco: baixo, pois `getSchedules` já aceita `area` e `status`.
+- Arquivos prováveis: `src/app/agendamentos/page.tsx`.
+
+## Funcionalidades entregues
+
+| Funcionalidade | Área | Benefício | Status |
+|---|---|---|---|
+| Filtros rápidos de Chromebooks | Chromebooks | Menos cliques para recortes diários | Entregue |
+| Exportação CSV de agendamentos de Chromebooks | Chromebooks | Compartilhamento rápido da lista filtrada | Entregue |
+| Marcar notificação individual como lida | Notificações | Controle granular da inbox | Entregue |
+| Filtros de agenda por área e status | Agendamentos | Lista mais clara por operação | Entregue |
+
+## Funcionalidade 1
+
+- Nome: Filtros rápidos de Chromebooks
+- Área: Chromebooks
+- Problema resolvido: a operação precisava ajustar data/status manualmente para recortes frequentes.
+- Como usar: em `/chromebooks`, use os botões `Hoje`, `Amanhã`, `Pendentes` ou `Confirmados`; o filtro ativo fica destacado e pode ser limpo.
+- Arquivos alterados: `src/app/chromebooks/chromebook-admin-client.tsx`.
+- Testes: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, `pnpm test:smoke`, `pnpm test:e2e`.
+
+## Funcionalidade 2
+
+- Nome: Exportação CSV de agendamentos de Chromebooks
+- Área: Chromebooks
+- Problema resolvido: não havia saída rápida para conferência externa ou compartilhamento da lista filtrada.
+- Como usar: em `/chromebooks`, filtre a lista desejada e clique em `Exportar CSV`; o botão fica desabilitado quando não há agendamentos.
+- Arquivos alterados: `src/app/chromebooks/chromebook-admin-client.tsx`.
+- Testes: `pnpm test` validou o helper CSV existente; validações finais completas passaram.
+
+## Funcionalidade 3
+
+- Nome: Marcar notificação individual como lida
+- Área: Notificações
+- Problema resolvido: a inbox só permitia marcar todas como lidas de uma vez.
+- Como usar: em `/notificacoes`, use `Marcar lida` em uma notificação específica ou filtre por `Não lidas`.
+- Arquivos alterados: `src/app/notificacoes/page.tsx`, `src/app/notificacoes/notifications-client.tsx`.
+- Testes: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, `pnpm test:smoke`, `pnpm test:e2e`.
+
+## Funcionalidade 4
+
+- Nome: Filtros de agenda por área e status
+- Área: Agendamentos
+- Problema resolvido: a agenda carregava todos os itens sem controle visual por área ou situação.
+- Como usar: em `/agendamentos`, selecione área e/ou status e clique em `Filtrar agenda`; `Limpar` volta à agenda completa.
+- Arquivos alterados: `src/app/agendamentos/page.tsx`.
+- Testes: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, `pnpm test:smoke`, `pnpm test:e2e`.
 
 ## Versão
 
-- Versão anterior: `0.2.3`
-- Versão nova: `0.2.4`
+- Versão anterior: `0.2.4`
+- Versão nova: `0.2.5`
+- Observação: `pnpm version patch --no-git-tag-version` falhou por árvore de trabalho suja; o patch foi incrementado manualmente conforme regra do prompt.
 
 ## GitHub
 
-- Branch de trabalho: `main`
-- Commit: `fix: rotina geral de reparos do Helper`
-- Tag: `v0.2.4`
+- Branch: `main`
+- Commit: `feat: adiciona melhorias úteis ao Helper`
+- Tag: `v0.2.5`
 - Push para main: sim
 - PR: não
 - Link do PR, se houver: não aplicável
 
-## Prioridade alta
-
-| Problema | Área | Correção | Status |
-|---|---|---|---|
-| Formulário público de Chromebooks podia ficar travado se a Server Action lançasse exceção | `/solicitar/chromebooks` | Adicionado `try/catch/finally`, liberação garantida do lock, erro visível e toast | Corrigido |
-| Calendário editorial aceitava datas impossíveis como 31/02 | Marketing / calendário | Adicionada validação backend de dia real por mês e filtragem defensiva de eventos inválidos | Corrigido |
-| Ações assíncronas de Chromebooks, Agendamentos e Marketing não tinham fallback claro para exceções inesperadas | Fluxos internos | Adicionados `try/catch` com mensagens de erro claras | Corrigido |
-
-## Prioridade média
-
-| Problema | Área | Correção | Status |
-|---|---|---|---|
-| Botões de envio mantinham texto estático durante processamento | Formulários públicos, tickets, Chromebooks, Agendamentos, Marketing e Gravações | Adicionados textos de progresso como `Enviando...`, `Salvando...` e `Criando...` | Corrigido |
-| Botões de ícone dependiam de `title` em pontos de Agendamentos, Calendário e Gravações | Acessibilidade | Adicionados `aria-label` contextuais e `disabled` durante ações pendentes | Corrigido |
-| Formulário do calendário editorial não ajustava limite do dia ao mês selecionado | Marketing / calendário | Campo de dia passou a usar limite dinâmico por mês | Corrigido |
-
-## Prioridade baixa
-
-| Problema | Área | Correção | Status |
-|---|---|---|---|
-| Metadados e documentação precisavam refletir a nova rotina | Produto / release | Atualizados README, MEMORY, CHANGELOG, versão do app e service worker | Corrigido |
-| Testes não cobriam validação de dia real em datas recorrentes | Testes | Adicionado teste unitário para `isValidMonthDay` | Corrigido |
-
-## Arquivos alterados
-
-- `CHANGELOG.md`
-- `MEMORY.md`
-- `README.md`
-- `RELATORIO_REPAROS_HELPER.md`
-- `package.json`
-- `public/sw.js`
-- `src/actions/marketing-events.ts`
-- `src/app/agendamentos/schedule-client.tsx`
-- `src/app/chromebooks/chromebook-admin-client.tsx`
-- `src/app/chromebooks/solicitar/request-form.tsx`
-- `src/app/marketing/calendario/event-form.tsx`
-- `src/app/marketing/calendario/event-list.tsx`
-- `src/app/marketing/recording-form.tsx`
-- `src/app/marketing/recording-list.tsx`
-- `src/app/solicitar/_components/public-request-form.tsx`
-- `src/components/tickets/ticket-form.tsx`
-- `src/lib/validation.ts`
-- `src/lib/version.ts`
-- `tests/validation.test.ts`
-
-## Comandos executados
-
-- `pwd`
-- `git status --short`
-- `git branch --show-current`
-- `git fetch origin`
-- `git checkout main`
-- `git pull --rebase origin main`
-- `node -v`
-- `pnpm -v`
-- `pnpm install --frozen-lockfile`
-- Leituras obrigatórias de README, STACK, MEMORY, CHANGELOG, package, lockfile, schemas, configs e proxy
-- Buscas obrigatórias com `rg` para TODO/FIXME/console, `any`, browser APIs, HTML perigoso, nomes de envs, estados de UI e validações
-- `pnpm lint`
-- `pnpm typecheck`
-- `pnpm test`
-- `pnpm build`
-- `pnpm test:smoke`
-- `pnpm test:e2e`
-- `pnpm version patch --no-git-tag-version`
-- `git diff --check`
-- `git status --short`
-
-## Resultado das validações
+## Validações
 
 | Comando | Resultado |
 |---|---|
-| `pnpm install --frozen-lockfile` | Passou |
 | `pnpm lint` | Passou |
 | `pnpm typecheck` | Passou |
 | `pnpm test` | Passou, 50 testes |
@@ -100,16 +107,18 @@ Rotina geral de reparos executada na branch `main`. Foram corrigidos papercuts e
 | `pnpm test:smoke` | Passou |
 | `pnpm test:e2e` | Passou |
 | `git diff --check` | Passou |
+| `git status --short` | Alterações esperadas para commit |
 
 ## Pendências
 
 - Nenhuma pendência técnica identificada nesta rotina.
-- `pnpm version patch --no-git-tag-version` falhou com `ERR_PNPM_UNCLEAN_WORKING_TREE`; o patch foi incrementado manualmente conforme regra do prompt.
 
 ## Risco de regressão
 
-Baixo a médio. As mudanças são focadas em feedback de erro/loading, acessibilidade e validação de calendário. O maior ponto de atenção é o calendário editorial: datas inválidas deixam de ser aceitas, o que é a regra correta, mas pode bloquear registros antigos inconsistentes se forem editados.
+Baixo. As mudanças são focadas em UI e reaproveitam filtros/actions existentes. Pontos de atenção: exportação CSV de Chromebooks roda no navegador com os dados já carregados e filtros da agenda passam a afetar também a visualização em calendário.
 
-## Próximo passo recomendado
+## Próximas funcionalidades recomendadas
 
-Monitorar o deploy da Vercel após o push para confirmar build de produção e testar manualmente `/solicitar/chromebooks`, `/agendamentos`, `/marketing/calendario` e `/marketing/gravacoes`.
+- Salvar visões de filtros também em Chromebooks.
+- Adicionar contador por status na Agenda.
+- Permitir exportar CSV da Agenda filtrada.
