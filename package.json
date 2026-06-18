@@ -1,6 +1,6 @@
 {
   "name": "helper",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "private": true,
   "packageManager": "pnpm@11.5.1",
   "engines": {
@@ -11,7 +11,7 @@
     "build": "node scripts/next-build.mjs",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit --incremental false",
     "test": "tsx --test tests/*.test.ts",
     "test:watch": "tsx --test --watch tests/*.test.ts",
     "test:smoke": "node scripts/smoke.mjs",

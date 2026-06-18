@@ -1,8 +1,8 @@
-// Helper Service Worker - v8
+// Helper Service Worker - v9
 // Keep authenticated pages network-only. Older versions cached HTML and could
 // serve stale Next.js payloads after deploys.
 
-const CACHE = 'helper-static-v8';
+const CACHE = 'helper-static-v9';
 const STATIC_URLS = [
   '/favicon.svg',
   '/icon-192.png',

@@ -1,6 +1,6 @@
 # Helper
 
-Versão atual: `Helper 0.2.2`
+Versão atual: `Helper 0.2.3`
 
 Helper é uma central operacional para registrar, organizar e acompanhar demandas internas. O sistema reúne página pública de solicitações, tickets, Kanban, agenda, reservas de Chromebooks, notificações, rotinas administrativas e PWA em uma única aplicação.
 
@@ -60,6 +60,12 @@ Regras de trabalho:
 O runtime é estritamente Node 24.x LTS. O projeto usa `.node-version`, `.nvmrc`, `engines` e `engine-strict=true` para evitar builds em Node Current.
 
 Tailwind 4 usa tema CSS-first em `src/app/globals.css`; não há mais `tailwind.config.js`. A variante `dark` é baseada na classe `.dark`, pois o Helper usa alternância manual de tema.
+
+## Mudanças da Versão 0.2.3
+
+- `pnpm typecheck` agora executa `tsc --noEmit --incremental false`, evitando travamento por cache incremental local durante validações.
+- Metadados operacionais atualizados para Helper 0.2.3 em package, aplicativo, documentação, changelog e memória.
+- Service worker atualizado para cache `helper-static-v9`.
 
 ## Mudanças da Versão 0.2.2
 
@@ -763,10 +769,10 @@ pnpm test:smoke
 pnpm build
 git status
 git add .
-git commit -m "chore: release Helper 0.2.2"
+git commit -m "chore: release Helper 0.2.3"
 git push origin main
-git tag v0.2.2
-git push origin v0.2.2
+git tag v0.2.3
+git push origin v0.2.3
 ```
 
 Depois:
@@ -787,4 +793,4 @@ Depois:
 - Use Notificações para alertas internos.
 - Revise logs antes de mexer em banco ou env.
 
-Helper 0.2.2 deve permanecer limpo: sem warnings relevantes, sem marcas antigas, sem rotas quebradas, sem cache PWA antigo e sem Preview escrevendo em Production por acidente.
+Helper 0.2.3 deve permanecer limpo: sem warnings relevantes, sem marcas antigas, sem rotas quebradas, sem cache PWA antigo e sem Preview escrevendo em Production por acidente.

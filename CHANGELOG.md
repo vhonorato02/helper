@@ -1,5 +1,12 @@
 # Changelog
 
+## Helper 0.2.3 - 2026-06-18
+
+- Corrige o script `pnpm typecheck` para executar `tsc --noEmit --incremental false`, evitando travamento por cache incremental local durante validacoes.
+- Ignora novos logs locais em `.codex-routines/logs/*.log` para evitar que rotinas operacionais entrem em commits futuros.
+- Atualiza metadados operacionais para Helper 0.2.3 em documentacao e constante de versao do aplicativo.
+- Atualiza o service worker para cache `helper-static-v9`, forçando clientes PWA a perceberem a nova versao.
+
 ## Helper 0.2.2 - 2026-06-17
 
 - Endurece solicitações públicas aplicando rate limit antes das validações de contato e agenda.
