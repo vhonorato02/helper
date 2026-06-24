@@ -140,7 +140,7 @@ export function Nav({ user, users }: NavProps) {
   return (
     <>
       <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/90 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80">
-        <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-4 sm:gap-3 sm:px-6">
+        <div className="safe-auth-x mx-auto flex h-14 max-w-7xl items-center gap-2 sm:gap-3">
           <Link
             href="/"
             className="group flex min-w-0 shrink-0 items-center gap-2.5 rounded-lg pr-1 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"

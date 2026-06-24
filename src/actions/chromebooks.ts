@@ -7,7 +7,7 @@ import { and, asc, eq, gte, inArray, lt, ne, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { auth } from '@/auth';
 import { db } from '@/db';
-import { chromebookBookings, chromebookSettings, users } from '@/db/schema';
+import { chromebookBookingLocks, chromebookBookings, chromebookSettings, users } from '@/db/schema';
 import { copy } from '@/lib/copy';
 import {
   ACTIVE_CHROMEBOOK_BOOKING_STATUSES,
@@ -255,19 +255,21 @@ async function withChromebookBookingLock<T>(callback: () => Promise<T>) {
   const deadline = Date.now() + 5_000;
 
   while (Date.now() < deadline) {
-    await db.execute(sql`DELETE FROM chromebook_booking_locks WHERE id = ${LOCK_ID} AND expires_at < now()`);
+    await db
+      .delete(chromebookBookingLocks)
+      .where(and(eq(chromebookBookingLocks.id, LOCK_ID), lt(chromebookBookingLocks.expiresAt, sql`now()`)));
     try {
-      await db.execute(sql`
-        INSERT INTO chromebook_booking_locks (id, owner, expires_at)
-        VALUES (${LOCK_ID}, ${owner}, now() + interval '10 seconds')
-      `);
+      await db.insert(chromebookBookingLocks).values({
+        id: LOCK_ID,
+        owner,
+        expiresAt: sql`now() + interval '10 seconds'`,
+      });
       try {
         return await callback();
       } finally {
-        await db.execute(sql`
-          DELETE FROM chromebook_booking_locks
-          WHERE id = ${LOCK_ID} AND owner = ${owner}
-        `);
+        await db
+          .delete(chromebookBookingLocks)
+          .where(and(eq(chromebookBookingLocks.id, LOCK_ID), eq(chromebookBookingLocks.owner, owner)));
       }
     } catch (error) {
       if (!isUniqueConstraintError(error)) throw error;

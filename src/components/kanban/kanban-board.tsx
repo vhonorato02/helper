@@ -50,16 +50,7 @@ export function KanbanBoard({ initialTickets }: KanbanBoardProps) {
     setActiveTicket(null);
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    setActiveTicket(null);
-    const { active, over } = event;
-    if (!over) return;
-
-    const code = active.id as string;
-    const overId = String(over.id);
-    if (!isBoardStatus(overId)) return;
-
-    const newStatus = overId;
+  const moveTicketToStatus = (code: string, newStatus: KanbanTicket['status']) => {
     const ticket = optimisticTickets.find((t) => t.code === code);
     if (!ticket || ticket.status === newStatus) return;
 
@@ -94,6 +85,18 @@ export function KanbanBoard({ initialTickets }: KanbanBoardProps) {
     });
   };
 
+  const handleDragEnd = (event: DragEndEvent) => {
+    setActiveTicket(null);
+    const { active, over } = event;
+    if (!over) return;
+
+    const code = active.id as string;
+    const overId = String(over.id);
+    if (!isBoardStatus(overId)) return;
+
+    moveTicketToStatus(code, overId);
+  };
+
   if (initialTickets.length === 0) {
     return (
       <div className="surface-panel rounded-lg px-5 py-20 text-center">
@@ -122,6 +125,7 @@ export function KanbanBoard({ initialTickets }: KanbanBoardProps) {
             key={status}
             status={status}
             tickets={optimisticTickets.filter((t) => t.status === status)}
+            onMoveStatus={moveTicketToStatus}
           />
         ))}
       </div>

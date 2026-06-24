@@ -227,13 +227,13 @@ export function RecordingFormDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label>{copy.marketing.recordings.form.responsible}</Label>
+            <Label htmlFor="rec-responsible">{copy.marketing.recordings.form.responsible}</Label>
             <Select
               value={responsible || 'none'}
               onValueChange={(v) => setResponsible(v === 'none' ? '' : v)}
               disabled={isPending}
             >
-              <SelectTrigger>
+              <SelectTrigger id="rec-responsible">
                 <SelectValue placeholder={copy.marketing.recordings.form.responsiblePlaceholder} />
               </SelectTrigger>
               <SelectContent>

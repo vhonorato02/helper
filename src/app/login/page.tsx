@@ -76,7 +76,7 @@ export default function LoginPage() {
   const errorId = error ? 'login-error' : undefined;
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center overflow-x-hidden px-4 py-10">
+    <div className="safe-public-screen flex w-full items-center justify-center overflow-x-hidden">
       <div className="w-full min-w-0 max-w-[calc(100vw-2rem)] sm:max-w-sm">
         <div className="mb-6 flex items-center justify-center gap-3">
           <BrandMark className="size-10 rounded-lg shadow-md shadow-primary/20" />

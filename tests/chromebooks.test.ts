@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import { getTableName } from 'drizzle-orm';
+import { chromebookBookingLocks } from '@/db/schema';
 import {
   calculateMaxChromebooksUsed,
   combineDateTimeInSaoPaulo,
@@ -56,5 +58,12 @@ describe('Chromebook scheduling rules', () => {
     assert.equal(isActiveChromebookBookingStatus('pendente'), true);
     assert.equal(isActiveChromebookBookingStatus('confirmado'), true);
     assert.equal(isActiveChromebookBookingStatus('cancelado'), false);
+  });
+
+  it('keeps the booking lock table declared in the Drizzle schema', () => {
+    assert.equal(getTableName(chromebookBookingLocks), 'chromebook_booking_locks');
+    assert.equal(chromebookBookingLocks.id.name, 'id');
+    assert.equal(chromebookBookingLocks.owner.name, 'owner');
+    assert.equal(chromebookBookingLocks.expiresAt.name, 'expires_at');
   });
 });

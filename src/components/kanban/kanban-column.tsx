@@ -6,8 +6,9 @@ import { KanbanCard } from './kanban-card';
 import { STATUS_LABELS } from '@/lib/constants';
 import { copy } from '@/lib/copy';
 import type { Ticket } from '@/db/schema';
+import type { KanbanTicket } from '@/lib/kanban';
 
-type Status = Ticket['status'];
+type Status = KanbanTicket['status'];
 
 interface KanbanColumnProps {
   status: Status;
@@ -22,10 +23,11 @@ interface KanbanColumnProps {
     updatedAt: Date;
     assigneeName?: string | null;
   }[];
+  onMoveStatus: (code: string, status: Status) => void;
 }
 
 const columnConfig: Record<
-  Status,
+  Ticket['status'],
   { dot: string; stripe: string; badge: string; isOver: string }
 > = {
   aberto: {
@@ -60,7 +62,7 @@ const columnConfig: Record<
   },
 };
 
-export function KanbanColumn({ status, tickets }: KanbanColumnProps) {
+export function KanbanColumn({ status, tickets, onMoveStatus }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
   const config = columnConfig[status];
 
@@ -111,7 +113,9 @@ export function KanbanColumn({ status, tickets }: KanbanColumnProps) {
             </p>
           </div>
         ) : (
-          tickets.map((t) => <KanbanCard key={t.code} ticket={t} />)
+          tickets.map((t) => (
+            <KanbanCard key={t.code} ticket={t} onMoveStatus={onMoveStatus} />
+          ))
         )}
       </div>
     </div>

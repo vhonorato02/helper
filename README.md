@@ -1,6 +1,6 @@
 # Helper
 
-Versão atual: `Helper 0.2.5`
+Versão atual: `Helper 0.2.6`
 
 Helper é uma central operacional para registrar, organizar e acompanhar demandas internas. O sistema reúne página pública de solicitações, tickets, Kanban, agenda, reservas de Chromebooks, notificações, rotinas administrativas e PWA em uma única aplicação.
 
@@ -60,6 +60,15 @@ Regras de trabalho:
 O runtime é estritamente Node 24.x LTS. O projeto usa `.node-version`, `.nvmrc`, `engines` e `engine-strict=true` para evitar builds em Node Current.
 
 Tailwind 4 usa tema CSS-first em `src/app/globals.css`; não há mais `tailwind.config.js`. A variante `dark` é baseada na classe `.dark`, pois o Helper usa alternância manual de tema.
+
+## Mudanças da Versão 0.2.6
+
+- Kanban ganhou ação "Mover para" nos cards como alternativa acessível ao arrastar.
+- Formulários de tickets, agenda, marketing e Chromebooks associam labels aos selects Radix.
+- Solicitações públicas e reserva pública de Chromebooks associam erros de contato/período aos campos envolvidos.
+- Layout público, layout autenticado, prompts PWA e barra de ações em lote respeitam safe area em modo instalado.
+- Notificações não dependem apenas de cor para indicar leitura, e a atividade recente quebra melhor em mobile.
+- Metadados operacionais atualizados para Helper 0.2.6 e service worker `helper-static-v12`.
 
 ## Mudanças da Versão 0.2.5
 
@@ -785,10 +794,10 @@ pnpm test:smoke
 pnpm build
 git status
 git add .
-git commit -m "chore: release Helper 0.2.5"
+git commit -m "chore: release Helper 0.2.6"
 git push origin main
-git tag v0.2.5
-git push origin v0.2.5
+git tag v0.2.6
+git push origin v0.2.6
 ```
 
 Depois:
@@ -809,4 +818,4 @@ Depois:
 - Use Notificações para alertas internos.
 - Revise logs antes de mexer em banco ou env.
 
-Helper 0.2.5 deve permanecer limpo: sem warnings relevantes, sem marcas antigas, sem rotas quebradas, sem cache PWA antigo e sem Preview escrevendo em Production por acidente.
+Helper 0.2.6 deve permanecer limpo: sem warnings relevantes, sem marcas antigas, sem rotas quebradas, sem cache PWA antigo e sem Preview escrevendo em Production por acidente.

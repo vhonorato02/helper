@@ -237,6 +237,12 @@ export const chromebookBookings = pgTable(
   ],
 );
 
+export const chromebookBookingLocks = pgTable('chromebook_booking_locks', {
+  id: text('id').primaryKey(),
+  owner: text('owner').notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+});
+
 export const recordings = pgTable(
   'recordings',
   {
@@ -393,6 +399,7 @@ export type NewSchedule = typeof schedules.$inferInsert;
 export type ChromebookSetting = typeof chromebookSettings.$inferSelect;
 export type ChromebookBooking = typeof chromebookBookings.$inferSelect;
 export type NewChromebookBooking = typeof chromebookBookings.$inferInsert;
+export type ChromebookBookingLock = typeof chromebookBookingLocks.$inferSelect;
 export type Recording = typeof recordings.$inferSelect;
 export type NewRecording = typeof recordings.$inferInsert;
 export type MarketingEvent = typeof marketingEvents.$inferSelect;

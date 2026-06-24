@@ -170,13 +170,13 @@ export function ScheduleFormDialog({ open, onOpenChange, initial }: ScheduleForm
             </div>
 
             <div className="space-y-1.5">
-              <Label>{copy.agendamentos.form.area}</Label>
+              <Label htmlFor="sched-area">{copy.agendamentos.form.area}</Label>
               <Select
                 value={area || 'none'}
                 onValueChange={(v) => setArea(v === 'none' ? '' : v)}
                 disabled={isPending}
               >
-                <SelectTrigger>
+                <SelectTrigger id="sched-area">
                   <SelectValue placeholder={copy.agendamentos.form.areaPlaceholder} />
                 </SelectTrigger>
                 <SelectContent>

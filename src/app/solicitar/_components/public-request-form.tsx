@@ -38,6 +38,7 @@ export function PublicRequestForm({
   const [isPending, startTransition] = useTransition();
   const [protocol, setProtocol] = useState('');
   const [formError, setFormError] = useState('');
+  const [errorScope, setErrorScope] = useState<'contact' | 'schedule' | 'form' | ''>('');
   const [descriptionLength, setDescriptionLength] = useState(0);
 
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -46,12 +47,14 @@ export function PublicRequestForm({
     submitLockRef.current = true;
     setProtocol('');
     setFormError('');
+    setErrorScope('');
 
     const formData = new FormData(event.currentTarget);
     const contact = validatePublicContact(String(formData.get('requesterContact') ?? ''));
     if (!contact.ok) {
       submitLockRef.current = false;
       setFormError(contact.error);
+      setErrorScope('contact');
       return;
     }
 
@@ -64,6 +67,7 @@ export function PublicRequestForm({
     if (showSchedule && !schedule.ok) {
       submitLockRef.current = false;
       setFormError(schedule.error);
+      setErrorScope('schedule');
       return;
     }
 
@@ -74,6 +78,7 @@ export function PublicRequestForm({
         if (result && 'error' in result) {
           const message = result.error ?? 'Não foi possível registrar a solicitação.';
           setFormError(message);
+          setErrorScope('form');
           toast.error(message);
           return;
         }
@@ -86,6 +91,7 @@ export function PublicRequestForm({
       } catch {
         const message = 'Não foi possível registrar a solicitação agora.';
         setFormError(message);
+        setErrorScope('form');
         toast.error(message);
       } finally {
         submitLockRef.current = false;
@@ -135,7 +141,8 @@ export function PublicRequestForm({
             maxLength={120}
             required
             aria-required="true"
-            aria-describedby={formError ? 'public-contact-help public-form-error' : 'public-contact-help'}
+            aria-invalid={errorScope === 'contact'}
+            aria-describedby={errorScope === 'contact' ? 'public-contact-help public-form-error' : 'public-contact-help'}
             disabled={isPending}
           />
           <p id="public-contact-help" className="text-xs text-muted-foreground">
@@ -183,17 +190,38 @@ export function PublicRequestForm({
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="space-y-1.5">
             <Label htmlFor="public-date">Data</Label>
-            <Input id="public-date" name="desiredDate" type="date" disabled={isPending} />
+            <Input
+              id="public-date"
+              name="desiredDate"
+              type="date"
+              aria-invalid={errorScope === 'schedule'}
+              aria-describedby={errorScope === 'schedule' ? 'public-schedule-help public-form-error' : 'public-schedule-help'}
+              disabled={isPending}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="public-start">Início</Label>
-            <Input id="public-start" name="startTime" type="time" disabled={isPending} />
+            <Input
+              id="public-start"
+              name="startTime"
+              type="time"
+              aria-invalid={errorScope === 'schedule'}
+              aria-describedby={errorScope === 'schedule' ? 'public-schedule-help public-form-error' : 'public-schedule-help'}
+              disabled={isPending}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="public-end">Término</Label>
-            <Input id="public-end" name="endTime" type="time" disabled={isPending} />
+            <Input
+              id="public-end"
+              name="endTime"
+              type="time"
+              aria-invalid={errorScope === 'schedule'}
+              aria-describedby={errorScope === 'schedule' ? 'public-schedule-help public-form-error' : 'public-schedule-help'}
+              disabled={isPending}
+            />
           </div>
-          <p className="text-xs text-muted-foreground sm:col-span-3">
+          <p id="public-schedule-help" className="text-xs text-muted-foreground sm:col-span-3">
             Se informar um horário, preencha data, início e término. O término precisa ser depois do início.
           </p>
         </div>

@@ -1,41 +1,903 @@
-REGRAS ABSOLUTAS:
-- Trabalhe somente em D:\helper.
-- Trabalhe diretamente na branch main.
-- Não crie branch.
-- Não crie worktree.
-- Não use workspace temporário.
-- Não use npm. Use pnpm.
-- Faça todas as alterações direto no working tree real de D:\helper.
-- Atualize versionamento quando fizer sentido:
-  - package.json version se a mudança for relevante;
-  - arquivo de versionamento existente, se houver;
-  - CHANGELOG.md com resumo objetivo;
-  - documentação técnica mínima se alterar comportamento.
-- Cada execução vira patch em .codex-patches.
-- Não esconda alteração fora do Git.
-- Não apague trabalho local.
-- Não imprima segredos, tokens, connection strings ou senhas.
+# PROMPT DE EXECUÇÃO AUTÔNOMA: REVISÃO DE REGRESSÕES, COBERTURA E PUBLICAÇÃO DO HELPER
 
-MISSÃO:
-Revisar todas as features e fluxos existentes do Helper, encontrar regressões reais, corrigir e aumentar cobertura. Não crie feature nova nesta rotina.
+Você é um agente sênior de manutenção full stack. Sua missão é revisar todas as features e fluxos existentes do Helper, encontrar regressões reais, corrigir problemas, aumentar cobertura de testes e publicar diretamente em produção quando, e somente quando, a validação final passar.
 
-FEATURES:
-Login, alteração de senha, dashboard, tickets, detalhe, comentários, histórico, filtros, ações em lote, Kanban, movimentação de status, alternativa ao drag, agenda, marketing, calendário, gravações, Chromebooks público/admin, configuração de total, solicitações públicas, entrada externa, notificações, preferências, crons, PWA, manifesto, service worker, rotas protegidas, rotas públicas, error/loading/not-found, atividade e configurações.
+Esta execução representa um novo patch. Trate tudo como uma intervenção real, auditável, rastreável e pronta para produção.
 
-ROTAS:
-/login, /alterar-senha, /solicitar, /solicitar/ti, /solicitar/midia, /solicitar/arte, /solicitar/cobertura, /solicitar/outra, /solicitar/chromebooks, /, /tickets, /kanban, /agendamentos, /marketing, /marketing/calendario, /marketing/gravacoes, /chromebooks, /notificacoes, /configuracoes, /atividade.
+## 1. Regras absolutas
 
-RODE E CORRIJA:
-pnpm install --frozen-lockfile, pnpm lint, pnpm typecheck, pnpm test, pnpm test:smoke, pnpm test:e2e, pnpm build.
+Cumpra todas as regras abaixo sem exceção.
 
-COBERTURA:
-Melhore e2e/smoke para rotas obrigatórias sem fragilizar. Verifique renderização, console error, proteção de rotas, rotas públicas, mobile, formulário inválido, PWA, Chromebooks, Kanban, notificações (navegador, pwa, e-mail, etc) e tickets.
+1. Trabalhe somente em:
 
-CORRIJA FLUXOS:
-Login, solicitações públicas, tickets, Kanban, agenda, marketing, Chromebooks, notificações e PWA.
+```powershell
+D:\helper
+```
 
-VALIDAÇÃO FINAL:
-pnpm lint, pnpm typecheck, pnpm test, pnpm test:smoke, pnpm test:e2e, pnpm build, git diff --check, git status --short.
+2. Trabalhe diretamente na branch:
 
-ENTREGA:
-Fluxos revisados, regressões, correções, testes, comandos, limitações, validação manual e risco.  Aplicar versionamento no estilo padrão, sempre entendendo que esse prompt é um novo patch, sempre
+```text
+main
+```
+
+3. Não crie branch.
+
+4. Não crie worktree.
+
+5. Não use workspace temporário.
+
+6. Não copie o repositório para outro diretório.
+
+7. Não use `npm`.
+
+8. Use somente `pnpm`.
+
+9. Faça todas as alterações diretamente no working tree real de `D:\helper`.
+
+10. Não esconda alteração fora do Git.
+
+11. Não apague trabalho local.
+
+12. Não sobrescreva mudanças locais existentes.
+
+13. Não rode comandos destrutivos como:
+
+```bash
+git reset --hard
+git clean -fd
+git clean -fdx
+rm -rf
+```
+
+14. Não remova teste para fazer validação passar.
+
+15. Não desative lint, typecheck, testes ou validações para mascarar erro.
+
+16. Não use `any`, `@ts-ignore`, `@ts-expect-error` ou casts inseguros para esconder problema.
+
+17. Não imprima segredos, tokens, connection strings, cookies, senhas ou variáveis sensíveis.
+
+18. Não registre segredo em log, teste, snapshot, changelog, documentação, patch, commit ou saída final.
+
+19. Não crie feature nova nesta rotina.
+
+20. Não altere produto, fluxo, visual, permissão ou regra de negócio além do necessário para corrigir regressão, bug, inconsistência ou falta de cobertura.
+
+21. Não rode `db:setup`, seed ou migração em banco se `DATABASE_URL` aparentar ambiente de produção.
+
+22. Não faça migração destrutiva.
+
+23. Não faça push se qualquer validação final obrigatória falhar.
+
+24. Não faça push se houver bloqueio crítico não resolvido.
+
+25. Não faça push se houver segredo exposto no diff.
+
+26. Não faça push se o working tree contiver alterações não compreendidas.
+
+27. Não faça deploy manual fora do fluxo padrão do repositório.
+
+28. Se produção for acionada por push na `main`, faça push somente após cumprir todos os critérios de publicação.
+
+## 2. Missão
+
+Revisar todas as features e fluxos existentes do Helper, encontrar regressões reais, corrigir problemas e aumentar cobertura.
+
+Não entregue apenas relatório.
+
+Não entregue apenas diagnóstico.
+
+Faça correção real.
+
+Não crie feature nova.
+
+Ao final, se tudo passar, gerar patch, versionar quando fizer sentido, commitar e subir direto para a `main`, respeitando o fluxo de produção do repositório.
+
+## 3. Escopo principal
+
+Revise e corrija os fluxos existentes abaixo:
+
+```text
+Login
+Alteração de senha
+Dashboard
+Tickets
+Detalhe de ticket
+Comentários
+Histórico
+Filtros
+Ações em lote
+Kanban
+Movimentação de status
+Alternativa ao drag
+Agenda
+Marketing
+Calendário
+Gravações
+Chromebooks público
+Chromebooks admin
+Configuração de total de Chromebooks
+Solicitações públicas
+Entrada externa
+Notificações
+Preferências
+Crons
+PWA
+Página de solicitações públicas de TI
+Página de solicitações públicas de Marketing
+Manifesto
+Service worker
+Rotas protegidas
+Rotas públicas
+Error
+Loading
+Not-found
+Atividade
+Configurações
+```
+
+## 4. Escopo negativo
+
+Nesta rotina, não crie:
+
+1. Nova página.
+2. Novo módulo.
+3. Novo produto.
+4. Nova funcionalidade de negócio.
+5. Novo fluxo que não exista.
+6. Nova integração externa.
+7. Nova regra de permissão.
+8. Nova dependência sem necessidade técnica objetiva.
+9. Novo design system.
+10. Nova arquitetura.
+
+É permitido:
+
+1. Corrigir bug.
+2. Corrigir regressão.
+3. Corrigir teste quebrado pela causa raiz.
+4. Fortalecer teste frágil.
+5. Adicionar teste para comportamento já existente.
+6. Corrigir validação existente.
+7. Melhorar mensagem de erro existente.
+8. Corrigir loading state, empty state, error state ou not-found.
+9. Corrigir problema mobile evidente.
+10. Corrigir proteção de rota.
+11. Corrigir exposição indevida de dados.
+12. Corrigir PWA, manifesto ou service worker.
+13. Atualizar documentação mínima quando comportamento mudar.
+
+## 5. Repositório
+
+Repositório remoto de referência:
+
+```text
+https://github.com/vhonorato02/helper
+```
+
+A execução deve ocorrer somente em:
+
+```powershell
+D:\helper
+```
+
+Não clone novamente.
+
+Não trabalhe fora do diretório real.
+
+Não use cópia paralela.
+
+## 6. Stack esperada
+
+Considere a stack abaixo como referência técnica:
+
+```text
+Next.js 16 App Router
+React 19
+TypeScript 6
+Node >=24.15 <25
+pnpm 11.5.1
+Tailwind CSS 4.3 CSS-first
+Radix UI
+lucide-react
+sonner
+Server Actions
+Route Handlers
+jose/JWT com cookie HTTP-only
+Zod
+Drizzle ORM
+Neon PostgreSQL
+date-fns/date-fns-tz America/Sao_Paulo
+PWA
+Vercel
+```
+
+Respeite os padrões já existentes no projeto.
+
+Não substitua tecnologia sem necessidade inevitável.
+
+Não reestruture em grande escala.
+
+## 7. Rotas obrigatórias
+
+As rotas abaixo são críticas e devem ser cobertas por smoke/e2e sempre que a estrutura de teste permitir:
+
+```text
+/login
+/alterar-senha
+/solicitar
+/solicitar/ti
+/solicitar/midia
+/solicitar/arte
+/solicitar/cobertura
+/solicitar/outra
+/solicitar/chromebooks
+/
+/tickets
+/kanban
+/agendamentos
+/marketing
+/marketing/calendario
+/marketing/gravacoes
+/chromebooks
+/notificacoes
+/configuracoes
+/atividade
+```
+
+Para cada rota aplicável, verifique:
+
+1. Renderização sem erro fatal.
+2. Ausência de `console.error` inesperado.
+3. Estado mobile básico.
+4. Loading state quando houver carregamento assíncrono.
+5. Empty state quando não houver dados.
+6. Error state quando houver falha tratável.
+7. Not-found quando aplicável.
+8. Proteção de rota quando privada.
+9. Acesso público quando pública.
+10. Navegação essencial.
+11. Formulário inválido quando houver formulário.
+12. Feedback de sucesso e erro quando houver submissão.
+
+## 8. Protocolo inicial obrigatório
+
+Antes de alterar qualquer arquivo, execute:
+
+```powershell
+cd /d D:\helper
+pwd
+git status --short
+git branch --show-current
+git remote -v
+node -v
+pnpm -v
+```
+
+Confirme:
+
+1. Diretório correto.
+2. Branch `main`.
+3. Remoto configurado.
+4. Existência de alterações locais antes da execução.
+5. Versão do Node.
+6. Versão do pnpm.
+
+Se não estiver em `D:\helper`, pare e registre bloqueio.
+
+Se a branch atual não for `main`, não crie branch. Registre bloqueio.
+
+Se houver alterações locais anteriores, preserve tudo. Não sobrescreva. Registre no final.
+
+## 9. Sincronização segura antes de alterar
+
+Antes de começar as correções, execute:
+
+```bash
+git fetch origin
+git status --short
+git branch --show-current
+```
+
+Não rode `git pull` se houver alterações locais.
+
+Se a `main` local estiver atrás de `origin/main` e o working tree estiver limpo, atualize com segurança usando o padrão do projeto.
+
+Se houver divergência entre local e remoto, não force push. Registre bloqueio.
+
+Nunca use:
+
+```bash
+git push --force
+git push --force-with-lease
+```
+
+## 10. Leitura inicial obrigatória
+
+Leia os arquivos abaixo se existirem:
+
+```text
+README.md
+STACK.md
+MEMORY.md
+CHANGELOG.md
+package.json
+src/db/schema.ts
+database/schema.sql
+playwright.config.*
+vitest.config.*
+next.config.*
+middleware.*
+```
+
+Identifique:
+
+1. Scripts disponíveis.
+2. Padrão de versionamento.
+3. Padrão de changelog.
+4. Padrão de testes.
+5. Padrão de rotas protegidas.
+6. Padrão de autenticação.
+7. Padrão de PWA.
+8. Padrão de schema e migrations.
+
+Se algum arquivo não existir, não crie automaticamente. Registre apenas se for relevante.
+
+## 11. Validação inicial obrigatória
+
+Execute, nesta ordem:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm test:smoke
+pnpm test:e2e
+pnpm build
+```
+
+Se Chromium do Playwright estiver ausente, execute:
+
+```bash
+pnpm exec playwright install chromium
+```
+
+Depois rode novamente o comando afetado.
+
+Se algum script não existir em `package.json`, não invente substituto. Registre como `SKIPPED`, com motivo.
+
+Se algum comando falhar, investigue causa raiz e corrija.
+
+## 12. Buscas obrigatórias
+
+Execute nos diretórios existentes:
+
+```bash
+rg -n "TODO|FIXME|HACK|deprecated|console\\.log|console\\.warn|console\\.error" src scripts tests public database
+```
+
+```bash
+rg -n "any\\b|as unknown as|@ts-ignore|@ts-expect-error" src scripts tests
+```
+
+```bash
+rg -n "window\\.|document\\.|localStorage|sessionStorage" src/app src/components src/lib
+```
+
+```bash
+rg -n "dangerouslySetInnerHTML|innerHTML|eval\\(|new Function" src
+```
+
+```bash
+rg -n "DATABASE_URL|AUTH_SECRET|CRON_SECRET|GMAIL_APP_PASSWORD|BOOTSTRAP_ADMIN_PASSWORD" src scripts public tests README.md STACK.md MEMORY.md CHANGELOG.md
+```
+
+Para cada ocorrência relevante:
+
+1. Classifique como bug real, risco, falso positivo ou dívida documentada.
+2. Corrija bug real e risco.
+3. Não altere ocorrência legítima sem motivo.
+4. Registre pendência quando não for seguro corrigir.
+5. Nunca exponha valor real de segredo na resposta.
+
+## 13. Revisão por fluxo
+
+### 13.1 Login
+
+Verifique e corrija:
+
+1. Renderização.
+2. Formulário inválido.
+3. Credenciais inválidas.
+4. Loading durante submissão.
+5. Redirecionamento após login.
+6. Cookie HTTP-only.
+7. Mensagem de erro segura.
+8. Proteção contra vazamento de detalhe interno.
+9. Teste smoke/e2e do fluxo principal.
+
+### 13.2 Alteração de senha
+
+Verifique e corrija:
+
+1. Rota protegida ou fluxo esperado.
+2. Validação da senha atual.
+3. Validação da nova senha.
+4. Confirmação de senha.
+5. Loading durante submissão.
+6. Feedback de sucesso.
+7. Feedback de erro.
+8. Teste para entrada inválida quando possível.
+
+### 13.3 Dashboard
+
+Verifique e corrija:
+
+1. Rota protegida.
+2. Cards e métricas.
+3. Dados ausentes.
+4. Loading.
+5. Error state.
+6. Mobile.
+7. Links para tickets, Kanban, agenda, marketing, Chromebooks e notificações.
+
+### 13.4 Tickets
+
+Verifique e corrija:
+
+1. Listagem.
+2. Filtros.
+3. Busca.
+4. Ordenação, se existir.
+5. Ações em lote.
+6. Detalhe.
+7. Comentários.
+8. Histórico.
+9. Mudança de status.
+10. Validação de entrada.
+11. Empty state.
+12. Error state.
+13. Teste para fluxo essencial.
+
+### 13.5 Kanban
+
+Verifique e corrija:
+
+1. Renderização das colunas.
+2. Cards sem dados quebrados.
+3. Movimentação de status.
+4. Alternativa ao drag.
+5. Persistência da alteração.
+6. Feedback de erro ao mover.
+7. Mobile.
+8. Acessibilidade básica para ação sem arrastar.
+9. Teste e2e/smoke sem depender de drag frágil quando houver alternativa.
+
+### 13.6 Agenda
+
+Verifique e corrija:
+
+1. Renderização.
+2. Timezone `America/Sao_Paulo`.
+3. Datas e horários.
+4. Criação, edição ou visualização conforme fluxo existente.
+5. Empty state.
+6. Error state.
+7. Mobile.
+8. Testes de data quando possível.
+
+### 13.7 Marketing, calendário e gravações
+
+Verifique e corrija:
+
+1. Listagens.
+2. Calendário editorial.
+3. Gravações.
+4. Formulários existentes.
+5. Empty state.
+6. Error state.
+7. Mobile.
+8. Proteção de rotas privadas.
+9. Testes mínimos de renderização e navegação.
+
+### 13.8 Chromebooks público e admin
+
+Verifique e corrija:
+
+1. Solicitação pública de Chromebook.
+2. Área admin de Chromebooks.
+3. Configuração de total.
+4. Validação de quantidade.
+5. Limite disponível.
+6. Estado sem disponibilidade.
+7. Feedback para usuário.
+8. Mobile.
+9. Teste de formulário inválido.
+10. Teste de rota pública e rota privada.
+
+### 13.9 Solicitações públicas e entrada externa
+
+Verifique e corrija:
+
+1. `/solicitar`.
+2. `/solicitar/ti`.
+3. `/solicitar/midia`.
+4. `/solicitar/arte`.
+5. `/solicitar/cobertura`.
+6. `/solicitar/outra`.
+7. `/solicitar/chromebooks`.
+8. Validação de campos obrigatórios.
+9. Mensagens de erro.
+10. Feedback de envio.
+11. Proteção contra payload inválido.
+12. Criação correta da solicitação.
+13. Mobile.
+14. Testes de formulário inválido e rota pública.
+
+### 13.10 Notificações
+
+Verifique e corrija:
+
+1. Página de notificações.
+2. Preferências.
+3. Notificação de navegador quando existir.
+4. Notificação PWA quando existir.
+5. Notificação por e-mail quando existir.
+6. Estados vazios.
+7. Estados de erro.
+8. Permissões do navegador.
+9. Fallback quando API de notificação não existir.
+10. Testes sem depender de permissão real do navegador.
+
+### 13.11 PWA, manifesto e service worker
+
+Verifique e corrija:
+
+1. Manifesto válido.
+2. Ícones referenciados.
+3. Metadata.
+4. Service worker, se existir.
+5. Build sem erro.
+6. Instalação básica.
+7. Cache sem quebrar rotas públicas.
+8. Compatibilidade com Vercel.
+9. Teste smoke para manifesto quando possível.
+
+### 13.12 Rotas protegidas e públicas
+
+Verifique e corrija:
+
+1. Rotas privadas redirecionam usuário não autenticado.
+2. Rotas públicas não exigem sessão.
+3. Login não fica preso em loop.
+4. Redirecionamentos preservam destino quando esse comportamento existir.
+5. Middleware não bloqueia assets, manifesto, service worker ou rotas públicas.
+6. Testes de proteção de rota.
+
+### 13.13 Error, loading e not-found
+
+Verifique e corrija:
+
+1. `error.tsx`.
+2. `loading.tsx`.
+3. `not-found.tsx`.
+4. Mensagens seguras.
+5. Botão de tentar novamente quando fizer sentido.
+6. Layout mobile.
+7. Ausência de stack trace para usuário final.
+
+## 14. Cobertura de testes
+
+Melhore cobertura sem fragilizar.
+
+Prioridades:
+
+1. Smoke das rotas obrigatórias.
+2. Proteção de rotas privadas.
+3. Acesso a rotas públicas.
+4. Formulário inválido em solicitações públicas.
+5. Formulário inválido em login.
+6. Kanban com alternativa ao drag.
+7. Chromebooks público.
+8. Notificações com fallback.
+9. PWA e manifesto.
+10. Tickets e filtros principais.
+
+Regras para testes:
+
+1. Não dependa de dados externos instáveis.
+2. Não dependa de relógio real sem controle.
+3. Não dependa de drag and drop se houver alternativa por botão ou select.
+4. Não ignore `console.error` inesperado.
+5. Não use sleeps arbitrários quando houver espera por elemento.
+6. Não remova assertivas relevantes.
+7. Não escreva teste que só verifica que a página abriu sem validar algo útil quando houver elemento estável.
+8. Use seletores acessíveis quando possível.
+9. Faça mocks seguindo o padrão existente.
+10. Evite testar implementação interna quando o fluxo de usuário puder ser testado.
+
+## 15. Correções obrigatórias quando encontradas
+
+Corrija regressões relacionadas a:
+
+```text
+Login
+Solicitações públicas
+Tickets
+Kanban
+Agenda
+Marketing
+Chromebooks
+Notificações
+PWA
+Rotas protegidas
+Rotas públicas
+Mobile
+Formulários inválidos
+Console error
+```
+
+Não deixe regressão conhecida sem correção, salvo bloqueio real.
+
+## 16. Versionamento
+
+Atualize versionamento quando fizer sentido, seguindo o padrão do projeto.
+
+Verifique antes:
+
+```text
+package.json
+CHANGELOG.md
+arquivo de versionamento existente
+tags ou padrão histórico se disponível localmente
+```
+
+Regras:
+
+1. Se houver correção funcional relevante, atualize `package.json version` conforme padrão existente.
+2. Se houver arquivo de versionamento existente, atualize também.
+3. Atualize `CHANGELOG.md` com resumo objetivo.
+4. Se alterar comportamento, atualize documentação técnica mínima.
+5. Se não atualizar versionamento, explique o motivo na entrega final.
+6. Não invente padrão de versionamento se o projeto já tiver um.
+
+## 17. Patch obrigatório
+
+Cada execução deve gerar patch em:
+
+```text
+.codex-patches
+```
+
+Crie a pasta se não existir:
+
+```bash
+mkdir -p .codex-patches
+```
+
+Gere patch com nome baseado em data, hora e resumo curto:
+
+```bash
+git diff --binary > .codex-patches/AAAA-MM-DD-HHMM-revisao-regressoes-cobertura.patch
+```
+
+Em PowerShell, use:
+
+```powershell
+New-Item -ItemType Directory -Force .codex-patches | Out-Null
+git diff --binary | Out-File -Encoding utf8 .codex-patches/AAAA-MM-DD-HHMM-revisao-regressoes-cobertura.patch
+```
+
+O patch deve incluir todas as alterações desta execução.
+
+Depois rode:
+
+```bash
+git status --short
+```
+
+## 18. Validação final obrigatória
+
+Antes de commit e push, rode:
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm test:smoke
+pnpm test:e2e
+pnpm build
+git diff --check
+git status --short
+```
+
+Se algum comando falhar:
+
+1. Corrija.
+2. Rode novamente.
+3. Se ainda falhar por bloqueio externo, registre como bloqueio.
+4. Não faça push.
+
+## 19. Critérios obrigatórios para commit
+
+Só faça commit se todos os itens abaixo forem verdadeiros:
+
+1. Diretório atual é `D:\helper`.
+2. Branch atual é `main`.
+3. Alterações foram feitas no working tree real.
+4. Patch foi criado em `.codex-patches`.
+5. `pnpm lint` passou.
+6. `pnpm typecheck` passou.
+7. `pnpm test` passou.
+8. `pnpm test:smoke` passou ou foi comprovadamente inexistente.
+9. `pnpm test:e2e` passou ou foi bloqueado por dependência externa claramente documentada.
+10. `pnpm build` passou.
+11. `git diff --check` passou.
+12. Não há segredo no diff.
+13. Não há migração destrutiva.
+14. Não há remoção artificial de teste.
+15. Não há alteração fora do escopo.
+16. Versionamento e changelog foram atualizados quando fizeram sentido.
+
+Se qualquer item falhar, não commite e registre bloqueio.
+
+## 20. Commit obrigatório quando critérios passarem
+
+Quando os critérios de commit forem atendidos, execute:
+
+```bash
+git status --short
+git diff --check
+git add .
+git commit -m "fix: revisar regressões e cobertura do Helper"
+```
+
+Antes de usar `git add .`, confira o status para evitar incluir arquivo indevido.
+
+Se houver arquivo sensível, artefato indevido, cache, log ou arquivo local, não adicione. Corrija `.gitignore` se fizer sentido e for seguro.
+
+## 21. Critérios obrigatórios para push em produção
+
+Só faça push para a `main` se todos os itens abaixo forem verdadeiros:
+
+1. Commit local criado com sucesso.
+2. Branch atual é `main`.
+3. Remoto `origin` aponta para o repositório esperado.
+4. `git status --short` está limpo após commit.
+5. `git log -1 --oneline` mostra o commit desta execução.
+6. Não há divergência com `origin/main`.
+7. Nenhuma validação final obrigatória falhou.
+8. Nenhum bloqueio crítico ficou pendente.
+9. Nenhum segredo foi exposto.
+10. Nenhum comando destrutivo foi usado.
+11. O push para `main` é o fluxo padrão de publicação em produção do projeto.
+
+Se qualquer item falhar, não faça push.
+
+## 22. Push para produção
+
+Se todos os critérios forem atendidos, execute:
+
+```bash
+git push origin main
+```
+
+Não use force push.
+
+Não use push para outra branch.
+
+Não crie tag sem padrão claro do projeto.
+
+Se o push acionar deploy em produção pelo fluxo do projeto, registre isso na entrega final como publicação acionada por push.
+
+Se houver integração Vercel e o repositório tiver comando ou documentação local para consultar status de deploy, use apenas se não exigir segredo exposto. Caso contrário, registre que o push foi feito e que o deploy deve ser verificado no provedor.
+
+## 23. Política para bloqueios
+
+Considere bloqueio real somente quando houver impedimento objetivo, como:
+
+1. `D:\helper` inexistente.
+2. Branch diferente de `main`.
+3. Mudanças locais que não podem ser preservadas com segurança.
+4. Dependência indisponível.
+5. Script inexistente.
+6. Chromium ausente e instalação indisponível.
+7. Banco aparentemente de produção para operação destrutiva.
+8. Segredo ausente necessário para teste externo.
+9. Falha externa fora do repositório.
+10. Divergência entre `main` local e `origin/main`.
+11. Falha de autenticação no Git.
+12. Falha de permissão para push.
+13. Validação final falhando.
+
+Mesmo com bloqueio parcial, avance no que for seguro.
+
+Não faça push se houver bloqueio crítico.
+
+## 24. Entrega final obrigatória
+
+Entregue em português com as seções abaixo:
+
+```text
+1. Resumo executivo
+2. Fluxos revisados
+3. Regressões encontradas
+4. Correções aplicadas
+5. Cobertura e testes adicionados ou ajustados
+6. Arquivos alterados
+7. Versionamento e changelog
+8. Patch gerado
+9. Comandos executados
+10. Validação final
+11. Commit
+12. Push para produção
+13. Limitações e bloqueios
+14. Validação manual recomendada
+15. Risco de regressão
+16. Estado final do Git
+```
+
+Em “Validação final”, liste cada comando com status:
+
+```text
+PASS
+FAIL
+SKIPPED
+BLOCKED
+```
+
+Comandos mínimos a reportar:
+
+```text
+pnpm install --frozen-lockfile
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm test:smoke
+pnpm test:e2e
+pnpm build
+git diff --check
+git status --short
+git commit
+git push origin main
+```
+
+Em “Risco de regressão”, classifique como:
+
+```text
+baixo
+médio
+alto
+```
+
+Explique em uma frase.
+
+Em “Push para produção”, informe um dos status:
+
+```text
+PUSHED
+NOT PUSHED
+BLOCKED
+```
+
+Se não subiu, explique exatamente qual critério impediu.
+
+## 25. Condição de sucesso
+
+A execução é considerada bem-sucedida quando:
+
+1. Regressões reais foram investigadas.
+2. Correções reais foram aplicadas quando encontradas.
+3. Cobertura foi aumentada ou fortalecida sem fragilizar testes.
+4. Todas as alterações ocorreram em `D:\helper`.
+5. Nenhum trabalho local foi apagado.
+6. Nenhum segredo foi exposto.
+7. Patch foi criado em `.codex-patches`.
+8. Versionamento e changelog foram atualizados quando fizeram sentido.
+9. Validação final passou.
+10. Commit foi criado.
+11. Push para `origin main` foi feito somente se todos os critérios de segurança passaram.
+12. Entrega final documentou fluxos, regressões, correções, testes, comandos, limitações, validação manual e risco.
+
+Comece agora.

@@ -129,7 +129,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             id="main-content"
             className={
               isAuthenticated
-                ? 'mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 sm:py-7 lg:py-8'
+                ? 'safe-auth-main mx-auto w-full max-w-7xl py-5 sm:py-7 lg:py-8'
                 : ''
             }
           >

@@ -14,7 +14,7 @@ export function PublicPageShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-background px-4 py-8 sm:py-12">
+    <div className="safe-public-screen bg-background">
       <main className="mx-auto w-full max-w-3xl space-y-6">
         <header className="flex items-center justify-between gap-3">
           <Link href="/solicitar" className="flex items-center gap-2.5 rounded-lg">

@@ -74,7 +74,9 @@ export function NotificationsClient({ items }: { items: NotificationItem[] }) {
                 'mt-1 size-2 shrink-0 rounded-full',
                 item.readAt ? 'bg-muted-foreground/30' : 'bg-primary',
               )}
-            />
+            >
+              <span className="sr-only">{isUnread ? 'Não lida' : 'Lida'}</span>
+            </span>
             {item.link ? (
               <Link href={item.link} className="min-w-0 flex-1">
                 {content}

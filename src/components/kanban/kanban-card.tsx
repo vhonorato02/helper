@@ -4,14 +4,22 @@ import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Clock3, ExternalLink, GripVertical, Pencil, UserRound } from 'lucide-react';
+import { ChevronDown, Clock3, ExternalLink, GripVertical, Pencil, UserRound } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { PriorityBadge, AreaBadge } from '@/components/tickets/ticket-badge';
+import { BOARD_STATUSES, STATUS_LABELS } from '@/lib/constants';
 import { copy } from '@/lib/copy';
 import { daysSince } from '@/lib/format';
 import type { Ticket } from '@/db/schema';
+import type { KanbanTicket } from '@/lib/kanban';
 
 interface KanbanCardProps {
   ticket: {
@@ -21,14 +29,15 @@ interface KanbanCardProps {
     title: string;
     subcategory: string;
     priority: Ticket['priority'];
-    status: Ticket['status'];
+    status: KanbanTicket['status'];
     updatedAt: Date;
     assigneeName?: string | null;
   };
   dragging?: boolean;
+  onMoveStatus?: (code: string, status: KanbanTicket['status']) => void;
 }
 
-export function KanbanCard({ ticket, dragging = false }: KanbanCardProps) {
+export function KanbanCard({ ticket, dragging = false, onMoveStatus }: KanbanCardProps) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, isDragging } = useDraggable({
     id: ticket.code,
   });
@@ -133,6 +142,34 @@ export function KanbanCard({ ticket, dragging = false }: KanbanCardProps) {
           </Link>
         </Button>
       </div>
+
+      {!dragging && onMoveStatus && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-1.5 h-8 w-full justify-center px-2 text-[11px]"
+              aria-label={`Mover ${ticket.code} para outro status`}
+            >
+              Mover para
+              <ChevronDown className="size-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48">
+            {BOARD_STATUSES.map((status) => (
+              <DropdownMenuItem
+                key={status}
+                onSelect={() => onMoveStatus(ticket.code, status)}
+                disabled={status === ticket.status}
+              >
+                {STATUS_LABELS[status]}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
     </div>
   );
 }

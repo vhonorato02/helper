@@ -121,13 +121,13 @@ export function EditTicketDialog({ open, onOpenChange, ticket }: EditTicketDialo
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label>{copy.tickets.form.fields.area}</Label>
-              <Input value={AREA_LABELS[ticket.area]} disabled />
+              <Label htmlFor="edit-ticket-area">{copy.tickets.form.fields.area}</Label>
+              <Input id="edit-ticket-area" value={AREA_LABELS[ticket.area]} disabled />
             </div>
             <div className="space-y-1.5">
-              <Label>{copy.tickets.form.fields.subcategory}</Label>
+              <Label htmlFor="edit-ticket-subcategory">{copy.tickets.form.fields.subcategory}</Label>
               <Select value={subcategory} onValueChange={setSubcategory} disabled={isPending}>
-                <SelectTrigger>
+                <SelectTrigger id="edit-ticket-subcategory">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -155,13 +155,13 @@ export function EditTicketDialog({ open, onOpenChange, ticket }: EditTicketDialo
 
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-1.5">
-              <Label>{copy.tickets.form.fields.priority}</Label>
+              <Label htmlFor="edit-ticket-priority">{copy.tickets.form.fields.priority}</Label>
               <Select
                 value={priority}
                 onValueChange={(value) => setPriority(value as Ticket['priority'])}
                 disabled={isPending}
               >
-                <SelectTrigger>
+                <SelectTrigger id="edit-ticket-priority">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

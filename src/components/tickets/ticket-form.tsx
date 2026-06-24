@@ -230,9 +230,9 @@ export function TicketForm({ open, onClose, users }: TicketFormProps) {
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label>{copy.tickets.form.fields.area}</Label>
+              <Label htmlFor="ticket-area">{copy.tickets.form.fields.area}</Label>
               <Select value={area} onValueChange={handleAreaChange} disabled={isSubmitting}>
-                <SelectTrigger>
+                <SelectTrigger id="ticket-area">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -246,14 +246,14 @@ export function TicketForm({ open, onClose, users }: TicketFormProps) {
             </div>
 
             <div className="space-y-1.5">
-              <Label>{copy.tickets.form.fields.subcategory}</Label>
+              <Label htmlFor="ticket-subcategory">{copy.tickets.form.fields.subcategory}</Label>
               <Select
                 key={area}
                 value={subcategory ?? ''}
                 onValueChange={(value) => setValue('subcategory', value)}
                 disabled={isSubmitting}
               >
-                <SelectTrigger aria-invalid={!!errors.subcategory}>
+                <SelectTrigger id="ticket-subcategory" aria-invalid={!!errors.subcategory}>
                   <SelectValue placeholder={copy.tickets.form.placeholders.subcategory} />
                 </SelectTrigger>
                 <SelectContent>
@@ -285,13 +285,13 @@ export function TicketForm({ open, onClose, users }: TicketFormProps) {
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label>{copy.tickets.form.fields.priority}</Label>
+              <Label htmlFor="ticket-priority">{copy.tickets.form.fields.priority}</Label>
               <Select
                 value={watch('priority')}
                 onValueChange={(value) => setValue('priority', value as FormData['priority'])}
                 disabled={isSubmitting}
               >
-                <SelectTrigger>
+                <SelectTrigger id="ticket-priority">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -305,13 +305,13 @@ export function TicketForm({ open, onClose, users }: TicketFormProps) {
             </div>
 
             <div className="space-y-1.5">
-              <Label>{copy.tickets.form.fields.assignee}</Label>
+              <Label htmlFor="ticket-assignee">{copy.tickets.form.fields.assignee}</Label>
               <Select
                 value={watch('assigneeId') ?? 'none'}
                 onValueChange={(value) => setValue('assigneeId', value)}
                 disabled={isSubmitting}
               >
-                <SelectTrigger>
+                <SelectTrigger id="ticket-assignee">
                   <SelectValue placeholder={copy.tickets.form.placeholders.assignee} />
                 </SelectTrigger>
                 <SelectContent>

@@ -713,7 +713,7 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
       )}
 
       {someSelected && (
-        <div className="fixed bottom-3 left-3 right-3 z-40 mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-2 overflow-y-auto rounded-lg border bg-card px-3 py-3 shadow-lg surface-elevated no-print sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:justify-start sm:px-4">
+        <div className="safe-floating-bar fixed z-40 mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-2 overflow-y-auto rounded-lg border bg-card px-3 py-3 shadow-lg surface-elevated no-print sm:-translate-x-1/2 sm:justify-start sm:px-4">
           <span className="text-sm font-semibold flex items-center gap-2">
             <Check className="size-4 text-primary" />
             {selected.size} selecionada{selected.size === 1 ? '' : 's'}

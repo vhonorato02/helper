@@ -121,7 +121,7 @@ export function PwaInstallPrompt() {
   if (updateVisible) {
     return (
       <div
-        className="fixed bottom-4 left-4 right-4 z-50 sm:left-auto sm:right-4 sm:max-w-sm animate-in slide-in-from-bottom-2"
+        className="safe-floating-toast fixed z-50 sm:max-w-sm animate-in slide-in-from-bottom-2"
         role="status"
       >
         <div className="surface-elevated flex items-start gap-3 rounded-lg border bg-card p-4 shadow-lg">
@@ -150,7 +150,7 @@ export function PwaInstallPrompt() {
   if (iosVisible) {
     return (
       <div
-        className="fixed bottom-4 left-4 right-4 z-50 sm:left-auto sm:right-4 sm:max-w-sm animate-in slide-in-from-bottom-2"
+        className="safe-floating-toast fixed z-50 sm:max-w-sm animate-in slide-in-from-bottom-2"
         role="dialog"
         aria-label="Instalar aplicativo no iOS"
       >
@@ -185,7 +185,7 @@ export function PwaInstallPrompt() {
 
   return (
     <div
-      className="fixed bottom-4 left-4 right-4 z-50 sm:left-auto sm:right-4 sm:max-w-sm animate-in slide-in-from-bottom-2"
+      className="safe-floating-toast fixed z-50 sm:max-w-sm animate-in slide-in-from-bottom-2"
       role="dialog"
       aria-label="Instalar aplicativo"
     >

@@ -344,9 +344,9 @@ function BookingDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Status</Label>
+              <Label htmlFor="chromebook-status">Status</Label>
               <Select name="status" defaultValue={initial?.status ?? 'confirmado'} disabled={isPending}>
-                <SelectTrigger>
+                <SelectTrigger id="chromebook-status">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

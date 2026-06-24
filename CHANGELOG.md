@@ -1,5 +1,19 @@
 # Changelog
 
+## Helper 0.2.6 - 2026-06-24
+
+- Adiciona ação acessível "Mover para" nos cards do Kanban como alternativa ao arrastar.
+- Associa labels aos selects Radix em formulários de tickets, agenda, marketing e Chromebooks.
+- Melhora associação de erros nos formulários públicos de solicitações e Chromebooks.
+- Ajusta safe area de PWA nos shells públicos, layout autenticado, prompts de instalação e barra de ações em lote.
+- Evita dependência apenas de cor na lista de notificações e melhora quebra mobile da atividade recente.
+- Atualiza metadados operacionais para Helper 0.2.6 e service worker `helper-static-v12`.
+
+## Manutenção - 2026-06-24
+
+- Alinha o schema Drizzle com `database/schema.sql` declarando `chromebook_booking_locks`.
+- Passa o lock de reservas de Chromebooks a usar a tabela tipada do schema e adiciona teste unitário contra regressão.
+
 ## Helper 0.2.5 - 2026-06-18
 
 ## Funcionalidades adicionadas

@@ -96,20 +96,29 @@ export default async function AtividadePage() {
                       {describeChange(item)}
                     </span>
                   </div>
-                  <div className="mt-1.5 flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <Link
                       href={`/tickets/${item.ticketCode}`}
                       className="font-mono text-primary hover:underline font-medium"
                     >
                       {item.ticketCode}
                     </Link>
-                    <span className="truncate">{item.ticketTitle}</span>
+                    <span className="min-w-0 max-w-full break-words">{item.ticketTitle}</span>
                     <AreaBadge area={item.ticketArea as Area} />
                   </div>
+                  <time
+                    dateTime={new Date(item.createdAt).toISOString()}
+                    className="mt-2 block text-xs text-muted-foreground tabular-nums sm:hidden"
+                  >
+                    {formatRelativeTime(item.createdAt)}
+                  </time>
                 </div>
-                <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                <time
+                  dateTime={new Date(item.createdAt).toISOString()}
+                  className="hidden shrink-0 text-xs text-muted-foreground tabular-nums sm:block"
+                >
                   {formatRelativeTime(item.createdAt)}
-                </span>
+                </time>
               </div>
             </div>
           ))}

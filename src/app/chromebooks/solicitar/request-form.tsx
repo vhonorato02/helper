@@ -54,6 +54,7 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
   const [endTime, setEndTime] = useState('');
   const [success, setSuccess] = useState('');
   const [formError, setFormError] = useState('');
+  const [errorScope, setErrorScope] = useState<'contact' | 'period' | 'form' | ''>('');
   const [notesLength, setNotesLength] = useState(0);
   const holidayNotice = getHolidaySchedulingNotice(date);
   const minDate = dateInputInSaoPaulo(new Date());
@@ -65,11 +66,13 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
     const formData = new FormData(event.currentTarget);
     setSuccess('');
     setFormError('');
+    setErrorScope('');
 
     const contact = validatePublicContact(String(formData.get('requesterContact') ?? ''));
     if (!contact.ok) {
       submitLockRef.current = false;
       setFormError(contact.error);
+      setErrorScope('contact');
       return;
     }
 
@@ -77,6 +80,7 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
     if (localPeriodError) {
       submitLockRef.current = false;
       setFormError(localPeriodError);
+      setErrorScope('period');
       return;
     }
 
@@ -86,6 +90,7 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
         if (result && 'error' in result) {
           const message = result.error ?? 'Não foi possível registrar a solicitação.';
           setFormError(message);
+          setErrorScope('form');
           toast.error(message);
           return;
         }
@@ -101,6 +106,7 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
       } catch {
         const message = 'Não foi possível registrar a solicitação agora.';
         setFormError(message);
+        setErrorScope('form');
         toast.error(message);
       } finally {
         submitLockRef.current = false;
@@ -140,6 +146,8 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
               min={minDate}
               onChange={(event) => setDate(event.target.value)}
               required
+              aria-invalid={errorScope === 'period'}
+              aria-describedby={errorScope === 'period' ? 'public-chromebook-period-help public-chromebook-form-error' : 'public-chromebook-period-help'}
               disabled={isPending}
             />
           </div>
@@ -152,6 +160,8 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
               value={startTime}
               onChange={(event) => setStartTime(event.target.value)}
               required
+              aria-invalid={errorScope === 'period'}
+              aria-describedby={errorScope === 'period' ? 'public-chromebook-period-help public-chromebook-form-error' : 'public-chromebook-period-help'}
               disabled={isPending}
             />
           </div>
@@ -164,10 +174,12 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
               value={endTime}
               onChange={(event) => setEndTime(event.target.value)}
               required
+              aria-invalid={errorScope === 'period'}
+              aria-describedby={errorScope === 'period' ? 'public-chromebook-period-help public-chromebook-form-error' : 'public-chromebook-period-help'}
               disabled={isPending}
             />
           </div>
-          <p className="text-xs text-muted-foreground sm:col-span-3">
+          <p id="public-chromebook-period-help" className="text-xs text-muted-foreground sm:col-span-3">
             Mínimo de 15 minutos e antecedência de 1 hora. A disponibilidade é revalidada antes de salvar.
           </p>
         </div>
@@ -227,8 +239,9 @@ export function PublicChromebookRequestForm({ totalChromebooks }: { totalChromeb
             minLength={3}
             maxLength={120}
             required
+            aria-invalid={errorScope === 'contact'}
             aria-describedby={
-              formError
+              errorScope === 'contact'
                 ? 'public-chromebook-contact-help public-chromebook-form-error'
                 : 'public-chromebook-contact-help'
             }

@@ -173,9 +173,9 @@ export function EventFormDialog({ open, onOpenChange, initial }: EventFormDialog
               </p>
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <Label>{copy.marketing.calendar.monthsLabel}</Label>
+              <Label htmlFor="evt-month">{copy.marketing.calendar.monthsLabel}</Label>
               <Select value={month} onValueChange={setMonth} disabled={isPending}>
-                <SelectTrigger>
+                <SelectTrigger id="evt-month">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -191,13 +191,13 @@ export function EventFormDialog({ open, onOpenChange, initial }: EventFormDialog
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label>{copy.marketing.calendar.form.category}</Label>
+              <Label htmlFor="evt-category">{copy.marketing.calendar.form.category}</Label>
               <Select
                 value={category}
                 onValueChange={(v) => setCategory(v as MarketingEventCategory)}
                 disabled={isPending}
               >
-                <SelectTrigger>
+                <SelectTrigger id="evt-category">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
