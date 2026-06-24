@@ -12,7 +12,7 @@ Este arquivo guarda contexto operacional para próximas versões do Helper.
 
 ## Regras de Versão
 
-- Patch atual: `0.2.7`.
+- Patch atual: `0.2.8`.
 - Toda versão precisa atualizar `package.json`, `src/lib/version.ts`, `CHANGELOG.md`, README, MEMORY e `.env.example` quando houver mudança operacional.
 - Atualize `pnpm-lock.yaml` somente quando `pnpm install` alterar dependências, overrides, package manager ou metadata realmente representada no lockfile. O lockfile pnpm v9 não replica a versão do pacote raiz.
 - Atualize `public/sw.js` quando uma versão precisar forçar atualização PWA ou quando assets estáticos cacheados mudarem.
@@ -25,6 +25,7 @@ Este arquivo guarda contexto operacional para próximas versões do Helper.
 - Logs estruturados devem continuar redigindo campos sensíveis, tokens e strings de conexão antes de escrever no console.
 - Em 0.2.6, o Kanban ganhou alternativa acessível ao drag, selects Radix receberam labels associados, formulários públicos associam erros aos campos, e o PWA passou a respeitar safe area em telas instaladas.
 - Em 0.2.7, botões de senha voltaram à ordem de foco, controles compactos receberam nomes acessíveis, menu mobile/barra flutuante ganharam rolagem controlada e toasts respeitam safe area.
+- Em 0.2.8, selects e menus ganharam limite de altura responsivo, ações do calendário viraram botões semânticos, visões salvas/teste de e-mail receberam labels explícitos e o service worker passou para `helper-static-v14`.
 
 ## Pontos Sensíveis
 

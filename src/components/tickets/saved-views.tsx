@@ -8,10 +8,12 @@ import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
 const STORAGE_KEY = 'helper-saved-views-v1';
@@ -101,7 +103,7 @@ export function SavedViews() {
       {views.length > 0 && (
         <>
           <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wide flex items-center gap-1.5">
-            <Bookmark className="size-3" />
+            <Bookmark className="size-3" aria-hidden="true" />
             Visões
           </span>
           {views.map((view) => (
@@ -115,7 +117,7 @@ export function SavedViews() {
                     : 'bg-card hover:bg-accent text-foreground border-border',
                 )}
               >
-                {isCurrentView(view) && <Star className="size-3 fill-current" />}
+                {isCurrentView(view) && <Star className="size-3 fill-current" aria-hidden="true" />}
                 <span className="truncate">{view.name}</span>
               </button>
               <button
@@ -127,7 +129,7 @@ export function SavedViews() {
                 title="Remover visão"
                 aria-label="Remover visão"
               >
-                <X className="size-3" />
+                <X className="size-3" aria-hidden="true" />
               </button>
             </div>
           ))}
@@ -136,7 +138,7 @@ export function SavedViews() {
 
       {currentQuery && (
         <Button variant="ghost" size="sm" onClick={() => setDialogOpen(true)} className="h-7 text-xs">
-          <Plus className="size-3" />
+          <Plus className="size-3" aria-hidden="true" />
           Salvar visão
         </Button>
       )}
@@ -145,21 +147,28 @@ export function SavedViews() {
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Salvar visão atual</DialogTitle>
+            <DialogDescription>
+              Dê um nome curto para reutilizar os filtros e a busca atuais.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            <Input
-              autoFocus
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Minhas urgentes, MKT atrasadas..."
-              maxLength={40}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleSave();
-                }
-              }}
-            />
+            <div className="space-y-1.5">
+              <Label htmlFor="saved-view-name">Nome da visão</Label>
+              <Input
+                id="saved-view-name"
+                autoFocus
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ex: Minhas urgentes, MKT atrasadas..."
+                maxLength={40}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSave();
+                  }
+                }}
+              />
+            </div>
             <p className="text-xs text-muted-foreground">
               Os filtros e a busca atuais serão salvos. As visões ficam guardadas neste dispositivo.
             </p>
@@ -169,7 +178,7 @@ export function SavedViews() {
               Cancelar
             </Button>
             <Button onClick={handleSave} disabled={!name.trim()}>
-              <Bookmark className="size-4" />
+              <Bookmark className="size-4" aria-hidden="true" />
               Salvar
             </Button>
           </DialogFooter>

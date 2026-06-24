@@ -144,7 +144,7 @@ function StatusBadge({ status }: { status: ChromebookBookingStatus }) {
   const Icon = status === 'confirmado' ? CheckCircle2 : status === 'cancelado' ? XCircle : Circle;
   return (
     <Badge variant={STATUS_BADGE[status]}>
-      <Icon className="size-3" />
+      <Icon className="size-3" aria-hidden="true" />
       {CHROMEBOOK_STATUS_LABELS[status]}
     </Badge>
   );
@@ -845,20 +845,20 @@ export function ChromebookAdminClient({
                                 size="icon-sm"
                                 onClick={() => runConfirm(booking)}
                                 title="Aprovar"
-                                aria-label="Aprovar agendamento"
+                                aria-label={`Aprovar agendamento de ${booking.requesterName}`}
                                 disabled={isPending}
                               >
-                                <CheckCircle2 className="size-3.5" />
+                                <CheckCircle2 className="size-3.5" aria-hidden="true" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="icon-sm"
                                 onClick={() => setConfirmCancel(booking)}
                                 title="Recusar"
-                                aria-label="Recusar agendamento"
+                                aria-label={`Recusar agendamento de ${booking.requesterName}`}
                                 disabled={isPending}
                               >
-                                <XCircle className="size-3.5" />
+                                <XCircle className="size-3.5" aria-hidden="true" />
                               </Button>
                             </>
                           )}
@@ -867,10 +867,10 @@ export function ChromebookAdminClient({
                             size="icon-sm"
                             onClick={() => openEdit(booking)}
                             title="Editar"
-                            aria-label="Editar agendamento"
+                            aria-label={`Editar agendamento de ${booking.requesterName}`}
                             disabled={isPending}
                           >
-                            <Pencil className="size-3.5" />
+                            <Pencil className="size-3.5" aria-hidden="true" />
                           </Button>
                           {booking.status === 'confirmado' && (
                             <Button
@@ -878,10 +878,10 @@ export function ChromebookAdminClient({
                               size="icon-sm"
                               onClick={() => setConfirmCancel(booking)}
                               title="Cancelar"
-                              aria-label="Cancelar agendamento"
+                              aria-label={`Cancelar agendamento de ${booking.requesterName}`}
                               disabled={isPending}
                             >
-                              <XCircle className="size-3.5" />
+                              <XCircle className="size-3.5" aria-hidden="true" />
                             </Button>
                           )}
                           {isAdmin && (
@@ -891,10 +891,10 @@ export function ChromebookAdminClient({
                               className="text-destructive hover:text-destructive"
                               onClick={() => setConfirmDelete(booking)}
                               title="Excluir"
-                              aria-label="Excluir agendamento"
+                              aria-label={`Excluir agendamento de ${booking.requesterName}`}
                               disabled={isPending}
                             >
-                              <Trash2 className="size-3.5" />
+                              <Trash2 className="size-3.5" aria-hidden="true" />
                             </Button>
                           )}
                         </div>

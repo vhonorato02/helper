@@ -12,6 +12,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -126,8 +127,8 @@ function StatusPanel() {
             />
           </div>
           <div className="mt-2 text-xs text-muted-foreground space-y-0.5">
-            <p>Gmail: {status.email.gmail ? '✓' : '—'}</p>
-            <p>CRON_SECRET: {status.email.cronSecret ? '✓' : '— (recomendado)'}</p>
+            <p>Gmail: {status.email.gmail ? 'Configurado' : 'Não configurado'}</p>
+            <p>CRON_SECRET: {status.email.cronSecret ? 'Configurado' : 'Não configurado (recomendado)'}</p>
           </div>
         </div>
 
@@ -228,19 +229,24 @@ export function SystemTools() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-2">
-        <Select value={area} onValueChange={(v) => setArea(v as 'TI' | 'MKT' | 'PF')}>
-          <SelectTrigger className="sm:w-[180px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {AREA_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+        <div className="space-y-1.5 sm:w-[180px]">
+          <Label htmlFor="system-test-email-area" className="text-xs text-muted-foreground">
+            Área do teste
+          </Label>
+          <Select value={area} onValueChange={(v) => setArea(v as 'TI' | 'MKT' | 'PF')}>
+            <SelectTrigger id="system-test-email-area">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {AREA_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         <Button onClick={handleTestEmail} disabled={loading}>
           {loading ? <Loader2 className="animate-spin size-4" /> : <Send className="size-4" />}

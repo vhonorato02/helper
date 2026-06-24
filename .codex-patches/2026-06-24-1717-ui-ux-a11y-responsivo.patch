@@ -1,0 +1,542 @@
+diff --git a/.env.example b/.env.example
+index da5e43f..0d5e806 100644
+--- a/.env.example
++++ b/.env.example
+@@ -1,4 +1,4 @@
+-# Helper 0.2.7 usa pnpm/Corepack para comandos locais. Docker nao e necessario.
++# Helper 0.2.8 usa pnpm/Corepack para comandos locais. Docker nao e necessario.
+ 
+ # Database
+ DATABASE_URL="postgresql://user:password@host.neon.tech/dbname?sslmode=require"
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index f71b7b6..188c348 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -1,5 +1,13 @@
+ # Changelog
+ 
++## Helper 0.2.8 - 2026-06-24
++
++- Limita a altura de selects e menus Radix para evitar estouro em telas baixas e PWAs instalados.
++- Troca ações de rolagem no calendário de agenda de links fictícios para botões com nome acessível.
++- Reforça estados inválidos em selects e textareas e oculta marcadores decorativos de badges/status para leitores de tela.
++- Adiciona label e descrição ao modal de visões salvas e label ao teste de e-mail nas configurações.
++- Torna ações compactas de agendamentos de Chromebooks mais descritivas e atualiza o service worker para `helper-static-v14`.
++
+ ## Helper 0.2.7 - 2026-06-24
+ 
+ - Corrige a navegação por teclado dos botões de mostrar/copiar senha e reforça associação de erros nos formulários de senha e criação de usuário.
+diff --git a/MEMORY.md b/MEMORY.md
+index 4bd1070..231b8bd 100644
+--- a/MEMORY.md
++++ b/MEMORY.md
+@@ -12,7 +12,7 @@ Este arquivo guarda contexto operacional para próximas versões do Helper.
+ 
+ ## Regras de Versão
+ 
+-- Patch atual: `0.2.7`.
++- Patch atual: `0.2.8`.
+ - Toda versão precisa atualizar `package.json`, `src/lib/version.ts`, `CHANGELOG.md`, README, MEMORY e `.env.example` quando houver mudança operacional.
+ - Atualize `pnpm-lock.yaml` somente quando `pnpm install` alterar dependências, overrides, package manager ou metadata realmente representada no lockfile. O lockfile pnpm v9 não replica a versão do pacote raiz.
+ - Atualize `public/sw.js` quando uma versão precisar forçar atualização PWA ou quando assets estáticos cacheados mudarem.
+@@ -25,6 +25,7 @@ Este arquivo guarda contexto operacional para próximas versões do Helper.
+ - Logs estruturados devem continuar redigindo campos sensíveis, tokens e strings de conexão antes de escrever no console.
+ - Em 0.2.6, o Kanban ganhou alternativa acessível ao drag, selects Radix receberam labels associados, formulários públicos associam erros aos campos, e o PWA passou a respeitar safe area em telas instaladas.
+ - Em 0.2.7, botões de senha voltaram à ordem de foco, controles compactos receberam nomes acessíveis, menu mobile/barra flutuante ganharam rolagem controlada e toasts respeitam safe area.
++- Em 0.2.8, selects e menus ganharam limite de altura responsivo, ações do calendário viraram botões semânticos, visões salvas/teste de e-mail receberam labels explícitos e o service worker passou para `helper-static-v14`.
+ 
+ ## Pontos Sensíveis
+ 
+diff --git a/README.md b/README.md
+index d2db838..7945581 100644
+--- a/README.md
++++ b/README.md
+@@ -1,6 +1,6 @@
+ # Helper
+ 
+-Versão atual: `Helper 0.2.7`
++Versão atual: `Helper 0.2.8`
+ 
+ Helper é uma central operacional para registrar, organizar e acompanhar demandas internas. O sistema reúne página pública de solicitações, tickets, Kanban, agenda, reservas de Chromebooks, notificações, rotinas administrativas e PWA em uma única aplicação.
+ 
+@@ -61,6 +61,14 @@ O runtime é estritamente Node 24.x LTS. O projeto usa `.node-version`, `.nvmrc`
+ 
+ Tailwind 4 usa tema CSS-first em `src/app/globals.css`; não há mais `tailwind.config.js`. A variante `dark` é baseada na classe `.dark`, pois o Helper usa alternância manual de tema.
+ 
++## Mudanças da Versão 0.2.8
++
++- Selects e menus Radix agora limitam altura em telas baixas para reduzir estouro em mobile e PWA.
++- Ações de calendário em Agenda deixaram de usar links fictícios e passaram a botões com nome acessível.
++- Estados inválidos de selects/textareas e marcadores decorativos de badges/status foram reforçados.
++- Modal de visões salvas e teste de e-mail nas configurações ganharam labels mais claros.
++- Ações compactas de Chromebooks ficaram mais descritivas para leitores de tela e o service worker foi atualizado para `helper-static-v14`.
++
+ ## Mudanças da Versão 0.2.7
+ 
+ - Botões de mostrar/copiar senha voltaram para a ordem de foco por teclado.
+@@ -803,10 +811,10 @@ pnpm test:smoke
+ pnpm build
+ git status
+ git add .
+-git commit -m "chore: release Helper 0.2.7"
++git commit -m "chore: release Helper 0.2.8"
+ git push origin main
+-git tag v0.2.7
+-git push origin v0.2.7
++git tag v0.2.8
++git push origin v0.2.8
+ ```
+ 
+ Depois:
+@@ -827,4 +835,4 @@ Depois:
+ - Use Notificações para alertas internos.
+ - Revise logs antes de mexer em banco ou env.
+ 
+-Helper 0.2.7 deve permanecer limpo: sem warnings relevantes, sem marcas antigas, sem rotas quebradas, sem cache PWA antigo e sem Preview escrevendo em Production por acidente.
++Helper 0.2.8 deve permanecer limpo: sem warnings relevantes, sem marcas antigas, sem rotas quebradas, sem cache PWA antigo e sem Preview escrevendo em Production por acidente.
+diff --git a/package.json b/package.json
+index 7783dd2..2a25132 100644
+--- a/package.json
++++ b/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "helper",
+-  "version": "0.2.7",
++  "version": "0.2.8",
+   "private": true,
+   "packageManager": "pnpm@11.5.1",
+   "engines": {
+diff --git a/public/sw.js b/public/sw.js
+index b80141b..5c4d6e2 100644
+--- a/public/sw.js
++++ b/public/sw.js
+@@ -1,8 +1,8 @@
+-// Helper Service Worker - v13
++// Helper Service Worker - v14
+ // Keep authenticated pages network-only. Older versions cached HTML and could
+ // serve stale Next.js payloads after deploys.
+ 
+-const CACHE = 'helper-static-v13';
++const CACHE = 'helper-static-v14';
+ const STATIC_URLS = [
+   '/favicon.svg',
+   '/icon-192.png',
+diff --git a/src/app/agendamentos/calendar-view.tsx b/src/app/agendamentos/calendar-view.tsx
+index d8ff0aa..3091afe 100644
+--- a/src/app/agendamentos/calendar-view.tsx
++++ b/src/app/agendamentos/calendar-view.tsx
+@@ -1,7 +1,6 @@
+ 'use client';
+ 
+ import { useMemo, useState } from 'react';
+-import Link from 'next/link';
+ import { ChevronLeft, ChevronRight } from 'lucide-react';
+ import { Button } from '@/components/ui/button';
+ import { AREA_LABELS } from '@/lib/constants';
+@@ -166,22 +165,22 @@ export function CalendarView({ schedules }: CalendarViewProps) {
+                 <ul className="space-y-2">
+                   {cell.items.map((item) => (
+                     <li key={item.id}>
+-                      <Link
+-                        href="#"
+-                        onClick={(e) => {
+-                          e.preventDefault();
++                      <button
++                        type="button"
++                        onClick={() => {
+                           const el = document.getElementById(`sched-${item.id}`);
+                           el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                           el?.classList.add('ring-2', 'ring-primary');
+                           setTimeout(() => el?.classList.remove('ring-2', 'ring-primary'), 1500);
+                         }}
+                         className={cn(
+-                          'flex items-center gap-2 rounded-lg border bg-card/70 px-3 py-2 text-sm',
++                          'flex w-full items-center gap-2 rounded-lg border bg-card/70 px-3 py-2 text-left text-sm transition-colors hover:bg-muted/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70',
+                           item.status === 'concluido' && 'line-through opacity-60',
+                         )}
++                        aria-label={`Ir para agendamento ${item.title}`}
+                       >
+                         {item.area && (
+-                          <span className={cn('size-2 rounded-full shrink-0', AREA_DOT[item.area])} />
++                          <span className={cn('size-2 rounded-full shrink-0', AREA_DOT[item.area])} aria-hidden="true" />
+                         )}
+                         <span className="font-mono text-xs">
+                           {new Date(item.scheduledDate).toLocaleTimeString('pt-BR', {
+@@ -190,7 +189,7 @@ export function CalendarView({ schedules }: CalendarViewProps) {
+                           })}
+                         </span>
+                         <span className="min-w-0 flex-1 truncate">{item.title}</span>
+-                      </Link>
++                      </button>
+                     </li>
+                   ))}
+                 </ul>
+@@ -253,23 +252,23 @@ export function CalendarView({ schedules }: CalendarViewProps) {
+                   <ul className="space-y-0.5">
+                     {cell.items.slice(0, 3).map((item) => (
+                       <li key={item.id}>
+-                        <Link
+-                          href="#"
+-                          onClick={(e) => {
+-                            e.preventDefault();
++                        <button
++                          type="button"
++                          onClick={() => {
+                             const el = document.getElementById(`sched-${item.id}`);
+                             el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                             el?.classList.add('ring-2', 'ring-primary');
+                             setTimeout(() => el?.classList.remove('ring-2', 'ring-primary'), 1500);
+                           }}
+                           className={cn(
+-                            'flex items-center gap-1 text-[10px] truncate rounded px-1 py-0.5 hover:bg-muted',
++                            'flex w-full items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[10px] hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70',
+                             item.status === 'concluido' && 'line-through opacity-50',
+                           )}
+                           title={item.title}
++                          aria-label={`Ir para agendamento ${item.title}`}
+                         >
+                           {item.area && (
+-                            <span className={cn('size-1.5 rounded-full shrink-0', AREA_DOT[item.area])} />
++                            <span className={cn('size-1.5 rounded-full shrink-0', AREA_DOT[item.area])} aria-hidden="true" />
+                           )}
+                           <span className="truncate">
+                             {new Date(item.scheduledDate).toLocaleTimeString('pt-BR', {
+@@ -278,7 +277,7 @@ export function CalendarView({ schedules }: CalendarViewProps) {
+                             })}{' '}
+                             {item.title}
+                           </span>
+-                        </Link>
++                        </button>
+                       </li>
+                     ))}
+                     {cell.items.length > 3 && (
+diff --git a/src/app/chromebooks/chromebook-admin-client.tsx b/src/app/chromebooks/chromebook-admin-client.tsx
+index 15bc308..02749e5 100644
+--- a/src/app/chromebooks/chromebook-admin-client.tsx
++++ b/src/app/chromebooks/chromebook-admin-client.tsx
+@@ -144,7 +144,7 @@ function StatusBadge({ status }: { status: ChromebookBookingStatus }) {
+   const Icon = status === 'confirmado' ? CheckCircle2 : status === 'cancelado' ? XCircle : Circle;
+   return (
+     <Badge variant={STATUS_BADGE[status]}>
+-      <Icon className="size-3" />
++      <Icon className="size-3" aria-hidden="true" />
+       {CHROMEBOOK_STATUS_LABELS[status]}
+     </Badge>
+   );
+@@ -845,20 +845,20 @@ export function ChromebookAdminClient({
+                                 size="icon-sm"
+                                 onClick={() => runConfirm(booking)}
+                                 title="Aprovar"
+-                                aria-label="Aprovar agendamento"
++                                aria-label={`Aprovar agendamento de ${booking.requesterName}`}
+                                 disabled={isPending}
+                               >
+-                                <CheckCircle2 className="size-3.5" />
++                                <CheckCircle2 className="size-3.5" aria-hidden="true" />
+                               </Button>
+                               <Button
+                                 variant="ghost"
+                                 size="icon-sm"
+                                 onClick={() => setConfirmCancel(booking)}
+                                 title="Recusar"
+-                                aria-label="Recusar agendamento"
++                                aria-label={`Recusar agendamento de ${booking.requesterName}`}
+                                 disabled={isPending}
+                               >
+-                                <XCircle className="size-3.5" />
++                                <XCircle className="size-3.5" aria-hidden="true" />
+                               </Button>
+                             </>
+                           )}
+@@ -867,10 +867,10 @@ export function ChromebookAdminClient({
+                             size="icon-sm"
+                             onClick={() => openEdit(booking)}
+                             title="Editar"
+-                            aria-label="Editar agendamento"
++                            aria-label={`Editar agendamento de ${booking.requesterName}`}
+                             disabled={isPending}
+                           >
+-                            <Pencil className="size-3.5" />
++                            <Pencil className="size-3.5" aria-hidden="true" />
+                           </Button>
+                           {booking.status === 'confirmado' && (
+                             <Button
+@@ -878,10 +878,10 @@ export function ChromebookAdminClient({
+                               size="icon-sm"
+                               onClick={() => setConfirmCancel(booking)}
+                               title="Cancelar"
+-                              aria-label="Cancelar agendamento"
++                              aria-label={`Cancelar agendamento de ${booking.requesterName}`}
+                               disabled={isPending}
+                             >
+-                              <XCircle className="size-3.5" />
++                              <XCircle className="size-3.5" aria-hidden="true" />
+                             </Button>
+                           )}
+                           {isAdmin && (
+@@ -891,10 +891,10 @@ export function ChromebookAdminClient({
+                               className="text-destructive hover:text-destructive"
+                               onClick={() => setConfirmDelete(booking)}
+                               title="Excluir"
+-                              aria-label="Excluir agendamento"
++                              aria-label={`Excluir agendamento de ${booking.requesterName}`}
+                               disabled={isPending}
+                             >
+-                              <Trash2 className="size-3.5" />
++                              <Trash2 className="size-3.5" aria-hidden="true" />
+                             </Button>
+                           )}
+                         </div>
+diff --git a/src/app/configuracoes/system-tools.tsx b/src/app/configuracoes/system-tools.tsx
+index 5b6b2b1..af231ba 100644
+--- a/src/app/configuracoes/system-tools.tsx
++++ b/src/app/configuracoes/system-tools.tsx
+@@ -12,6 +12,7 @@ import {
+   XCircle,
+ } from 'lucide-react';
+ import { Button } from '@/components/ui/button';
++import { Label } from '@/components/ui/label';
+ import {
+   Select,
+   SelectContent,
+@@ -126,8 +127,8 @@ function StatusPanel() {
+             />
+           </div>
+           <div className="mt-2 text-xs text-muted-foreground space-y-0.5">
+-            <p>Gmail: {status.email.gmail ? '✓' : '—'}</p>
+-            <p>CRON_SECRET: {status.email.cronSecret ? '✓' : '— (recomendado)'}</p>
++            <p>Gmail: {status.email.gmail ? 'Configurado' : 'Não configurado'}</p>
++            <p>CRON_SECRET: {status.email.cronSecret ? 'Configurado' : 'Não configurado (recomendado)'}</p>
+           </div>
+         </div>
+ 
+@@ -228,19 +229,24 @@ export function SystemTools() {
+         </div>
+       </div>
+ 
+-      <div className="flex flex-col sm:flex-row gap-2">
+-        <Select value={area} onValueChange={(v) => setArea(v as 'TI' | 'MKT' | 'PF')}>
+-          <SelectTrigger className="sm:w-[180px]">
+-            <SelectValue />
+-          </SelectTrigger>
+-          <SelectContent>
+-            {AREA_OPTIONS.map((opt) => (
+-              <SelectItem key={opt.value} value={opt.value}>
+-                {opt.label}
+-              </SelectItem>
+-            ))}
+-          </SelectContent>
+-        </Select>
++      <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
++        <div className="space-y-1.5 sm:w-[180px]">
++          <Label htmlFor="system-test-email-area" className="text-xs text-muted-foreground">
++            Área do teste
++          </Label>
++          <Select value={area} onValueChange={(v) => setArea(v as 'TI' | 'MKT' | 'PF')}>
++            <SelectTrigger id="system-test-email-area">
++              <SelectValue />
++            </SelectTrigger>
++            <SelectContent>
++              {AREA_OPTIONS.map((opt) => (
++                <SelectItem key={opt.value} value={opt.value}>
++                  {opt.label}
++                </SelectItem>
++              ))}
++            </SelectContent>
++          </Select>
++        </div>
+ 
+         <Button onClick={handleTestEmail} disabled={loading}>
+           {loading ? <Loader2 className="animate-spin size-4" /> : <Send className="size-4" />}
+diff --git a/src/components/tickets/saved-views.tsx b/src/components/tickets/saved-views.tsx
+index a28ca6d..ec102bb 100644
+--- a/src/components/tickets/saved-views.tsx
++++ b/src/components/tickets/saved-views.tsx
+@@ -8,10 +8,12 @@ import { Input } from '@/components/ui/input';
+ import {
+   Dialog,
+   DialogContent,
++  DialogDescription,
+   DialogFooter,
+   DialogHeader,
+   DialogTitle,
+ } from '@/components/ui/dialog';
++import { Label } from '@/components/ui/label';
+ import { cn } from '@/lib/utils';
+ 
+ const STORAGE_KEY = 'helper-saved-views-v1';
+@@ -101,7 +103,7 @@ export function SavedViews() {
+       {views.length > 0 && (
+         <>
+           <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wide flex items-center gap-1.5">
+-            <Bookmark className="size-3" />
++            <Bookmark className="size-3" aria-hidden="true" />
+             Visões
+           </span>
+           {views.map((view) => (
+@@ -115,7 +117,7 @@ export function SavedViews() {
+                     : 'bg-card hover:bg-accent text-foreground border-border',
+                 )}
+               >
+-                {isCurrentView(view) && <Star className="size-3 fill-current" />}
++                {isCurrentView(view) && <Star className="size-3 fill-current" aria-hidden="true" />}
+                 <span className="truncate">{view.name}</span>
+               </button>
+               <button
+@@ -127,7 +129,7 @@ export function SavedViews() {
+                 title="Remover visão"
+                 aria-label="Remover visão"
+               >
+-                <X className="size-3" />
++                <X className="size-3" aria-hidden="true" />
+               </button>
+             </div>
+           ))}
+@@ -136,7 +138,7 @@ export function SavedViews() {
+ 
+       {currentQuery && (
+         <Button variant="ghost" size="sm" onClick={() => setDialogOpen(true)} className="h-7 text-xs">
+-          <Plus className="size-3" />
++          <Plus className="size-3" aria-hidden="true" />
+           Salvar visão
+         </Button>
+       )}
+@@ -145,21 +147,28 @@ export function SavedViews() {
+         <DialogContent className="sm:max-w-sm">
+           <DialogHeader>
+             <DialogTitle>Salvar visão atual</DialogTitle>
++            <DialogDescription>
++              Dê um nome curto para reutilizar os filtros e a busca atuais.
++            </DialogDescription>
+           </DialogHeader>
+           <div className="space-y-3">
+-            <Input
+-              autoFocus
+-              value={name}
+-              onChange={(e) => setName(e.target.value)}
+-              placeholder="Ex: Minhas urgentes, MKT atrasadas..."
+-              maxLength={40}
+-              onKeyDown={(e) => {
+-                if (e.key === 'Enter') {
+-                  e.preventDefault();
+-                  handleSave();
+-                }
+-              }}
+-            />
++            <div className="space-y-1.5">
++              <Label htmlFor="saved-view-name">Nome da visão</Label>
++              <Input
++                id="saved-view-name"
++                autoFocus
++                value={name}
++                onChange={(e) => setName(e.target.value)}
++                placeholder="Ex: Minhas urgentes, MKT atrasadas..."
++                maxLength={40}
++                onKeyDown={(e) => {
++                  if (e.key === 'Enter') {
++                    e.preventDefault();
++                    handleSave();
++                  }
++                }}
++              />
++            </div>
+             <p className="text-xs text-muted-foreground">
+               Os filtros e a busca atuais serão salvos. As visões ficam guardadas neste dispositivo.
+             </p>
+@@ -169,7 +178,7 @@ export function SavedViews() {
+               Cancelar
+             </Button>
+             <Button onClick={handleSave} disabled={!name.trim()}>
+-              <Bookmark className="size-4" />
++              <Bookmark className="size-4" aria-hidden="true" />
+               Salvar
+             </Button>
+           </DialogFooter>
+diff --git a/src/components/tickets/ticket-badge.tsx b/src/components/tickets/ticket-badge.tsx
+index e85663f..3228cc2 100644
+--- a/src/components/tickets/ticket-badge.tsx
++++ b/src/components/tickets/ticket-badge.tsx
+@@ -54,7 +54,7 @@ export function PriorityBadge({
+ }) {
+   return (
+     <Badge variant={priorityVariant[priority]} aria-label={`Prioridade ${PRIORITY_LABELS[priority]}`}>
+-      {withDot && <span className={cn('size-1.5 rounded-full', priorityDot[priority])} />}
++      {withDot && <span className={cn('size-1.5 rounded-full', priorityDot[priority])} aria-hidden="true" />}
+       {PRIORITY_LABELS[priority]}
+     </Badge>
+   );
+@@ -63,7 +63,7 @@ export function PriorityBadge({
+ export function StatusBadge({ status, withDot = true }: { status: Status; withDot?: boolean }) {
+   return (
+     <Badge variant={statusVariant[status]} aria-label={`Status ${STATUS_LABELS[status]}`}>
+-      {withDot && <span className={cn('size-1.5 rounded-full', statusDot[status])} />}
++      {withDot && <span className={cn('size-1.5 rounded-full', statusDot[status])} aria-hidden="true" />}
+       {STATUS_LABELS[status]}
+     </Badge>
+   );
+diff --git a/src/components/ui/dropdown-menu.tsx b/src/components/ui/dropdown-menu.tsx
+index 711d89c..e4e6b03 100644
+--- a/src/components/ui/dropdown-menu.tsx
++++ b/src/components/ui/dropdown-menu.tsx
+@@ -38,7 +38,7 @@ const DropdownMenuSubContent = React.forwardRef<
+   <DropdownMenuPrimitive.SubContent
+     ref={ref}
+     className={cn(
+-      'z-50 min-w-[8rem] overflow-hidden rounded-lg border border-border/70 bg-popover p-1 text-popover-foreground shadow-lg shadow-foreground/12',
++      'z-50 max-h-[min(24rem,calc(100svh-4rem))] min-w-[8rem] overflow-y-auto rounded-lg border border-border/70 bg-popover p-1 text-popover-foreground shadow-lg shadow-foreground/12',
+       className,
+     )}
+     {...props}
+@@ -55,7 +55,7 @@ const DropdownMenuContent = React.forwardRef<
+       ref={ref}
+       sideOffset={sideOffset}
+       className={cn(
+-        'z-50 min-w-[8rem] overflow-hidden rounded-lg border border-border/70 bg-popover p-1 text-popover-foreground shadow-lg shadow-foreground/12 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
++        'z-50 max-h-[min(24rem,calc(100svh-4rem))] min-w-[8rem] overflow-y-auto rounded-lg border border-border/70 bg-popover p-1 text-popover-foreground shadow-lg shadow-foreground/12 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+         className,
+       )}
+       {...props}
+diff --git a/src/components/ui/select.tsx b/src/components/ui/select.tsx
+index a8d5de1..0cc8188 100644
+--- a/src/components/ui/select.tsx
++++ b/src/components/ui/select.tsx
+@@ -16,7 +16,7 @@ const SelectTrigger = React.forwardRef<
+   <SelectPrimitive.Trigger
+     ref={ref}
+     className={cn(
+-      'flex h-10 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-card px-3 py-2 text-sm shadow-xs transition-[color,box-shadow,border-color,background-color] placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-ring/55 focus:border-ring data-[state=open]:border-ring data-[state=open]:ring-2 data-[state=open]:ring-ring/55 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1',
++      'flex h-10 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-card px-3 py-2 text-sm shadow-xs transition-[color,box-shadow,border-color,background-color] placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-ring/55 focus:border-ring data-[state=open]:border-ring data-[state=open]:ring-2 data-[state=open]:ring-ring/55 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 [&>span]:line-clamp-1',
+       className,
+     )}
+     {...props}
+@@ -65,7 +65,7 @@ const SelectContent = React.forwardRef<
+     <SelectPrimitive.Content
+       ref={ref}
+       className={cn(
+-        'relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-lg border border-border/80 bg-popover text-popover-foreground shadow-lg shadow-foreground/12 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
++        'relative z-50 max-h-[min(24rem,calc(100svh-4rem))] min-w-[8rem] overflow-hidden rounded-lg border border-border/80 bg-popover text-popover-foreground shadow-lg shadow-foreground/12 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+         position === 'popper' &&
+           'data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1',
+         className,
+diff --git a/src/components/ui/textarea.tsx b/src/components/ui/textarea.tsx
+index a1d7647..199977c 100644
+--- a/src/components/ui/textarea.tsx
++++ b/src/components/ui/textarea.tsx
+@@ -10,6 +10,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, React.ComponentProps<'tex
+           'placeholder:text-muted-foreground/70',
+           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/55 focus-visible:border-ring',
+           'disabled:cursor-not-allowed disabled:opacity-50 resize-y',
++          'aria-invalid:border-destructive aria-invalid:ring-destructive/20',
+           className,
+         )}
+         ref={ref}
+diff --git a/src/lib/version.ts b/src/lib/version.ts
+index 1873205..dc2dde8 100644
+--- a/src/lib/version.ts
++++ b/src/lib/version.ts
+@@ -1,4 +1,4 @@
+ export const APP_NAME = 'helper';
+ export const APP_DISPLAY_NAME = 'Helper';
+-export const APP_VERSION = '0.2.7';
++export const APP_VERSION = '0.2.8';
+ export const APP_VERSION_LABEL = `${APP_DISPLAY_NAME} ${APP_VERSION}`;

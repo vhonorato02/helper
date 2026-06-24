@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AREA_LABELS } from '@/lib/constants';
@@ -166,22 +165,22 @@ export function CalendarView({ schedules }: CalendarViewProps) {
                 <ul className="space-y-2">
                   {cell.items.map((item) => (
                     <li key={item.id}>
-                      <Link
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
+                      <button
+                        type="button"
+                        onClick={() => {
                           const el = document.getElementById(`sched-${item.id}`);
                           el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                           el?.classList.add('ring-2', 'ring-primary');
                           setTimeout(() => el?.classList.remove('ring-2', 'ring-primary'), 1500);
                         }}
                         className={cn(
-                          'flex items-center gap-2 rounded-lg border bg-card/70 px-3 py-2 text-sm',
+                          'flex w-full items-center gap-2 rounded-lg border bg-card/70 px-3 py-2 text-left text-sm transition-colors hover:bg-muted/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70',
                           item.status === 'concluido' && 'line-through opacity-60',
                         )}
+                        aria-label={`Ir para agendamento ${item.title}`}
                       >
                         {item.area && (
-                          <span className={cn('size-2 rounded-full shrink-0', AREA_DOT[item.area])} />
+                          <span className={cn('size-2 rounded-full shrink-0', AREA_DOT[item.area])} aria-hidden="true" />
                         )}
                         <span className="font-mono text-xs">
                           {new Date(item.scheduledDate).toLocaleTimeString('pt-BR', {
@@ -190,7 +189,7 @@ export function CalendarView({ schedules }: CalendarViewProps) {
                           })}
                         </span>
                         <span className="min-w-0 flex-1 truncate">{item.title}</span>
-                      </Link>
+                      </button>
                     </li>
                   ))}
                 </ul>
@@ -253,23 +252,23 @@ export function CalendarView({ schedules }: CalendarViewProps) {
                   <ul className="space-y-0.5">
                     {cell.items.slice(0, 3).map((item) => (
                       <li key={item.id}>
-                        <Link
-                          href="#"
-                          onClick={(e) => {
-                            e.preventDefault();
+                        <button
+                          type="button"
+                          onClick={() => {
                             const el = document.getElementById(`sched-${item.id}`);
                             el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                             el?.classList.add('ring-2', 'ring-primary');
                             setTimeout(() => el?.classList.remove('ring-2', 'ring-primary'), 1500);
                           }}
                           className={cn(
-                            'flex items-center gap-1 text-[10px] truncate rounded px-1 py-0.5 hover:bg-muted',
+                            'flex w-full items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[10px] hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70',
                             item.status === 'concluido' && 'line-through opacity-50',
                           )}
                           title={item.title}
+                          aria-label={`Ir para agendamento ${item.title}`}
                         >
                           {item.area && (
-                            <span className={cn('size-1.5 rounded-full shrink-0', AREA_DOT[item.area])} />
+                            <span className={cn('size-1.5 rounded-full shrink-0', AREA_DOT[item.area])} aria-hidden="true" />
                           )}
                           <span className="truncate">
                             {new Date(item.scheduledDate).toLocaleTimeString('pt-BR', {
@@ -278,7 +277,7 @@ export function CalendarView({ schedules }: CalendarViewProps) {
                             })}{' '}
                             {item.title}
                           </span>
-                        </Link>
+                        </button>
                       </li>
                     ))}
                     {cell.items.length > 3 && (

@@ -5,3 +5,5 @@
 *.webp binary
 *.jpg binary
 *.jpeg binary
+
+.codex-patches/*.patch -whitespace

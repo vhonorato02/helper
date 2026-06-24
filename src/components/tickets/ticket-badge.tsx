@@ -54,7 +54,7 @@ export function PriorityBadge({
 }) {
   return (
     <Badge variant={priorityVariant[priority]} aria-label={`Prioridade ${PRIORITY_LABELS[priority]}`}>
-      {withDot && <span className={cn('size-1.5 rounded-full', priorityDot[priority])} />}
+      {withDot && <span className={cn('size-1.5 rounded-full', priorityDot[priority])} aria-hidden="true" />}
       {PRIORITY_LABELS[priority]}
     </Badge>
   );
@@ -63,7 +63,7 @@ export function PriorityBadge({
 export function StatusBadge({ status, withDot = true }: { status: Status; withDot?: boolean }) {
   return (
     <Badge variant={statusVariant[status]} aria-label={`Status ${STATUS_LABELS[status]}`}>
-      {withDot && <span className={cn('size-1.5 rounded-full', statusDot[status])} />}
+      {withDot && <span className={cn('size-1.5 rounded-full', statusDot[status])} aria-hidden="true" />}
       {STATUS_LABELS[status]}
     </Badge>
   );

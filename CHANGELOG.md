@@ -1,5 +1,13 @@
 # Changelog
 
+## Helper 0.2.8 - 2026-06-24
+
+- Limita a altura de selects e menus Radix para evitar estouro em telas baixas e PWAs instalados.
+- Troca ações de rolagem no calendário de agenda de links fictícios para botões com nome acessível.
+- Reforça estados inválidos em selects e textareas e oculta marcadores decorativos de badges/status para leitores de tela.
+- Adiciona label e descrição ao modal de visões salvas e label ao teste de e-mail nas configurações.
+- Torna ações compactas de agendamentos de Chromebooks mais descritivas e atualiza o service worker para `helper-static-v14`.
+
 ## Helper 0.2.7 - 2026-06-24
 
 - Corrige a navegação por teclado dos botões de mostrar/copiar senha e reforça associação de erros nos formulários de senha e criação de usuário.
