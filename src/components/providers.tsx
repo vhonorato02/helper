@@ -8,6 +8,16 @@ export function Providers({ children }: { children: React.ReactNode }) {
       {children}
       <Toaster
         position="bottom-right"
+        offset={{
+          right: 'max(1rem, env(safe-area-inset-right))',
+          bottom: 'max(1rem, env(safe-area-inset-bottom))',
+        }}
+        mobileOffset={{
+          left: 'max(1rem, env(safe-area-inset-left))',
+          right: 'max(1rem, env(safe-area-inset-right))',
+          bottom: 'max(1rem, env(safe-area-inset-bottom))',
+        }}
+        containerAriaLabel="Notificações"
         toastOptions={{
           classNames: {
             toast:

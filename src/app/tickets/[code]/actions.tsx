@@ -278,7 +278,7 @@ export function TicketActions({
               onValueChange={handleAssigneeChange}
               disabled={isPending}
             >
-              <SelectTrigger className="h-9 text-xs">
+              <SelectTrigger className="h-9 text-xs" aria-label="Alterar responsável da demanda">
                 <SelectValue placeholder={copy.tickets.detail.noAssignee} />
               </SelectTrigger>
               <SelectContent>
@@ -316,7 +316,7 @@ export function TicketActions({
               onValueChange={handlePriorityChange}
               disabled={isPending}
             >
-              <SelectTrigger className="h-9 text-xs">
+              <SelectTrigger className="h-9 text-xs" aria-label="Alterar prioridade da demanda">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

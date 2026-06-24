@@ -111,12 +111,24 @@ export function CalendarView({ schedules }: CalendarViewProps) {
   return (
     <div className="surface-elevated overflow-hidden rounded-lg">
       <div className="flex items-center justify-between border-b p-3">
-        <Button variant="outline" size="sm" onClick={() => setCursor((c) => addMonths(c, -1))}>
-          <ChevronLeft className="size-3.5" />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setCursor((c) => addMonths(c, -1))}
+          aria-label="Mostrar mês anterior"
+          title="Mês anterior"
+        >
+          <ChevronLeft className="size-3.5" aria-hidden="true" />
         </Button>
         <h3 className="font-semibold capitalize text-sm">{monthLabel}</h3>
-        <Button variant="outline" size="sm" onClick={() => setCursor((c) => addMonths(c, 1))}>
-          <ChevronRight className="size-3.5" />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setCursor((c) => addMonths(c, 1))}
+          aria-label="Mostrar próximo mês"
+          title="Próximo mês"
+        >
+          <ChevronRight className="size-3.5" aria-hidden="true" />
         </Button>
       </div>
 

@@ -228,17 +228,17 @@ const statusConfig: Record<
   { icon: React.ReactNode; label: string; classes: string }
 > = {
   pendente: {
-    icon: <Circle className="size-4 text-muted-foreground" />,
+    icon: <Circle className="size-4 text-muted-foreground" aria-hidden="true" />,
     label: copy.agendamentos.status.pendente,
     classes: '',
   },
   concluido: {
-    icon: <CheckCircle2 className="size-4 text-green-500" />,
+    icon: <CheckCircle2 className="size-4 text-green-500" aria-hidden="true" />,
     label: copy.agendamentos.status.concluido,
     classes: 'opacity-60',
   },
   cancelado: {
-    icon: <XCircle className="size-4 text-destructive" />,
+    icon: <XCircle className="size-4 text-destructive" aria-hidden="true" />,
     label: copy.agendamentos.status.cancelado,
     classes: 'opacity-50',
   },
@@ -255,6 +255,12 @@ export function ScheduleItem({ schedule }: ScheduleItemProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   const cfg = statusConfig[schedule.status];
+  const toggleLabel =
+    schedule.status === 'pendente'
+      ? 'Marcar agendamento como concluído'
+      : schedule.status === 'concluido'
+        ? 'Reabrir agendamento como pendente'
+        : cfg.label;
 
   const handleToggle = () => {
     startTransition(async () => {
@@ -310,11 +316,16 @@ export function ScheduleItem({ schedule }: ScheduleItemProps) {
           <button
             onClick={handleToggle}
             disabled={isPending || schedule.status === 'cancelado'}
-            className="mt-0.5 shrink-0 transition-opacity hover:opacity-80 disabled:cursor-default"
-            title={cfg.label}
-            aria-label={cfg.label}
+            className="mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 disabled:cursor-default disabled:opacity-60"
+            title={toggleLabel}
+            aria-label={toggleLabel}
+            aria-pressed={schedule.status === 'concluido'}
           >
-            {isPending ? <Loader2 className="size-4 animate-spin text-muted-foreground" /> : cfg.icon}
+            {isPending ? (
+              <Loader2 className="size-4 animate-spin text-muted-foreground" aria-hidden="true" />
+            ) : (
+              cfg.icon
+            )}
           </button>
 
           <div className="min-w-0 flex-1">
@@ -352,7 +363,7 @@ export function ScheduleItem({ schedule }: ScheduleItemProps) {
               aria-label={`${copy.common.edit}: ${schedule.title}`}
               disabled={isPending}
             >
-              <Pencil className="size-3.5" />
+              <Pencil className="size-3.5" aria-hidden="true" />
             </Button>
             <Button
               variant="ghost"
@@ -363,7 +374,7 @@ export function ScheduleItem({ schedule }: ScheduleItemProps) {
               aria-label={`${copy.common.delete}: ${schedule.title}`}
               disabled={isPending}
             >
-              <Trash2 className="size-3.5" />
+              <Trash2 className="size-3.5" aria-hidden="true" />
             </Button>
           </div>
         </div>

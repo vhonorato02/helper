@@ -1,5 +1,13 @@
 # Changelog
 
+## Helper 0.2.7 - 2026-06-24
+
+- Corrige a navegação por teclado dos botões de mostrar/copiar senha e reforça associação de erros nos formulários de senha e criação de usuário.
+- Adiciona nomes acessíveis a controles de calendário, selects de ações em lote e selects de detalhe de demanda.
+- Ajusta rolagem do menu mobile autenticado e limita a altura da barra flutuante de ações em lote.
+- Melhora quebra de textos longos em comentários e notificações.
+- Aplica safe area aos toasts do Sonner em PWA e atualiza o service worker para `helper-static-v13`.
+
 ## Helper 0.2.6 - 2026-06-24
 
 - Adiciona ação acessível "Mover para" nos cards do Kanban como alternativa ao arrastar.

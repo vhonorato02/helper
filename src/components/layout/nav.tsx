@@ -262,14 +262,22 @@ export function Nav({ user, users }: NavProps) {
               onClick={() => setMobileOpen((open) => !open)}
               aria-label={copy.nav.mobileMenu}
               aria-expanded={mobileOpen}
+              aria-controls="mobile-navigation"
             >
-              {mobileOpen ? <X className="size-4" /> : <Menu className="size-4" />}
+              {mobileOpen ? (
+                <X className="size-4" aria-hidden="true" />
+              ) : (
+                <Menu className="size-4" aria-hidden="true" />
+              )}
             </Button>
           </div>
         </div>
 
         {mobileOpen && (
-          <div className="border-t border-border/70 bg-background/95 px-4 py-3 shadow-lg xl:hidden">
+          <div
+            id="mobile-navigation"
+            className="safe-auth-x max-h-[calc(100svh-3.5rem)] overflow-y-auto border-t border-border/70 bg-background/95 py-3 shadow-lg xl:hidden"
+          >
             <div className="mb-3 flex items-center gap-3 rounded-lg border bg-card p-3">
               <Avatar className="size-9">
                 <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">

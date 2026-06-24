@@ -42,6 +42,7 @@ export function CreateUserForm() {
   const [error, setError] = useState('');
   const formRef = useRef<HTMLFormElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
+  const errorId = error ? 'create-user-error' : undefined;
 
   const handleGeneratePassword = () => {
     if (!passwordRef.current) return;
@@ -116,26 +117,32 @@ export function CreateUserForm() {
               minLength={10}
               required
               disabled={isPending}
+              aria-describedby={errorId}
+              aria-invalid={!!error}
               className="pr-20"
             />
             <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => setShowPassword((value) => !value)}
-                tabIndex={-1}
-                className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded"
+                disabled={isPending}
+                className="rounded p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 disabled:opacity-50"
                 aria-label={showPassword ? copy.users.form.hidePassword : copy.users.form.showPassword}
               >
-                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                {showPassword ? (
+                  <EyeOff className="size-4" aria-hidden="true" />
+                ) : (
+                  <Eye className="size-4" aria-hidden="true" />
+                )}
               </button>
               <button
                 type="button"
                 onClick={handleCopyPassword}
-                tabIndex={-1}
-                className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded"
+                disabled={isPending}
+                className="rounded p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 disabled:opacity-50"
                 aria-label={copy.users.form.copyPassword}
               >
-                <Copy className="size-4" />
+                <Copy className="size-4" aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -166,7 +173,11 @@ export function CreateUserForm() {
       </label>
 
       {error && (
-        <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg ring-1 ring-inset ring-destructive/20">
+        <p
+          id="create-user-error"
+          role="alert"
+          className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive ring-1 ring-inset ring-destructive/20"
+        >
           {error}
         </p>
       )}

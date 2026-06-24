@@ -293,7 +293,7 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
         <div className="grid gap-3 xl:grid-cols-[minmax(18rem,1fr)_auto] xl:items-end">
           <FilterField label={copy.nav.search} htmlFor="search-input">
             <div className="relative min-w-0">
-              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
               <Input
                 placeholder={copy.tickets.table.searchPlaceholder}
                 className="pl-9 pr-9"
@@ -307,7 +307,7 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground transition-colors hover:text-foreground"
                   aria-label={copy.tickets.table.clearSearch}
                 >
-                  <X className="size-3.5" />
+                  <X className="size-3.5" aria-hidden="true" />
                 </button>
               )}
             </div>
@@ -325,7 +325,7 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
               aria-label={copy.tickets.table.exportCsv}
               disabled={total === 0 || isExporting}
             >
-              {isExporting ? <Loader2 className="animate-spin" /> : <Download />}
+              {isExporting ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Download aria-hidden="true" />}
             </Button>
           </div>
         </div>
@@ -713,14 +713,14 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
       )}
 
       {someSelected && (
-        <div className="safe-floating-bar fixed z-40 mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-2 overflow-y-auto rounded-lg border bg-card px-3 py-3 shadow-lg surface-elevated no-print sm:-translate-x-1/2 sm:justify-start sm:px-4">
+        <div className="safe-floating-bar fixed z-40 mx-auto flex max-h-[70svh] max-w-4xl flex-wrap items-center justify-center gap-2 overflow-y-auto rounded-lg border bg-card px-3 py-3 shadow-lg surface-elevated no-print sm:-translate-x-1/2 sm:justify-start sm:px-4">
           <span className="text-sm font-semibold flex items-center gap-2">
             <Check className="size-4 text-primary" />
             {selected.size} selecionada{selected.size === 1 ? '' : 's'}
           </span>
           <span className="hidden sm:inline h-5 w-px bg-border mx-1" />
           <Select onValueChange={(v) => runBulk('set_status', v)} disabled={bulkPending}>
-            <SelectTrigger className="h-9 w-[140px] text-xs">
+            <SelectTrigger className="h-9 w-[140px] text-xs" aria-label="Alterar status das demandas selecionadas">
               <SelectValue placeholder="Mudar status" />
             </SelectTrigger>
             <SelectContent>
@@ -732,7 +732,7 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
             </SelectContent>
           </Select>
           <Select onValueChange={(v) => runBulk('set_priority', v)} disabled={bulkPending}>
-            <SelectTrigger className="h-9 w-[140px] text-xs">
+            <SelectTrigger className="h-9 w-[140px] text-xs" aria-label="Alterar prioridade das demandas selecionadas">
               <SelectValue placeholder="Prioridade" />
             </SelectTrigger>
             <SelectContent>
@@ -744,7 +744,7 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
             </SelectContent>
           </Select>
           <Select onValueChange={(v) => runBulk('set_assignee', v)} disabled={bulkPending}>
-            <SelectTrigger className="h-9 w-[160px] text-xs">
+            <SelectTrigger className="h-9 w-[160px] text-xs" aria-label="Atribuir demandas selecionadas">
               <SelectValue placeholder="Atribuir a..." />
             </SelectTrigger>
             <SelectContent>

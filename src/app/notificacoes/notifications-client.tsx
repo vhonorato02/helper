@@ -57,10 +57,10 @@ export function NotificationsClient({ items }: { items: NotificationItem[] }) {
         const content = (
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-              <p className="text-sm font-semibold">{item.title}</p>
+              <p className="break-words text-sm font-semibold">{item.title}</p>
               <time className="text-xs text-muted-foreground">{formatDate(item.createdAt)}</time>
             </div>
-            {item.body && <p className="mt-1 text-sm text-muted-foreground">{item.body}</p>}
+            {item.body && <p className="mt-1 break-words text-sm text-muted-foreground">{item.body}</p>}
           </div>
         );
 
@@ -78,7 +78,10 @@ export function NotificationsClient({ items }: { items: NotificationItem[] }) {
               <span className="sr-only">{isUnread ? 'Não lida' : 'Lida'}</span>
             </span>
             {item.link ? (
-              <Link href={item.link} className="min-w-0 flex-1">
+              <Link
+                href={item.link}
+                className="min-w-0 flex-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
                 {content}
               </Link>
             ) : (

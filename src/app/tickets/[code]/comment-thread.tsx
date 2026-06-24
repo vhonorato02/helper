@@ -188,6 +188,7 @@ export function CommentThread({
                         value={editingBody}
                         onChange={(event) => setEditingBody(event.target.value)}
                         placeholder={copy.tickets.comments.editPlaceholder}
+                        aria-label={copy.tickets.comments.edit}
                         className="min-h-[96px]"
                         disabled={isPending}
                       />
@@ -213,7 +214,7 @@ export function CommentThread({
                       </div>
                     </div>
                   ) : (
-                    <div className="rounded-lg border border-border/60 bg-card px-3.5 py-3 text-sm leading-relaxed shadow-xs whitespace-pre-wrap">
+                    <div className="rounded-lg border border-border/60 bg-card px-3.5 py-3 text-sm leading-relaxed shadow-xs whitespace-pre-wrap break-words">
                       {comment.body}
                     </div>
                   )}
@@ -228,6 +229,7 @@ export function CommentThread({
         <Textarea
           name="body"
           placeholder={copy.tickets.comments.placeholder}
+          aria-label={copy.tickets.comments.title}
           className="min-h-[88px]"
           disabled={isPending}
           onKeyDown={(event) => {

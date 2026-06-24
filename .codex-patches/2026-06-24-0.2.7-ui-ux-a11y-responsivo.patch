@@ -1,0 +1,409 @@
+diff --git a/.env.example b/.env.example
+index f4404cf..da5e43f 100644
+--- a/.env.example
++++ b/.env.example
+@@ -1 +1 @@
+-# Helper 0.2.6 usa pnpm/Corepack para comandos locais. Docker nao e necessario.
++# Helper 0.2.7 usa pnpm/Corepack para comandos locais. Docker nao e necessario.
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index d4531c8..f71b7b6 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -2,0 +3,8 @@
++## Helper 0.2.7 - 2026-06-24
++
++- Corrige a navegação por teclado dos botões de mostrar/copiar senha e reforça associação de erros nos formulários de senha e criação de usuário.
++- Adiciona nomes acessíveis a controles de calendário, selects de ações em lote e selects de detalhe de demanda.
++- Ajusta rolagem do menu mobile autenticado e limita a altura da barra flutuante de ações em lote.
++- Melhora quebra de textos longos em comentários e notificações.
++- Aplica safe area aos toasts do Sonner em PWA e atualiza o service worker para `helper-static-v13`.
++
+diff --git a/MEMORY.md b/MEMORY.md
+index 119763b..4bd1070 100644
+--- a/MEMORY.md
++++ b/MEMORY.md
+@@ -15 +15 @@ Este arquivo guarda contexto operacional para próximas versões do Helper.
+-- Patch atual: `0.2.6`.
++- Patch atual: `0.2.7`.
+@@ -26,0 +27 @@ Este arquivo guarda contexto operacional para próximas versões do Helper.
++- Em 0.2.7, botões de senha voltaram à ordem de foco, controles compactos receberam nomes acessíveis, menu mobile/barra flutuante ganharam rolagem controlada e toasts respeitam safe area.
+diff --git a/README.md b/README.md
+index 4edf66f..d2db838 100644
+--- a/README.md
++++ b/README.md
+@@ -3 +3 @@
+-Versão atual: `Helper 0.2.6`
++Versão atual: `Helper 0.2.7`
+@@ -63,0 +64,9 @@ Tailwind 4 usa tema CSS-first em `src/app/globals.css`; não há mais `tailwind.
++## Mudanças da Versão 0.2.7
++
++- Botões de mostrar/copiar senha voltaram para a ordem de foco por teclado.
++- Formulários de senha e criação de usuário reforçam estados de erro associados aos campos.
++- Calendário, ações em lote de tickets e detalhe de demanda ganharam nomes acessíveis em controles compactos.
++- Menu mobile autenticado e barra flutuante de ações em lote ganharam rolagem controlada para telas baixas.
++- Comentários e notificações quebram textos longos com mais segurança em mobile.
++- Toasts respeitam safe area em PWA e o service worker foi atualizado para `helper-static-v13`.
++
+@@ -797 +806 @@ git add .
+-git commit -m "chore: release Helper 0.2.6"
++git commit -m "chore: release Helper 0.2.7"
+@@ -799,2 +808,2 @@ git push origin main
+-git tag v0.2.6
+-git push origin v0.2.6
++git tag v0.2.7
++git push origin v0.2.7
+@@ -821 +830 @@ Depois:
+-Helper 0.2.6 deve permanecer limpo: sem warnings relevantes, sem marcas antigas, sem rotas quebradas, sem cache PWA antigo e sem Preview escrevendo em Production por acidente.
++Helper 0.2.7 deve permanecer limpo: sem warnings relevantes, sem marcas antigas, sem rotas quebradas, sem cache PWA antigo e sem Preview escrevendo em Production por acidente.
+diff --git a/package.json b/package.json
+index 1504b0f..7783dd2 100644
+--- a/package.json
++++ b/package.json
+@@ -3 +3 @@
+-  "version": "0.2.6",
++  "version": "0.2.7",
+diff --git a/public/sw.js b/public/sw.js
+index 11cecaa..b80141b 100644
+--- a/public/sw.js
++++ b/public/sw.js
+@@ -1 +1 @@
+-// Helper Service Worker - v12
++// Helper Service Worker - v13
+@@ -5 +5 @@
+-const CACHE = 'helper-static-v12';
++const CACHE = 'helper-static-v13';
+diff --git a/scripts/e2e-playwright.mjs b/scripts/e2e-playwright.mjs
+index 5452f03..5f92409 100644
+--- a/scripts/e2e-playwright.mjs
++++ b/scripts/e2e-playwright.mjs
+@@ -7,0 +8,7 @@ const timeoutMs = 60_000;
++const responsiveViewports = [375, 390, 430, 768, 1024, 1280];
++const responsivePublicRoutes = [
++  ['/login', 'Helper'],
++  ['/solicitar', 'Como podemos ajudar?'],
++  ['/solicitar/ti', 'Solicitar suporte de TI'],
++  ['/solicitar/chromebooks', 'Solicitar Chromebooks'],
++];
+@@ -229,0 +237,26 @@ async function runScenario(browser, name, contextOptions) {
++async function expectResponsivePublicRoutes(browser) {
++  for (const width of responsiveViewports) {
++    const context = await browser.newContext({
++      viewport: { width, height: width < 768 ? 844 : 900 },
++      deviceScaleFactor: 1,
++      isMobile: width < 768,
++      hasTouch: width < 768,
++    });
++    const page = await context.newPage();
++
++    for (const [path, heading] of responsivePublicRoutes) {
++      await page.goto(`${baseURL}${path}`, { waitUntil: 'networkidle' });
++      await expectVisible(
++        page.getByRole('heading', { name: heading }),
++        `viewport ${width}: ${path} heading`,
++      );
++      await expectNoHorizontalOverflow(
++        page,
++        `viewport ${width}: ${path} should not overflow horizontally`,
++      );
++    }
++
++    await context.close();
++  }
++}
++
+@@ -248,0 +282 @@ try {
++    await expectResponsivePublicRoutes(browser);
+diff --git a/src/app/agendamentos/calendar-view.tsx b/src/app/agendamentos/calendar-view.tsx
+index 9fed174..d8ff0aa 100644
+--- a/src/app/agendamentos/calendar-view.tsx
++++ b/src/app/agendamentos/calendar-view.tsx
+@@ -114,2 +114,8 @@ export function CalendarView({ schedules }: CalendarViewProps) {
+-        <Button variant="outline" size="sm" onClick={() => setCursor((c) => addMonths(c, -1))}>
+-          <ChevronLeft className="size-3.5" />
++        <Button
++          variant="outline"
++          size="sm"
++          onClick={() => setCursor((c) => addMonths(c, -1))}
++          aria-label="Mostrar mês anterior"
++          title="Mês anterior"
++        >
++          <ChevronLeft className="size-3.5" aria-hidden="true" />
+@@ -118,2 +124,8 @@ export function CalendarView({ schedules }: CalendarViewProps) {
+-        <Button variant="outline" size="sm" onClick={() => setCursor((c) => addMonths(c, 1))}>
+-          <ChevronRight className="size-3.5" />
++        <Button
++          variant="outline"
++          size="sm"
++          onClick={() => setCursor((c) => addMonths(c, 1))}
++          aria-label="Mostrar próximo mês"
++          title="Próximo mês"
++        >
++          <ChevronRight className="size-3.5" aria-hidden="true" />
+diff --git a/src/app/agendamentos/schedule-client.tsx b/src/app/agendamentos/schedule-client.tsx
+index d269d34..15b9027 100644
+--- a/src/app/agendamentos/schedule-client.tsx
++++ b/src/app/agendamentos/schedule-client.tsx
+@@ -231 +231 @@ const statusConfig: Record<
+-    icon: <Circle className="size-4 text-muted-foreground" />,
++    icon: <Circle className="size-4 text-muted-foreground" aria-hidden="true" />,
+@@ -236 +236 @@ const statusConfig: Record<
+-    icon: <CheckCircle2 className="size-4 text-green-500" />,
++    icon: <CheckCircle2 className="size-4 text-green-500" aria-hidden="true" />,
+@@ -241 +241 @@ const statusConfig: Record<
+-    icon: <XCircle className="size-4 text-destructive" />,
++    icon: <XCircle className="size-4 text-destructive" aria-hidden="true" />,
+@@ -257,0 +258,6 @@ export function ScheduleItem({ schedule }: ScheduleItemProps) {
++  const toggleLabel =
++    schedule.status === 'pendente'
++      ? 'Marcar agendamento como concluído'
++      : schedule.status === 'concluido'
++        ? 'Reabrir agendamento como pendente'
++        : cfg.label;
+@@ -313,3 +319,4 @@ export function ScheduleItem({ schedule }: ScheduleItemProps) {
+-            className="mt-0.5 shrink-0 transition-opacity hover:opacity-80 disabled:cursor-default"
+-            title={cfg.label}
+-            aria-label={cfg.label}
++            className="mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 disabled:cursor-default disabled:opacity-60"
++            title={toggleLabel}
++            aria-label={toggleLabel}
++            aria-pressed={schedule.status === 'concluido'}
+@@ -317 +324,5 @@ export function ScheduleItem({ schedule }: ScheduleItemProps) {
+-            {isPending ? <Loader2 className="size-4 animate-spin text-muted-foreground" /> : cfg.icon}
++            {isPending ? (
++              <Loader2 className="size-4 animate-spin text-muted-foreground" aria-hidden="true" />
++            ) : (
++              cfg.icon
++            )}
+@@ -355 +366 @@ export function ScheduleItem({ schedule }: ScheduleItemProps) {
+-              <Pencil className="size-3.5" />
++              <Pencil className="size-3.5" aria-hidden="true" />
+@@ -366 +377 @@ export function ScheduleItem({ schedule }: ScheduleItemProps) {
+-              <Trash2 className="size-3.5" />
++              <Trash2 className="size-3.5" aria-hidden="true" />
+diff --git a/src/app/agendamentos/view-toggle.tsx b/src/app/agendamentos/view-toggle.tsx
+index 4b1a319..83d9eb4 100644
+--- a/src/app/agendamentos/view-toggle.tsx
++++ b/src/app/agendamentos/view-toggle.tsx
+@@ -21,0 +22 @@ export function ViewToggle({ current }: { current: 'list' | 'calendar' }) {
++        type="button"
+@@ -22,0 +24 @@ export function ViewToggle({ current }: { current: 'list' | 'calendar' }) {
++        aria-pressed={current === 'list'}
+@@ -33,0 +36 @@ export function ViewToggle({ current }: { current: 'list' | 'calendar' }) {
++        type="button"
+@@ -34,0 +38 @@ export function ViewToggle({ current }: { current: 'list' | 'calendar' }) {
++        aria-pressed={current === 'calendar'}
+diff --git a/src/app/configuracoes/create-user-form.tsx b/src/app/configuracoes/create-user-form.tsx
+index bb51dc7..bc1f6e0 100644
+--- a/src/app/configuracoes/create-user-form.tsx
++++ b/src/app/configuracoes/create-user-form.tsx
+@@ -44,0 +45 @@ export function CreateUserForm() {
++  const errorId = error ? 'create-user-error' : undefined;
+@@ -118,0 +120,2 @@ export function CreateUserForm() {
++              aria-describedby={errorId}
++              aria-invalid={!!error}
+@@ -125,2 +128,2 @@ export function CreateUserForm() {
+-                tabIndex={-1}
+-                className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded"
++                disabled={isPending}
++                className="rounded p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 disabled:opacity-50"
+@@ -129 +132,5 @@ export function CreateUserForm() {
+-                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
++                {showPassword ? (
++                  <EyeOff className="size-4" aria-hidden="true" />
++                ) : (
++                  <Eye className="size-4" aria-hidden="true" />
++                )}
+@@ -134,2 +141,2 @@ export function CreateUserForm() {
+-                tabIndex={-1}
+-                className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded"
++                disabled={isPending}
++                className="rounded p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 disabled:opacity-50"
+@@ -138 +145 @@ export function CreateUserForm() {
+-                <Copy className="size-4" />
++                <Copy className="size-4" aria-hidden="true" />
+@@ -169 +176,5 @@ export function CreateUserForm() {
+-        <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg ring-1 ring-inset ring-destructive/20">
++        <p
++          id="create-user-error"
++          role="alert"
++          className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive ring-1 ring-inset ring-destructive/20"
++        >
+diff --git a/src/app/notificacoes/notifications-client.tsx b/src/app/notificacoes/notifications-client.tsx
+index 1aec87b..4b15cc4 100644
+--- a/src/app/notificacoes/notifications-client.tsx
++++ b/src/app/notificacoes/notifications-client.tsx
+@@ -60 +60 @@ export function NotificationsClient({ items }: { items: NotificationItem[] }) {
+-              <p className="text-sm font-semibold">{item.title}</p>
++              <p className="break-words text-sm font-semibold">{item.title}</p>
+@@ -63 +63 @@ export function NotificationsClient({ items }: { items: NotificationItem[] }) {
+-            {item.body && <p className="mt-1 text-sm text-muted-foreground">{item.body}</p>}
++            {item.body && <p className="mt-1 break-words text-sm text-muted-foreground">{item.body}</p>}
+@@ -81 +81,4 @@ export function NotificationsClient({ items }: { items: NotificationItem[] }) {
+-              <Link href={item.link} className="min-w-0 flex-1">
++              <Link
++                href={item.link}
++                className="min-w-0 flex-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
++              >
+diff --git a/src/app/tickets/[code]/actions.tsx b/src/app/tickets/[code]/actions.tsx
+index dbf1bed..cb5e4cd 100644
+--- a/src/app/tickets/[code]/actions.tsx
++++ b/src/app/tickets/[code]/actions.tsx
+@@ -281 +281 @@ export function TicketActions({
+-              <SelectTrigger className="h-9 text-xs">
++              <SelectTrigger className="h-9 text-xs" aria-label="Alterar responsável da demanda">
+@@ -319 +319 @@ export function TicketActions({
+-              <SelectTrigger className="h-9 text-xs">
++              <SelectTrigger className="h-9 text-xs" aria-label="Alterar prioridade da demanda">
+diff --git a/src/app/tickets/[code]/comment-thread.tsx b/src/app/tickets/[code]/comment-thread.tsx
+index d425479..f92d961 100644
+--- a/src/app/tickets/[code]/comment-thread.tsx
++++ b/src/app/tickets/[code]/comment-thread.tsx
+@@ -190,0 +191 @@ export function CommentThread({
++                        aria-label={copy.tickets.comments.edit}
+@@ -216 +217 @@ export function CommentThread({
+-                    <div className="rounded-lg border border-border/60 bg-card px-3.5 py-3 text-sm leading-relaxed shadow-xs whitespace-pre-wrap">
++                    <div className="rounded-lg border border-border/60 bg-card px-3.5 py-3 text-sm leading-relaxed shadow-xs whitespace-pre-wrap break-words">
+@@ -230,0 +232 @@ export function CommentThread({
++          aria-label={copy.tickets.comments.title}
+diff --git a/src/components/change-password-dialog.tsx b/src/components/change-password-dialog.tsx
+index abeceb2..80f505a 100644
+--- a/src/components/change-password-dialog.tsx
++++ b/src/components/change-password-dialog.tsx
+@@ -129,0 +130 @@ export function ChangePasswordDialog({
++                aria-invalid={!!error}
+@@ -146,0 +148 @@ export function ChangePasswordDialog({
++                aria-invalid={!!error}
+@@ -153,2 +155,2 @@ export function ChangePasswordDialog({
+-                tabIndex={-1}
+-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 rounded"
++                disabled={isPending}
++                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
+@@ -157 +159,5 @@ export function ChangePasswordDialog({
+-                {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
++                {show ? (
++                  <EyeOff className="size-4" aria-hidden="true" />
++                ) : (
++                  <Eye className="size-4" aria-hidden="true" />
++                )}
+@@ -172,0 +179 @@ export function ChangePasswordDialog({
++              aria-invalid={!!error}
+diff --git a/src/components/layout/nav.tsx b/src/components/layout/nav.tsx
+index 5fe1ef8..d440d49 100644
+--- a/src/components/layout/nav.tsx
++++ b/src/components/layout/nav.tsx
+@@ -262,9 +262,14 @@ export function Nav({ user, users }: NavProps) {
+-              onClick={() => setMobileOpen((open) => !open)}
+-              aria-label={copy.nav.mobileMenu}
+-              aria-expanded={mobileOpen}
+-            >
+-              {mobileOpen ? <X className="size-4" /> : <Menu className="size-4" />}
+-            </Button>
+-          </div>
+-        </div>
+-
++              onClick={() => setMobileOpen((open) => !open)}
++              aria-label={copy.nav.mobileMenu}
++              aria-expanded={mobileOpen}
++              aria-controls="mobile-navigation"
++            >
++              {mobileOpen ? (
++                <X className="size-4" aria-hidden="true" />
++              ) : (
++                <Menu className="size-4" aria-hidden="true" />
++              )}
++            </Button>
++          </div>
++        </div>
++
+@@ -272,4 +277,7 @@ export function Nav({ user, users }: NavProps) {
+-          <div className="border-t border-border/70 bg-background/95 px-4 py-3 shadow-lg xl:hidden">
+-            <div className="mb-3 flex items-center gap-3 rounded-lg border bg-card p-3">
+-              <Avatar className="size-9">
+-                <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
++          <div
++            id="mobile-navigation"
++            className="safe-auth-x max-h-[calc(100svh-3.5rem)] overflow-y-auto border-t border-border/70 bg-background/95 py-3 shadow-lg xl:hidden"
++          >
++            <div className="mb-3 flex items-center gap-3 rounded-lg border bg-card p-3">
++              <Avatar className="size-9">
++                <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
+diff --git a/src/components/providers.tsx b/src/components/providers.tsx
+index 1a2793a..7785171 100644
+--- a/src/components/providers.tsx
++++ b/src/components/providers.tsx
+@@ -10,0 +11,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
++        offset={{
++          right: 'max(1rem, env(safe-area-inset-right))',
++          bottom: 'max(1rem, env(safe-area-inset-bottom))',
++        }}
++        mobileOffset={{
++          left: 'max(1rem, env(safe-area-inset-left))',
++          right: 'max(1rem, env(safe-area-inset-right))',
++          bottom: 'max(1rem, env(safe-area-inset-bottom))',
++        }}
++        containerAriaLabel="Notificações"
+diff --git a/src/components/tickets/ticket-table.tsx b/src/components/tickets/ticket-table.tsx
+index 40c419c..9a306e4 100644
+--- a/src/components/tickets/ticket-table.tsx
++++ b/src/components/tickets/ticket-table.tsx
+@@ -296 +296 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
+-              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
++              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+@@ -310 +310 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
+-                  <X className="size-3.5" />
++                  <X className="size-3.5" aria-hidden="true" />
+@@ -328 +328 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
+-              {isExporting ? <Loader2 className="animate-spin" /> : <Download />}
++              {isExporting ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Download aria-hidden="true" />}
+@@ -716 +716 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
+-        <div className="safe-floating-bar fixed z-40 mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-2 overflow-y-auto rounded-lg border bg-card px-3 py-3 shadow-lg surface-elevated no-print sm:-translate-x-1/2 sm:justify-start sm:px-4">
++        <div className="safe-floating-bar fixed z-40 mx-auto flex max-h-[70svh] max-w-4xl flex-wrap items-center justify-center gap-2 overflow-y-auto rounded-lg border bg-card px-3 py-3 shadow-lg surface-elevated no-print sm:-translate-x-1/2 sm:justify-start sm:px-4">
+@@ -723 +723 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
+-            <SelectTrigger className="h-9 w-[140px] text-xs">
++            <SelectTrigger className="h-9 w-[140px] text-xs" aria-label="Alterar status das demandas selecionadas">
+@@ -735 +735 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
+-            <SelectTrigger className="h-9 w-[140px] text-xs">
++            <SelectTrigger className="h-9 w-[140px] text-xs" aria-label="Alterar prioridade das demandas selecionadas">
+@@ -747 +747 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
+-            <SelectTrigger className="h-9 w-[160px] text-xs">
++            <SelectTrigger className="h-9 w-[160px] text-xs" aria-label="Atribuir demandas selecionadas">
+diff --git a/src/components/ui/dialog.tsx b/src/components/ui/dialog.tsx
+index 78ec9b5..c502865 100644
+--- a/src/components/ui/dialog.tsx
++++ b/src/components/ui/dialog.tsx
+@@ -45 +45 @@ const DialogContent = React.forwardRef<
+-        <X className="h-4 w-4" />
++        <X className="h-4 w-4" aria-hidden="true" />
+diff --git a/src/components/ui/dropdown-menu.tsx b/src/components/ui/dropdown-menu.tsx
+index 0624ce5..711d89c 100644
+--- a/src/components/ui/dropdown-menu.tsx
++++ b/src/components/ui/dropdown-menu.tsx
+@@ -29 +29 @@ const DropdownMenuSubTrigger = React.forwardRef<
+-    <ChevronRight className="ml-auto" />
++    <ChevronRight className="ml-auto" aria-hidden="true" />
+@@ -98 +98 @@ const DropdownMenuCheckboxItem = React.forwardRef<
+-        <Check className="h-4 w-4" />
++        <Check className="h-4 w-4" aria-hidden="true" />
+diff --git a/src/components/ui/select.tsx b/src/components/ui/select.tsx
+index 1e8f43a..a8d5de1 100644
+--- a/src/components/ui/select.tsx
++++ b/src/components/ui/select.tsx
+@@ -26 +26 @@ const SelectTrigger = React.forwardRef<
+-      <ChevronDown className="h-4 w-4 opacity-50" />
++      <ChevronDown className="h-4 w-4 opacity-50" aria-hidden="true" />
+@@ -41 +41 @@ const SelectScrollUpButton = React.forwardRef<
+-    <ChevronUp className="h-4 w-4" />
++    <ChevronUp className="h-4 w-4" aria-hidden="true" />
+@@ -55 +55 @@ const SelectScrollDownButton = React.forwardRef<
+-    <ChevronDown className="h-4 w-4" />
++    <ChevronDown className="h-4 w-4" aria-hidden="true" />
+@@ -118 +118 @@ const SelectItem = React.forwardRef<
+-        <Check className="h-4 w-4" />
++        <Check className="h-4 w-4" aria-hidden="true" />
+diff --git a/src/lib/version.ts b/src/lib/version.ts
+index 292cb12..1873205 100644
+--- a/src/lib/version.ts
++++ b/src/lib/version.ts
+@@ -3 +3 @@ export const APP_DISPLAY_NAME = 'Helper';
+-export const APP_VERSION = '0.2.6';
++export const APP_VERSION = '0.2.7';

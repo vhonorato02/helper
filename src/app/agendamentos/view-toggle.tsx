@@ -19,7 +19,9 @@ export function ViewToggle({ current }: { current: 'list' | 'calendar' }) {
   return (
     <div className="inline-flex items-center rounded-md border border-border p-0.5 bg-card">
       <button
+        type="button"
         onClick={() => setView('list')}
+        aria-pressed={current === 'list'}
         className={cn(
           'flex h-8 items-center gap-1.5 rounded-sm px-2.5 text-xs font-medium transition-colors',
           current === 'list'
@@ -31,7 +33,9 @@ export function ViewToggle({ current }: { current: 'list' | 'calendar' }) {
         Lista
       </button>
       <button
+        type="button"
         onClick={() => setView('calendar')}
+        aria-pressed={current === 'calendar'}
         className={cn(
           'flex h-8 items-center gap-1.5 rounded-sm px-2.5 text-xs font-medium transition-colors',
           current === 'calendar'

@@ -5,6 +5,13 @@ import { chromium, devices } from '@playwright/test';
 const port = Number.parseInt(process.env.PLAYWRIGHT_PORT ?? '3101', 10);
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${port}`;
 const timeoutMs = 60_000;
+const responsiveViewports = [375, 390, 430, 768, 1024, 1280];
+const responsivePublicRoutes = [
+  ['/login', 'Helper'],
+  ['/solicitar', 'Como podemos ajudar?'],
+  ['/solicitar/ti', 'Solicitar suporte de TI'],
+  ['/solicitar/chromebooks', 'Solicitar Chromebooks'],
+];
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -227,6 +234,32 @@ async function runScenario(browser, name, contextOptions) {
   await context.close();
 }
 
+async function expectResponsivePublicRoutes(browser) {
+  for (const width of responsiveViewports) {
+    const context = await browser.newContext({
+      viewport: { width, height: width < 768 ? 844 : 900 },
+      deviceScaleFactor: 1,
+      isMobile: width < 768,
+      hasTouch: width < 768,
+    });
+    const page = await context.newPage();
+
+    for (const [path, heading] of responsivePublicRoutes) {
+      await page.goto(`${baseURL}${path}`, { waitUntil: 'networkidle' });
+      await expectVisible(
+        page.getByRole('heading', { name: heading }),
+        `viewport ${width}: ${path} heading`,
+      );
+      await expectNoHorizontalOverflow(
+        page,
+        `viewport ${width}: ${path} should not overflow horizontally`,
+      );
+    }
+
+    await context.close();
+  }
+}
+
 let child = null;
 let output = '';
 
@@ -246,6 +279,7 @@ try {
   try {
     await runScenario(browser, 'desktop', devices['Desktop Chrome']);
     await runScenario(browser, 'mobile', devices['Pixel 7']);
+    await expectResponsivePublicRoutes(browser);
   } finally {
     await browser.close();
   }
