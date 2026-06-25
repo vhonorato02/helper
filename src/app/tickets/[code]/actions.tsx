@@ -32,6 +32,7 @@ import { DATE_FORMATS, formatPtBrDate } from '@/lib/format';
 import { PRIORITY_LABELS, PRIORITY_ORDER, STATUS_TRANSITIONS } from '@/lib/constants';
 import type { Ticket, User } from '@/db/schema';
 import { EditTicketDialog } from './edit-ticket-dialog';
+import { TicketReminderDialog } from './ticket-reminder-dialog';
 
 interface TicketActionsProps {
   ticket: Ticket & {
@@ -224,6 +225,8 @@ export function TicketActions({
             <Pencil className="size-3.5" />
             {copy.tickets.detail.editDetails}
           </Button>
+
+          <TicketReminderDialog ticketCode={ticket.code} />
 
           {ticket.status === 'aberto' && ticket.assigneeId !== currentUserId && (
             <Button

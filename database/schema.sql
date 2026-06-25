@@ -135,6 +135,20 @@ CREATE TABLE IF NOT EXISTS ticket_history (
   created_at timestamp NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS ticket_tasks (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  ticket_id uuid NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+  title text NOT NULL,
+  is_done boolean NOT NULL DEFAULT false,
+  author_id uuid REFERENCES users(id) ON DELETE SET NULL,
+  completed_at timestamp,
+  created_at timestamp NOT NULL DEFAULT now(),
+  updated_at timestamp NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS ticket_tasks_ticket_idx ON ticket_tasks (ticket_id, is_done, created_at);
+CREATE INDEX IF NOT EXISTS ticket_tasks_author_idx ON ticket_tasks (author_id);
+
 CREATE TABLE IF NOT EXISTS ticket_mentions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   ticket_id uuid NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,

@@ -135,6 +135,26 @@ export const ticketHistory = pgTable('ticket_history', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+export const ticketTasks = pgTable(
+  'ticket_tasks',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    ticketId: uuid('ticket_id')
+      .references(() => tickets.id, { onDelete: 'cascade' })
+      .notNull(),
+    title: text('title').notNull(),
+    isDone: boolean('is_done').default(false).notNull(),
+    authorId: uuid('author_id').references(() => users.id, { onDelete: 'set null' }),
+    completedAt: timestamp('completed_at'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (t) => [
+    index('ticket_tasks_ticket_idx').on(t.ticketId, t.isDone, t.createdAt),
+    index('ticket_tasks_author_idx').on(t.authorId),
+  ],
+);
+
 export const ticketMentions = pgTable(
   'ticket_mentions',
   {
@@ -322,6 +342,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   assignedTickets: many(tickets, { relationName: 'assignee' }),
   comments: many(comments),
   history: many(ticketHistory),
+  ticketTasks: many(ticketTasks),
   mentions: many(ticketMentions),
   notifications: many(notifications),
 }));
@@ -339,6 +360,7 @@ export const ticketsRelations = relations(tickets, ({ one, many }) => ({
   }),
   comments: many(comments),
   history: many(ticketHistory),
+  tasks: many(ticketTasks),
   mentions: many(ticketMentions),
   notifications: many(notifications),
 }));
@@ -352,6 +374,11 @@ export const commentsRelations = relations(comments, ({ one, many }) => ({
 export const ticketHistoryRelations = relations(ticketHistory, ({ one }) => ({
   ticket: one(tickets, { fields: [ticketHistory.ticketId], references: [tickets.id] }),
   author: one(users, { fields: [ticketHistory.authorId], references: [users.id] }),
+}));
+
+export const ticketTasksRelations = relations(ticketTasks, ({ one }) => ({
+  ticket: one(tickets, { fields: [ticketTasks.ticketId], references: [tickets.id] }),
+  author: one(users, { fields: [ticketTasks.authorId], references: [users.id] }),
 }));
 
 export const ticketMentionsRelations = relations(ticketMentions, ({ one }) => ({
@@ -397,6 +424,7 @@ export type NewTicket = typeof tickets.$inferInsert;
 export type Comment = typeof comments.$inferSelect;
 export type NewComment = typeof comments.$inferInsert;
 export type TicketHistory = typeof ticketHistory.$inferSelect;
+export type TicketTask = typeof ticketTasks.$inferSelect;
 export type Subcategory = typeof subcategories.$inferSelect;
 export type NewSubcategory = typeof subcategories.$inferInsert;
 export type AuthEvent = typeof authEvents.$inferSelect;

@@ -18,6 +18,7 @@ import {
   Plus,
   Search,
   Settings,
+  UsersRound,
   X,
 } from 'lucide-react';
 import { logoutAction } from '@/actions/auth';
@@ -47,6 +48,7 @@ const NAV_LINKS = [
   { href: '/', label: copy.nav.links.dashboard, icon: LayoutDashboard },
   { href: '/kanban', label: copy.nav.links.kanban, icon: Kanban },
   { href: '/tickets', label: copy.nav.links.tickets, icon: List },
+  { href: '/equipe', label: copy.nav.links.team, icon: UsersRound },
   { href: '/agendamentos', label: copy.nav.links.schedules, icon: CalendarDays },
   { href: '/marketing', label: copy.nav.links.marketing, icon: Megaphone },
   { href: '/solicitacoes-publicas', label: copy.nav.links.publicRequests, icon: FileInput },

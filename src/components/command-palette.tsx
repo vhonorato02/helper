@@ -17,6 +17,7 @@ import {
   Search,
   Settings,
   UserRound,
+  UsersRound,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
@@ -34,6 +35,13 @@ const NAV_ITEMS = [
   { label: copy.commandPalette.actions.dashboard, href: '/', icon: LayoutDashboard, admin: false },
   { label: copy.commandPalette.actions.kanban, href: '/kanban', icon: Kanban, admin: false },
   { label: copy.commandPalette.actions.tickets, href: '/tickets', icon: List, admin: false },
+  {
+    label: copy.commandPalette.actions.team,
+    href: '/equipe',
+    icon: UsersRound,
+    admin: false,
+    keywords: copy.commandPalette.keywords.team,
+  },
   { label: copy.commandPalette.actions.marketing, href: '/marketing', icon: Megaphone, admin: false },
   {
     label: copy.commandPalette.actions.publicRequests,

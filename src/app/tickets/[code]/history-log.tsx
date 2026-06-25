@@ -24,6 +24,13 @@ const COMMENT_ACTIONS = {
   comment_deleted: copy.tickets.history.deletedComment,
 } as const;
 
+const TASK_ACTIONS = {
+  task_added: 'adicionou ao checklist',
+  task_completed: 'concluiu no checklist',
+  task_reopened: 'reabriu no checklist',
+  task_deleted: 'removeu do checklist',
+} as const;
+
 function TimeAgo({ date }: { date: Date }) {
   return (
     <span className="text-muted-foreground/70">
@@ -58,15 +65,16 @@ export function HistoryLog({ history }: { history: HistoryEntry[] }) {
       <ol className="relative ml-1.5 space-y-3.5 border-l border-border/60 pl-5">
         {history.map((entry) => {
           const commentAction = COMMENT_ACTIONS[entry.field as keyof typeof COMMENT_ACTIONS];
+          const taskAction = TASK_ACTIONS[entry.field as keyof typeof TASK_ACTIONS];
           const authorName = entry.authorName ?? copy.common.removedUser;
 
-          if (commentAction) {
+          if (commentAction || taskAction) {
             return (
               <li key={entry.id} className="relative text-xs">
                 <span className="absolute -left-[1.6875rem] top-1 size-2.5 rounded-full bg-background border-2 border-border" />
                 <div className="text-muted-foreground leading-relaxed">
                   <span className="font-medium text-foreground">{authorName}</span>
-                  {` ${commentAction}`}
+                  {` ${commentAction ?? taskAction}`}
                   {entry.field === 'comment_edited' ? (
                     <>
                       {` ${copy.tickets.history.from} `}

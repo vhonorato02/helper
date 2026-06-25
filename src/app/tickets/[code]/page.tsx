@@ -1,18 +1,22 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Calendar, CalendarCheck, FileText, MapPin, Tag, User } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Calendar, CalendarCheck, FileText, MapPin, Tag, User } from 'lucide-react';
 import { auth } from '@/auth';
 import { getComments } from '@/actions/comments';
+import { getTicketTasks } from '@/actions/ticket-tasks';
 import { getTicket } from '@/actions/tickets';
 import { getActiveUsersForAssignment, getTicketHistory } from '@/actions/users';
 import { AreaBadge, PriorityBadge, StatusBadge } from '@/components/tickets/ticket-badge';
+import { Badge } from '@/components/ui/badge';
 import { copy } from '@/lib/copy';
 import { DATE_FORMATS, daysUntil, formatPtBrDate } from '@/lib/format';
 import { formatHolidaySummary, getHolidayByDate } from '@/lib/holidays';
+import { getTicketRisk, isRiskVisible } from '@/lib/ticket-risk';
 import { CommentThread } from './comment-thread';
 import { HistoryLog } from './history-log';
 import { TicketActions } from './actions';
 import { TicketHeaderActions } from './ticket-header-actions';
+import { TicketTasks } from './ticket-tasks';
 import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
@@ -50,15 +54,17 @@ export default async function TicketDetailPage({ params }: PageProps) {
   const ticket = await getTicket(code);
   if (!ticket) notFound();
 
-  const [comments, history, users] = await Promise.all([
+  const [comments, history, users, tasks] = await Promise.all([
     safeLoad('ticket_comments_load_failed', () => getComments(code), []),
     safeLoad('ticket_history_load_failed', () => getTicketHistory(code), []),
     safeLoad('ticket_users_load_failed', () => getActiveUsersForAssignment(), []),
+    safeLoad('ticket_tasks_load_failed', () => getTicketTasks(code), []),
   ]);
 
   const authorName = ticket.author?.displayName ?? copy.common.removedUser;
   const dueDays = ticket.dueDate ? daysUntil(ticket.dueDate) : null;
   const dueHoliday = getHolidayByDate(ticket.dueDate);
+  const risk = getTicketRisk(ticket);
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -78,6 +84,12 @@ export default async function TicketDetailPage({ params }: PageProps) {
           <AreaBadge area={ticket.area} />
           <StatusBadge status={ticket.status} />
           <PriorityBadge priority={ticket.priority} />
+          {isRiskVisible(risk) && (
+            <Badge variant={risk.level === 'critical' ? 'destructive' : 'warning'}>
+              <AlertTriangle className="size-3" />
+              {risk.label}
+            </Badge>
+          )}
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
@@ -153,6 +165,8 @@ export default async function TicketDetailPage({ params }: PageProps) {
               {copy.tickets.detail.noDescription}
             </p>
           )}
+
+          <TicketTasks ticketCode={code} tasks={tasks} />
 
           <CommentThread
             ticketCode={code}

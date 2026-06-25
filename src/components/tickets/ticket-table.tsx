@@ -25,6 +25,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { FilterField } from '@/components/ui/filter-field';
 import { AreaBadge, PriorityBadge, StatusBadge } from './ticket-badge';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -42,6 +43,7 @@ import {
 import { cn } from '@/lib/utils';
 import { copy } from '@/lib/copy';
 import { DATE_FORMATS, daysSince, daysUntil, formatPtBrDate } from '@/lib/format';
+import { getTicketRisk, isRiskVisible } from '@/lib/ticket-risk';
 import { bulkUpdateTickets, exportTicketRows, type TicketRow } from '@/actions/tickets';
 import { SavedViews } from './saved-views';
 import { CSV_BOM, csvDocument } from '@/lib/csv';
@@ -543,6 +545,7 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
               const staleDays = daysSince(ticket.updatedAt);
               const isStale =
                 staleDays >= 3 && !['resolvido', 'arquivado'].includes(ticket.status);
+              const risk = getTicketRisk(ticket);
 
               return (
                 <button
@@ -566,6 +569,12 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
                   <div className="flex flex-wrap items-center gap-2">
                     <AreaBadge area={ticket.area} />
                     <StatusBadge status={ticket.status} />
+                    {isRiskVisible(risk) && (
+                      <Badge variant={risk.level === 'critical' ? 'destructive' : 'warning'}>
+                        <AlertTriangle className="size-3" />
+                        {risk.label}
+                      </Badge>
+                    )}
                     {ticket.origin === 'Pagina publica' && (
                       <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
                         {copy.tickets.table.publicOrigin}
@@ -646,6 +655,7 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
                   const staleDays = daysSince(ticket.updatedAt);
                   const isStale =
                     staleDays >= 3 && !['resolvido', 'arquivado'].includes(ticket.status);
+                  const risk = getTicketRisk(ticket);
 
                   return (
                     <tr
@@ -683,7 +693,18 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
                         </span>
                       </td>
                       <td className="px-4 py-3 max-w-[280px]">
-                        <p className="line-clamp-1 font-medium">{ticket.title}</p>
+                        <div className="flex min-w-0 items-center gap-2">
+                          <p className="min-w-0 flex-1 line-clamp-1 font-medium">{ticket.title}</p>
+                          {isRiskVisible(risk) && (
+                            <Badge
+                              variant={risk.level === 'critical' ? 'destructive' : 'warning'}
+                              className="shrink-0"
+                              title={risk.reason}
+                            >
+                              {risk.label}
+                            </Badge>
+                          )}
+                        </div>
                         <p className="text-xs text-muted-foreground line-clamp-1">
                           {ticket.subcategory}
                           {ticket.origin === 'Pagina publica' && (

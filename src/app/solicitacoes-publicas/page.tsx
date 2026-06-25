@@ -14,6 +14,7 @@ import { auth } from '@/auth';
 import { getExternalIntakeSummary } from '@/actions/external-intake';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { PublicIntakeActions } from './public-intake-actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -129,30 +130,39 @@ export default async function SolicitacoesPublicasPage() {
         ) : (
           <div className="divide-y divide-border/60">
             {summary.items.map((item) => (
-              <Link
+              <div
                 key={`${item.kind}-${item.id}`}
-                href={item.href}
-                className="flex items-start justify-between gap-4 p-4 transition-colors hover:bg-muted/35"
+                className="flex flex-col gap-3 p-4 transition-colors hover:bg-muted/25 sm:flex-row sm:items-start sm:justify-between"
               >
-                <div className="min-w-0">
-                  <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-xs font-semibold text-primary">
-                      {item.code}
-                    </span>
-                    <Badge variant={item.kind === 'chromebook' ? 'warning' : 'secondary'}>
-                      {item.kind === 'chromebook' ? 'Chromebook' : 'Ticket'}
-                    </Badge>
+                <Link href={item.href} className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                        <span className="font-mono text-xs font-semibold text-primary">
+                          {item.code}
+                        </span>
+                        <Badge variant={item.kind === 'chromebook' ? 'warning' : 'secondary'}>
+                          {item.kind === 'chromebook' ? 'Chromebook' : 'Ticket'}
+                        </Badge>
+                        {item.kind === 'ticket' && !item.assigneeId && (
+                          <Badge variant="outline">sem responsável</Badge>
+                        )}
+                      </div>
+                      <p className="line-clamp-1 text-sm font-semibold">{item.title}</p>
+                      <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{item.detail}</p>
+                      {(item.location || item.contact) && (
+                        <p className="mt-2 line-clamp-1 text-xs text-muted-foreground">
+                          {[item.location, item.contact].filter(Boolean).join(' · ')}
+                        </p>
+                      )}
+                    </div>
+                    <ArrowUpRight className="mt-1 size-4 shrink-0 text-muted-foreground" />
                   </div>
-                  <p className="line-clamp-1 text-sm font-semibold">{item.title}</p>
-                  <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{item.detail}</p>
-                  {(item.location || item.contact) && (
-                    <p className="mt-2 line-clamp-1 text-xs text-muted-foreground">
-                      {[item.location, item.contact].filter(Boolean).join(' · ')}
-                    </p>
-                  )}
+                </Link>
+                <div className="shrink-0 sm:pt-1">
+                  <PublicIntakeActions item={item} />
                 </div>
-                <ArrowUpRight className="mt-1 size-4 shrink-0 text-muted-foreground" />
-              </Link>
+              </div>
             ))}
           </div>
         )}
