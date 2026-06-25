@@ -15,6 +15,7 @@ import {
   Inbox,
   Loader2,
   Search,
+  SlidersHorizontal,
   Square,
   UserRound,
   X,
@@ -113,6 +114,7 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
   const [isExporting, startExportTransition] = useTransition();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkPending, startBulkTransition] = useTransition();
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const allSelected = tickets.length > 0 && tickets.every((t) => selected.has(t.code));
   const someSelected = selected.size > 0;
@@ -236,6 +238,20 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
     activeDue !== 'all' ||
     activeSort !== 'created_desc' ||
     !!search;
+  const activeFilterCount = [
+    activeArea !== 'all',
+    activeStatus !== 'all',
+    activePriority !== 'all',
+    activeAssignee !== 'all',
+    activeOrigin !== 'all',
+    activeAttention,
+    activeDue !== 'all',
+    activeSort !== 'created_desc',
+  ].filter(Boolean).length;
+
+  useEffect(() => {
+    if (hasActiveFilters) setFiltersOpen(true);
+  }, [hasActiveFilters]);
 
   const clearFilters = () => router.push(pathname);
   const totalPages = Math.max(Math.ceil(total / pageSize), 1);
@@ -318,6 +334,15 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
               {copy.tickets.table.count(total)}
             </span>
             <Button
+              variant={filtersOpen ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setFiltersOpen((value) => !value)}
+              className="h-10 gap-1.5"
+            >
+              <SlidersHorizontal className="size-3.5" />
+              Filtros{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
+            </Button>
+            <Button
               variant="outline"
               size="icon"
               onClick={handleExport}
@@ -330,7 +355,8 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(14rem,auto)] xl:items-end">
+        {filtersOpen && (
+          <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(14rem,auto)] xl:items-end">
           <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
             <FilterField label={copy.tickets.table.headers.area} htmlFor="ticket-filter-area">
               <Select value={activeArea} onValueChange={(value) => updateParam('area', value)}>
@@ -484,7 +510,8 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
               </Button>
             )}
           </div>
-        </div>
+          </div>
+        )}
       </div>
 
       {tickets.length === 0 ? (

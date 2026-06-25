@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { auth } from '@/auth';
 import { db } from '@/db';
 import { schedules, users } from '@/db/schema';
-import { and, asc, eq, gte, lte, ne } from 'drizzle-orm';
+import { and, asc, eq, gte, lte, ne, sql } from 'drizzle-orm';
 import { copy } from '@/lib/copy';
 
 const areaSchema = z.enum(['TI', 'MKT', 'PF']).optional();
@@ -17,7 +17,25 @@ const scheduleSchema = z.object({
   description: z.string().trim().max(2000).optional(),
   scheduledDate: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/),
   area: z.enum(['TI', 'MKT', 'PF', '']).optional(),
+  reminderMinutesBefore: z.coerce.number().int().min(0).max(1440).default(30),
+  repeatReminder: z.boolean().default(true),
 });
+
+let scheduleReminderSchemaPromise: Promise<void> | null = null;
+
+async function ensureScheduleReminderSchema() {
+  scheduleReminderSchemaPromise ??= (async () => {
+    await db.execute(sql`
+      ALTER TABLE schedules
+      ADD COLUMN IF NOT EXISTS reminder_minutes_before integer NOT NULL DEFAULT 30
+    `);
+    await db.execute(sql`
+      ALTER TABLE schedules
+      ADD COLUMN IF NOT EXISTS repeat_reminder boolean NOT NULL DEFAULT true
+    `);
+  })();
+  return scheduleReminderSchemaPromise;
+}
 
 async function requireAuth() {
   const session = await auth();
@@ -70,17 +88,21 @@ async function getScheduleOverlapWarning(area: 'TI' | 'MKT' | 'PF' | null, date:
 
 export async function createSchedule(formData: FormData) {
   const user = await requireAuth();
+  await ensureScheduleReminderSchema();
 
   const parsed = scheduleSchema.safeParse({
     title: formData.get('title'),
     description: formData.get('description') || undefined,
     scheduledDate: formData.get('scheduledDate'),
     area: formData.get('area') || undefined,
+    reminderMinutesBefore: formData.get('reminderMinutesBefore') || 30,
+    repeatReminder: formData.has('repeatReminder'),
   });
 
   if (!parsed.success) return { error: copy.validation.invalidData };
 
-  const { title, description, scheduledDate, area } = parsed.data;
+  const { title, description, scheduledDate, area, reminderMinutesBefore, repeatReminder } =
+    parsed.data;
   const parsedDate = parseScheduledDate(scheduledDate);
   const normalizedArea = (area as 'TI' | 'MKT' | 'PF' | undefined) || null;
   const warning = await getScheduleOverlapWarning(normalizedArea, parsedDate);
@@ -90,6 +112,8 @@ export async function createSchedule(formData: FormData) {
     description: description || null,
     scheduledDate: parsedDate,
     area: normalizedArea,
+    reminderMinutesBefore,
+    repeatReminder,
     authorId: user.id,
   });
 
@@ -99,6 +123,7 @@ export async function createSchedule(formData: FormData) {
 
 export async function updateSchedule(id: string, formData: FormData) {
   const user = await requireAuth();
+  await ensureScheduleReminderSchema();
   const denied = await requireScheduleOwner(id, user);
   if (denied) return denied;
 
@@ -107,11 +132,14 @@ export async function updateSchedule(id: string, formData: FormData) {
     description: formData.get('description') || undefined,
     scheduledDate: formData.get('scheduledDate'),
     area: formData.get('area') || undefined,
+    reminderMinutesBefore: formData.get('reminderMinutesBefore') || 30,
+    repeatReminder: formData.has('repeatReminder'),
   });
 
   if (!parsed.success) return { error: copy.validation.invalidData };
 
-  const { title, description, scheduledDate, area } = parsed.data;
+  const { title, description, scheduledDate, area, reminderMinutesBefore, repeatReminder } =
+    parsed.data;
   const parsedDate = parseScheduledDate(scheduledDate);
   const normalizedArea = (area as 'TI' | 'MKT' | 'PF' | undefined) || null;
 
@@ -122,6 +150,8 @@ export async function updateSchedule(id: string, formData: FormData) {
       description: description || null,
       scheduledDate: parsedDate,
       area: normalizedArea,
+      reminderMinutesBefore,
+      repeatReminder,
       updatedAt: new Date(),
     })
     .where(eq(schedules.id, id));
@@ -168,6 +198,7 @@ export async function toggleScheduleStatus(id: string) {
 
 export async function getSchedules(filters?: { area?: string; status?: string }) {
   await requireAuth();
+  await ensureScheduleReminderSchema();
 
   const conditions = [];
 
@@ -191,6 +222,8 @@ export async function getSchedules(filters?: { area?: string; status?: string })
       scheduledDate: schedules.scheduledDate,
       area: schedules.area,
       status: schedules.status,
+      reminderMinutesBefore: schedules.reminderMinutesBefore,
+      repeatReminder: schedules.repeatReminder,
       authorId: schedules.authorId,
       authorName: users.displayName,
       createdAt: schedules.createdAt,

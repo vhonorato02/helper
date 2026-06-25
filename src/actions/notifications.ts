@@ -47,8 +47,18 @@ async function ensureNotificationSchema() {
         comment_mention boolean NOT NULL DEFAULT true,
         daily_digest boolean NOT NULL DEFAULT true,
         email_enabled boolean NOT NULL DEFAULT true,
+        browser_enabled boolean NOT NULL DEFAULT true,
+        reminder_lead_minutes integer NOT NULL DEFAULT 30,
         updated_at timestamp NOT NULL DEFAULT now()
       )
+    `);
+    await db.execute(sql`
+      ALTER TABLE notification_preferences
+      ADD COLUMN IF NOT EXISTS browser_enabled boolean NOT NULL DEFAULT true
+    `);
+    await db.execute(sql`
+      ALTER TABLE notification_preferences
+      ADD COLUMN IF NOT EXISTS reminder_lead_minutes integer NOT NULL DEFAULT 30
     `);
   })();
   return notificationSchemaPromise;
@@ -60,6 +70,8 @@ const DEFAULT_NOTIFICATION_PREFERENCES = {
   commentMention: true,
   dailyDigest: true,
   emailEnabled: true,
+  browserEnabled: true,
+  reminderLeadMinutes: 30,
 };
 
 const preferenceSchema = {
@@ -68,9 +80,10 @@ const preferenceSchema = {
   comment_mention: 'commentMention',
   daily_digest: 'dailyDigest',
   email_enabled: 'emailEnabled',
+  browser_enabled: 'browserEnabled',
 } as const;
 
-type PreferenceKey = keyof typeof DEFAULT_NOTIFICATION_PREFERENCES;
+type PreferenceKey = (typeof preferenceSchema)[keyof typeof preferenceSchema];
 
 function preferenceForNotificationType(type: string): PreferenceKey | null {
   if (type.includes('status')) return 'ticketStatus';
@@ -92,6 +105,8 @@ async function filterUserIdsByPreference(userIds: string[], type: string) {
       commentMention: notificationPreferences.commentMention,
       dailyDigest: notificationPreferences.dailyDigest,
       emailEnabled: notificationPreferences.emailEnabled,
+      browserEnabled: notificationPreferences.browserEnabled,
+      reminderLeadMinutes: notificationPreferences.reminderLeadMinutes,
     })
     .from(notificationPreferences)
     .where(inArray(notificationPreferences.userId, userIds));
@@ -228,6 +243,8 @@ export async function getNotificationPreferences() {
       commentMention: notificationPreferences.commentMention,
       dailyDigest: notificationPreferences.dailyDigest,
       emailEnabled: notificationPreferences.emailEnabled,
+      browserEnabled: notificationPreferences.browserEnabled,
+      reminderLeadMinutes: notificationPreferences.reminderLeadMinutes,
     })
     .from(notificationPreferences)
     .where(eq(notificationPreferences.userId, user.id))
@@ -255,6 +272,11 @@ export async function updateNotificationPreferences(formData: FormData) {
       commentMention: next.commentMention,
       dailyDigest: next.dailyDigest,
       emailEnabled: next.emailEnabled,
+      browserEnabled: next.browserEnabled,
+      reminderLeadMinutes: Math.max(
+        0,
+        Math.min(Number(formData.get('reminderLeadMinutes') ?? 30) || 30, 1440),
+      ),
       updatedAt: new Date(),
     })
     .onConflictDoUpdate({
@@ -265,6 +287,11 @@ export async function updateNotificationPreferences(formData: FormData) {
         commentMention: next.commentMention,
         dailyDigest: next.dailyDigest,
         emailEnabled: next.emailEnabled,
+        browserEnabled: next.browserEnabled,
+        reminderLeadMinutes: Math.max(
+          0,
+          Math.min(Number(formData.get('reminderLeadMinutes') ?? 30) || 30, 1440),
+        ),
         updatedAt: new Date(),
       },
     });

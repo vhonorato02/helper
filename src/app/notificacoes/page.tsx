@@ -1,6 +1,9 @@
 import Link from 'next/link';
-import { Bell, CheckCheck } from 'lucide-react';
+import { Bell, CalendarClock, CheckCheck } from 'lucide-react';
 import { getMyNotifications, markAllNotificationsRead } from '@/actions/notifications';
+import { getOperationalReminders, type ReminderPulseItem } from '@/actions/reminder-pulse';
+import { BrowserNotificationPermissionPanel } from '@/components/notifications/browser-notification-agent';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { NotificationsClient } from './notifications-client';
 
@@ -15,6 +18,61 @@ async function markAllAction() {
   await markAllNotificationsRead();
 }
 
+function formatReminderDate(value: string) {
+  return new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: 'America/Sao_Paulo',
+  }).format(new Date(value));
+}
+
+function ReminderRadar({ items }: { items: ReminderPulseItem[] }) {
+  if (items.length === 0) return null;
+
+  return (
+    <section className="surface-elevated overflow-hidden rounded-lg">
+      <div className="border-b px-4 py-3">
+        <h2 className="flex items-center gap-2 text-sm font-semibold">
+          <CalendarClock className="size-4 text-primary" />
+          Radar de agora
+        </h2>
+      </div>
+      <div className="grid divide-y md:grid-cols-2 md:divide-x md:divide-y-0">
+        {items.slice(0, 6).map((item) => (
+          <Link
+            key={item.id}
+            href={item.href}
+            className="block min-w-0 p-4 transition-colors hover:bg-muted/40"
+          >
+            <div className="mb-1.5 flex items-center justify-between gap-2">
+              <Badge
+                variant={
+                  item.priority === 'overdue'
+                    ? 'destructive'
+                    : item.priority === 'now'
+                      ? 'warning'
+                      : 'secondary'
+                }
+              >
+                {item.priority === 'overdue'
+                  ? 'passou'
+                  : item.priority === 'now'
+                    ? 'agora'
+                    : 'em breve'}
+              </Badge>
+              <time className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                {formatReminderDate(item.dueAt)}
+              </time>
+            </div>
+            <p className="line-clamp-1 text-sm font-semibold">{item.title}</p>
+            <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{item.body}</p>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default async function NotificationsPage({
   searchParams,
 }: {
@@ -22,7 +80,10 @@ export default async function NotificationsPage({
 }) {
   const params = await searchParams;
   const filter = params.status === 'unread' ? 'unread' : 'all';
-  const items = await getMyNotifications();
+  const [items, reminders] = await Promise.all([
+    getMyNotifications(),
+    getOperationalReminders(8),
+  ]);
   const unreadCount = items.filter((item) => !item.readAt).length;
   const visibleItems = filter === 'unread' ? items.filter((item) => !item.readAt) : items;
   const clientItems = visibleItems.map((item) => ({
@@ -63,6 +124,9 @@ export default async function NotificationsPage({
           </div>
         </div>
       </section>
+
+      <BrowserNotificationPermissionPanel />
+      <ReminderRadar items={reminders} />
 
       <section className="surface-elevated overflow-hidden rounded-lg">
         {visibleItems.length === 0 ? (

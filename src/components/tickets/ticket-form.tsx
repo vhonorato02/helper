@@ -29,6 +29,7 @@ import { createTicket } from '@/actions/tickets';
 import { getSubcategoriesForArea } from '@/actions/subcategories';
 import {
   AREA_OPTIONS,
+  AREA_LABELS,
   PRIORITY_LABELS,
   PRIORITY_ORDER,
   getSubcategories,
@@ -59,7 +60,7 @@ type FormData = z.infer<typeof schema>;
 interface TicketFormProps {
   open: boolean;
   onClose: () => void;
-  users: Pick<User, 'id' | 'displayName'>[];
+  users: Pick<User, 'id' | 'displayName' | 'role' | 'area' | 'avatarUrl'>[];
 }
 
 const defaultValues: FormData = {
@@ -70,6 +71,22 @@ const defaultValues: FormData = {
   assigneeId: 'none',
   dueDate: '',
 };
+
+const ROLE_BY_AREA: Record<Area, string> = {
+  TI: 'ti',
+  MKT: 'marketing',
+  PF: 'por_fora',
+};
+
+function pickDefaultAssignee(area: Area, users: TicketFormProps['users']) {
+  const role = ROLE_BY_AREA[area];
+  return (
+    users.find((user) => user.area === area && user.role === role) ??
+    users.find((user) => user.area === area) ??
+    users.find((user) => user.role === role) ??
+    null
+  );
+}
 
 export function TicketForm({ open, onClose, users }: TicketFormProps) {
   const router = useRouter();
@@ -115,6 +132,7 @@ export function TicketForm({ open, onClose, users }: TicketFormProps) {
   const area = watch('area');
   const subcategory = watch('subcategory');
   const dueDate = watch('dueDate');
+  const assigneeId = watch('assigneeId');
   const dueHolidayNotice = getHolidaySchedulingNotice(dueDate);
   const [subcategories, setSubcategories] = useState<string[]>(() => [...getSubcategories(defaultValues.area)]);
   const templates = getTemplatesByArea(area as Area);
@@ -136,7 +154,16 @@ export function TicketForm({ open, onClose, users }: TicketFormProps) {
   const handleAreaChange = (value: Area) => {
     setValue('area', value);
     setValue('subcategory', '');
+    if (!assigneeId || assigneeId === 'none') {
+      setValue('assigneeId', pickDefaultAssignee(value, users)?.id ?? 'none');
+    }
   };
+
+  useEffect(() => {
+    if (!open) return;
+    if (assigneeId && assigneeId !== 'none') return;
+    setValue('assigneeId', pickDefaultAssignee(area as Area, users)?.id ?? 'none');
+  }, [area, assigneeId, open, setValue, users]);
 
   const applyTemplate = (template: TicketTemplate) => {
     setValue('area', template.area);
@@ -319,6 +346,7 @@ export function TicketForm({ open, onClose, users }: TicketFormProps) {
                   {users.map((user) => (
                     <SelectItem key={user.id} value={user.id}>
                       {user.displayName}
+                      {user.area ? ` · ${AREA_LABELS[user.area]}` : ''}
                     </SelectItem>
                   ))}
                 </SelectContent>

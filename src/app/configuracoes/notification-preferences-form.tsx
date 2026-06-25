@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 
 const OPTIONS: Array<{
   name: string;
-  key: keyof NotificationPreferences;
+  key: Exclude<keyof NotificationPreferences, 'reminderLeadMinutes'>;
   label: string;
   description: string;
 }> = [
@@ -44,6 +44,12 @@ const OPTIONS: Array<{
     key: 'emailEnabled',
     label: 'E-mail',
     description: 'Mantém o e-mail como canal de apoio quando estiver configurado.',
+  },
+  {
+    name: 'browser_enabled',
+    key: 'browserEnabled',
+    label: 'Navegador e PWA',
+    description: 'Mostra alertas no computador ou no app instalado quando o Helper estiver ativo.',
   },
 ];
 
@@ -102,6 +108,22 @@ export function NotificationPreferencesForm({
           </label>
         ))}
       </div>
+
+      <label className="mt-3 flex flex-col gap-1.5 rounded-lg border bg-card/70 p-3 text-sm sm:max-w-xs">
+        <span className="font-medium">Antecedência padrão</span>
+        <select
+          name="reminderLeadMinutes"
+          defaultValue={String(preferences.reminderLeadMinutes ?? 30)}
+          disabled={isPending}
+          className="h-10 rounded-md border border-input bg-card px-3 text-sm"
+        >
+          <option value="5">5 minutos</option>
+          <option value="15">15 minutos</option>
+          <option value="30">30 minutos</option>
+          <option value="60">1 hora</option>
+          <option value="1440">1 dia</option>
+        </select>
+      </label>
 
       <Button type="submit" className="mt-4" disabled={isPending}>
         {isPending && <Loader2 className="animate-spin" />}

@@ -17,9 +17,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { updateUser } from '@/actions/users';
 import { copy } from '@/lib/copy';
+import { AREA_OPTIONS, USER_ROLE_OPTIONS } from '@/lib/constants';
 import type { User } from '@/db/schema';
 
-type UserItem = Pick<User, 'id' | 'username' | 'displayName' | 'isAdmin'>;
+type UserItem = Pick<User, 'id' | 'username' | 'displayName' | 'role' | 'area' | 'avatarUrl' | 'isAdmin'>;
 
 interface EditUserDialogProps {
   open: boolean;
@@ -95,6 +96,56 @@ export function EditUserDialog({ open, onOpenChange, user, isSelf }: EditUserDia
               name="displayName"
               defaultValue={user.displayName}
               required
+              disabled={isPending}
+            />
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-role">Cargo</Label>
+              <select
+                id="edit-role"
+                name="role"
+                defaultValue={user.role ?? ''}
+                disabled={isPending}
+                className="flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/55"
+              >
+                <option value="">Sem cargo</option>
+                {USER_ROLE_OPTIONS.map((role) => (
+                  <option key={role.value} value={role.value}>
+                    {role.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-area">Área padrão</Label>
+              <select
+                id="edit-area"
+                name="area"
+                defaultValue={user.area ?? ''}
+                disabled={isPending}
+                className="flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/55"
+              >
+                <option value="">Inferir pelo cargo</option>
+                {AREA_OPTIONS.map((area) => (
+                  <option key={area.value} value={area.value}>
+                    {area.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="edit-avatar-url">Avatar</Label>
+            <Input
+              id="edit-avatar-url"
+              name="avatarUrl"
+              type="url"
+              defaultValue={user.avatarUrl ?? ''}
+              placeholder="https://..."
+              maxLength={300}
               disabled={isPending}
             />
           </div>

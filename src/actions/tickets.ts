@@ -28,6 +28,7 @@ import { isValidSubcategoryAsync } from '@/actions/subcategories';
 import { sendTicketNotification } from '@/lib/email';
 import { nextResolvedAt } from '@/lib/ticket-status';
 import { dispatchNotification } from '@/actions/notifications';
+import { getDefaultAssigneeForArea } from '@/actions/users';
 
 const areaSchema = z.enum(['TI', 'MKT', 'PF']);
 const prioritySchema = z.enum(['baixa', 'media', 'alta', 'urgente']);
@@ -175,6 +176,9 @@ export async function createTicket(formData: FormData) {
       .limit(1);
     if (!assignee) return { error: copy.validation.invalidUser };
     activeAssigneeId = assignee.id;
+  } else {
+    const defaultAssignee = await getDefaultAssigneeForArea(area);
+    activeAssigneeId = defaultAssignee?.id ?? null;
   }
 
   for (let attempt = 0; attempt < 5; attempt += 1) {

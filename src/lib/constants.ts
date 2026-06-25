@@ -172,6 +172,26 @@ export type Area = keyof typeof AREA_LABELS;
 export type Status = keyof typeof STATUS_LABELS;
 export type Priority = keyof typeof PRIORITY_LABELS;
 
+export const USER_ROLE_OPTIONS = [
+  { value: 'ti', label: 'TI', area: 'TI' },
+  { value: 'marketing', label: 'Marketing', area: 'MKT' },
+  { value: 'por_fora', label: 'Por Fora', area: 'PF' },
+  { value: 'coordenacao', label: 'Coordenação', area: null },
+  { value: 'direcao', label: 'Direção', area: null },
+  { value: 'administrativo', label: 'Administrativo', area: null },
+  { value: 'outro', label: 'Outro', area: null },
+] as const;
+
+export type UserRole = (typeof USER_ROLE_OPTIONS)[number]['value'];
+
+export const USER_ROLE_LABELS = Object.fromEntries(
+  USER_ROLE_OPTIONS.map((role) => [role.value, role.label]),
+) as Record<UserRole, string>;
+
+export function roleDefaultArea(role: string | null | undefined): Area | null {
+  return (USER_ROLE_OPTIONS.find((item) => item.value === role)?.area ?? null) as Area | null;
+}
+
 export const RECORDING_STATUS_META = {
   planejada: { label: 'Planejada', tone: 'neutral' },
   confirmada: { label: 'Confirmada', tone: 'info' },

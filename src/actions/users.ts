@@ -5,10 +5,16 @@ import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { db } from '@/db';
 import { authEvents, comments, ticketHistory, tickets, users } from '@/db/schema';
-import { and, asc, count, desc, eq } from 'drizzle-orm';
+import { and, asc, count, desc, eq, sql } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { copy } from '@/lib/copy';
+import {
+  roleDefaultArea,
+  USER_ROLE_OPTIONS,
+  type Area,
+  type UserRole,
+} from '@/lib/constants';
 import {
   currentPasswordSchema,
   displayNameSchema,
@@ -28,6 +34,21 @@ async function requireAdmin() {
   const user = await requireSession();
   if (!user.isAdmin) redirect('/');
   return user;
+}
+
+let userProfileSchemaPromise: Promise<void> | null = null;
+
+async function ensureUserProfileSchema() {
+  userProfileSchemaPromise ??= (async () => {
+    await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS role text`);
+    await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS area area`);
+    await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url text`);
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS users_area_role_idx
+      ON users (area, role) WHERE is_active = true
+    `);
+  })();
+  return userProfileSchemaPromise;
 }
 
 async function getActiveAdminCount() {
@@ -58,11 +79,15 @@ function revalidateUserSurfaces() {
 export async function getActiveUsersForAssignment() {
   const session = await auth();
   if (!session?.user?.id) redirect('/login');
+  await ensureUserProfileSchema();
 
   return db
     .select({
       id: users.id,
       displayName: users.displayName,
+      role: users.role,
+      area: users.area,
+      avatarUrl: users.avatarUrl,
     })
     .from(users)
     .where(eq(users.isActive, true))
@@ -71,11 +96,15 @@ export async function getActiveUsersForAssignment() {
 
 export async function getUsers() {
   await requireAdmin();
+  await ensureUserProfileSchema();
   return db
     .select({
       id: users.id,
       username: users.username,
       displayName: users.displayName,
+      role: users.role,
+      area: users.area,
+      avatarUrl: users.avatarUrl,
       isAdmin: users.isAdmin,
       isActive: users.isActive,
       createdAt: users.createdAt,
@@ -84,20 +113,40 @@ export async function getUsers() {
     .orderBy(asc(users.displayName));
 }
 
+const roleSchema = z
+  .enum(USER_ROLE_OPTIONS.map((role) => role.value) as [UserRole, ...UserRole[]])
+  .optional()
+  .or(z.literal(''));
+const areaSchema = z.enum(['TI', 'MKT', 'PF']).optional().or(z.literal(''));
+const avatarUrlSchema = z
+  .string()
+  .trim()
+  .max(300)
+  .url('Informe uma URL válida para o avatar.')
+  .optional()
+  .or(z.literal(''));
+
 const createUserSchema = z.object({
   username: usernameSchema,
   displayName: displayNameSchema,
   password: passwordSchema,
+  role: roleSchema,
+  area: areaSchema,
+  avatarUrl: avatarUrlSchema,
   isAdmin: z.boolean().default(false),
 });
 
 export async function createUser(formData: FormData) {
   await requireAdmin();
+  await ensureUserProfileSchema();
 
   const parsed = createUserSchema.safeParse({
     username: formData.get('username'),
     displayName: formData.get('displayName'),
     password: formData.get('password'),
+    role: formData.get('role') || undefined,
+    area: formData.get('area') || undefined,
+    avatarUrl: formData.get('avatarUrl') || undefined,
     isAdmin: formData.get('isAdmin') === 'true',
   });
   if (!parsed.success) {
@@ -111,6 +160,9 @@ export async function createUser(formData: FormData) {
   await db.insert(users).values({
     username: parsed.data.username,
     displayName: parsed.data.displayName,
+    role: parsed.data.role || null,
+    area: (parsed.data.area || roleDefaultArea(parsed.data.role)) as Area | null,
+    avatarUrl: parsed.data.avatarUrl || null,
     passwordHash,
     isAdmin: parsed.data.isAdmin,
     mustChangePassword: true,
@@ -124,16 +176,23 @@ const updateUserSchema = z.object({
   userId: userIdSchema,
   username: usernameSchema,
   displayName: displayNameSchema,
+  role: roleSchema,
+  area: areaSchema,
+  avatarUrl: avatarUrlSchema,
   isAdmin: z.boolean().default(false),
 });
 
 export async function updateUser(formData: FormData) {
   const currentUser = await requireAdmin();
+  await ensureUserProfileSchema();
 
   const parsed = updateUserSchema.safeParse({
     userId: formData.get('userId'),
     username: formData.get('username'),
     displayName: formData.get('displayName'),
+    role: formData.get('role') || undefined,
+    area: formData.get('area') || undefined,
+    avatarUrl: formData.get('avatarUrl') || undefined,
     isAdmin: formData.get('isAdmin') === 'true',
   });
   if (!parsed.success) {
@@ -158,6 +217,9 @@ export async function updateUser(formData: FormData) {
     .set({
       username: parsed.data.username,
       displayName: parsed.data.displayName,
+      role: parsed.data.role || null,
+      area: (parsed.data.area || roleDefaultArea(parsed.data.role)) as Area | null,
+      avatarUrl: parsed.data.avatarUrl || null,
       isAdmin: parsed.data.isAdmin,
       updatedAt: new Date(),
     })
@@ -165,6 +227,36 @@ export async function updateUser(formData: FormData) {
 
   revalidateUserSurfaces();
   return { ok: true };
+}
+
+const ROLE_BY_AREA: Record<Area, UserRole> = {
+  TI: 'ti',
+  MKT: 'marketing',
+  PF: 'por_fora',
+};
+
+export async function getDefaultAssigneeForArea(area: Area) {
+  await ensureUserProfileSchema();
+
+  const rows = await db
+    .select({
+      id: users.id,
+      displayName: users.displayName,
+      role: users.role,
+      area: users.area,
+      isAdmin: users.isAdmin,
+    })
+    .from(users)
+    .where(eq(users.isActive, true))
+    .orderBy(asc(users.displayName));
+
+  const expectedRole = ROLE_BY_AREA[area];
+  return (
+    rows.find((user) => user.area === area && user.role === expectedRole) ??
+    rows.find((user) => user.area === area) ??
+    rows.find((user) => user.role === expectedRole) ??
+    null
+  );
 }
 
 export async function setUserAdmin(userId: string, isAdmin: boolean) {

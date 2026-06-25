@@ -77,6 +77,8 @@ function ScheduleGroup({
                 scheduledDate: s.scheduledDate,
                 area: s.area,
                 status: s.status,
+                reminderMinutesBefore: s.reminderMinutesBefore,
+                repeatReminder: s.repeatReminder,
                 authorName: s.authorName,
               }}
             />

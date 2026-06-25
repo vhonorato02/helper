@@ -15,6 +15,7 @@ import {
   Plus,
   Search,
   Settings,
+  SlidersHorizontal,
   Trash2,
   XCircle,
 } from 'lucide-react';
@@ -459,6 +460,7 @@ export function ChromebookAdminClient({
   const [confirmDelete, setConfirmDelete] = useState<ChromebookBookingRow | null>(null);
   const [isPending, startTransition] = useTransition();
   const [isExporting, setIsExporting] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const today = dateInputInSaoPaulo(new Date());
   const tomorrow = dateInputInSaoPaulo(addDays(new Date(), 1));
   const hasActiveFilters = Boolean(
@@ -467,6 +469,10 @@ export function ChromebookAdminClient({
       filters.room ||
       filters.quantity,
   );
+
+  useEffect(() => {
+    if (hasActiveFilters) setFiltersOpen(true);
+  }, [hasActiveFilters]);
 
   const activeCount = useMemo(
     () => bookings.filter((booking) => booking.status !== 'cancelado').length,
@@ -583,6 +589,14 @@ export function ChromebookAdminClient({
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Button
                   type="button"
+                  variant={filtersOpen ? 'default' : 'outline'}
+                  onClick={() => setFiltersOpen((value) => !value)}
+                >
+                  <SlidersHorizontal className="size-4" />
+                  Filtros
+                </Button>
+                <Button
+                  type="button"
                   variant="outline"
                   onClick={handleExport}
                   disabled={bookings.length === 0 || isExporting}
@@ -597,10 +611,11 @@ export function ChromebookAdminClient({
               </div>
             </div>
 
-            <form
-              action="/chromebooks"
-              className="mt-4 rounded-lg border border-border/70 bg-card/80 p-3 shadow-xs sm:p-4"
-            >
+            {filtersOpen && (
+              <form
+                action="/chromebooks"
+                className="mt-4 rounded-lg border border-border/70 bg-card/80 p-3 shadow-xs sm:p-4"
+              >
               <div className="mb-3 flex flex-wrap gap-2">
                 <Button
                   type="button"
@@ -710,7 +725,8 @@ export function ChromebookAdminClient({
                   )}
                 </div>
               </div>
-            </form>
+              </form>
+            )}
           </div>
 
           {bookings.length === 0 ? (

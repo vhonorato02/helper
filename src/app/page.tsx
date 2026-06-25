@@ -282,7 +282,7 @@ function ExternalIntakeQueue({ summary }: { summary: ExternalIntakeSummary }) {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" asChild>
-            <Link href="/tickets?origin=public&status=ativas">Tickets públicos</Link>
+            <Link href="/solicitacoes-publicas">Abrir triagem</Link>
           </Button>
           <Button variant="outline" size="sm" asChild>
             <Link href="/chromebooks?status=pendente">Chromebooks pendentes</Link>
@@ -540,7 +540,7 @@ export default async function DashboardPage() {
           label="Solicitações públicas"
           value={externalSummary.publicTicketCount}
           icon={<FileInput className="size-4" />}
-          href="/tickets?origin=public&status=ativas"
+          href="/solicitacoes-publicas"
           accent={externalSummary.publicTicketCount > 0 ? 'warning' : 'success'}
           empty="Sem pedido público pendente"
         />

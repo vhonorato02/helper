@@ -66,6 +66,10 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password boolean NOT NULL
 ALTER TABLE users ADD COLUMN IF NOT EXISTS password_changed_at timestamp;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at timestamp;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at timestamp NOT NULL DEFAULT now();
+ALTER TABLE users ADD COLUMN IF NOT EXISTS role text;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS area area;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url text;
+CREATE INDEX IF NOT EXISTS users_area_role_idx ON users (area, role) WHERE is_active = true;
 
 CREATE TABLE IF NOT EXISTS subcategories (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -165,8 +169,13 @@ CREATE TABLE IF NOT EXISTS notification_preferences (
   comment_mention boolean NOT NULL DEFAULT true,
   daily_digest boolean NOT NULL DEFAULT true,
   email_enabled boolean NOT NULL DEFAULT true,
+  browser_enabled boolean NOT NULL DEFAULT true,
+  reminder_lead_minutes integer NOT NULL DEFAULT 30,
   updated_at timestamp NOT NULL DEFAULT now()
 );
+
+ALTER TABLE notification_preferences ADD COLUMN IF NOT EXISTS browser_enabled boolean NOT NULL DEFAULT true;
+ALTER TABLE notification_preferences ADD COLUMN IF NOT EXISTS reminder_lead_minutes integer NOT NULL DEFAULT 30;
 
 CREATE TABLE IF NOT EXISTS schedules (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -175,10 +184,15 @@ CREATE TABLE IF NOT EXISTS schedules (
   scheduled_date timestamp NOT NULL,
   area area,
   status schedule_status NOT NULL DEFAULT 'pendente',
+  reminder_minutes_before integer NOT NULL DEFAULT 30,
+  repeat_reminder boolean NOT NULL DEFAULT true,
   author_id uuid REFERENCES users(id) ON DELETE SET NULL,
   created_at timestamp NOT NULL DEFAULT now(),
   updated_at timestamp NOT NULL DEFAULT now()
 );
+
+ALTER TABLE schedules ADD COLUMN IF NOT EXISTS reminder_minutes_before integer NOT NULL DEFAULT 30;
+ALTER TABLE schedules ADD COLUMN IF NOT EXISTS repeat_reminder boolean NOT NULL DEFAULT true;
 
 CREATE INDEX IF NOT EXISTS schedules_date_idx ON schedules (scheduled_date);
 CREATE INDEX IF NOT EXISTS schedules_status_idx ON schedules (status);

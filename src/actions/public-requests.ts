@@ -14,7 +14,8 @@ import {
   sendTicketNotification,
 } from '@/lib/email';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { dispatchNotificationToAdmins } from '@/actions/notifications';
+import { dispatchNotification, dispatchNotificationToAdmins } from '@/actions/notifications';
+import { getDefaultAssigneeForArea } from '@/actions/users';
 import { validatePublicContact, validatePublicRequestSchedule } from '@/lib/public-requests';
 
 const publicKindSchema = z.enum(['ti', 'midia', 'arte', 'cobertura', 'outra']);
@@ -168,6 +169,7 @@ export async function createPublicRequest(formData: FormData) {
   const description = buildDescription(input);
   const origin = 'Pagina publica';
   const publicContact = normalizeOptionalText(input.requesterContact);
+  const defaultAssignee = await getDefaultAssigneeForArea(meta.area);
   await ensurePublicRequestSchema();
 
   for (let attempt = 0; attempt < 5; attempt += 1) {
@@ -185,6 +187,7 @@ export async function createPublicRequest(formData: FormData) {
           origin,
           location: input.location,
           publicContact,
+          assigneeId: defaultAssignee?.id ?? null,
           authorId: null,
         })
         .returning({ id: tickets.id });
@@ -219,6 +222,17 @@ export async function createPublicRequest(formData: FormData) {
         link: `/tickets/${code}`,
         ticketId: created.id,
       });
+
+      if (defaultAssignee?.id) {
+        await dispatchNotification({
+          userIds: [defaultAssignee.id],
+          type: 'ticket_assigned',
+          title: `Solicitação pública atribuída: ${code}`,
+          body: title,
+          link: `/tickets/${code}`,
+          ticketId: created.id,
+        });
+      }
 
       const protocol = `PUB-${code}`;
       if (isEmail(input.requesterContact)) {

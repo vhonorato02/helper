@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import {
   CalendarDays,
   AlertTriangle,
+  BellRing,
   CheckCircle2,
   Circle,
   Clock,
@@ -55,6 +56,8 @@ type ScheduleRow = {
   scheduledDate: Date;
   area: Schedule['area'];
   status: Schedule['status'];
+  reminderMinutesBefore: number;
+  repeatReminder: boolean;
   authorName: string | null;
 };
 
@@ -189,6 +192,40 @@ export function ScheduleFormDialog({ open, onOpenChange, initial }: ScheduleForm
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+            <div className="space-y-1.5">
+              <Label htmlFor="sched-reminder">Lembrete</Label>
+              <Select
+                name="reminderMinutesBefore"
+                defaultValue={String(initial?.reminderMinutesBefore ?? 30)}
+                disabled={isPending}
+              >
+                <SelectTrigger id="sched-reminder">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">Na hora</SelectItem>
+                  <SelectItem value="5">5 minutos antes</SelectItem>
+                  <SelectItem value="15">15 minutos antes</SelectItem>
+                  <SelectItem value="30">30 minutos antes</SelectItem>
+                  <SelectItem value="60">1 hora antes</SelectItem>
+                  <SelectItem value="1440">1 dia antes</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <label className="flex min-h-10 items-center gap-2 rounded-md border border-border/70 bg-card px-3 text-sm">
+              <input
+                type="checkbox"
+                name="repeatReminder"
+                defaultChecked={initial?.repeatReminder ?? true}
+                disabled={isPending}
+                className="size-4 accent-primary"
+              />
+              Repetir até concluir
+            </label>
           </div>
 
           <div className="space-y-1.5">
@@ -344,6 +381,14 @@ export function ScheduleItem({ schedule }: ScheduleItemProps) {
                 {dateLabel}
               </span>
               {schedule.area && <AreaBadge area={schedule.area} />}
+              <span className="flex items-center gap-1">
+                <BellRing className="size-3" />
+                {schedule.reminderMinutesBefore === 0
+                  ? 'na hora'
+                  : schedule.reminderMinutesBefore >= 1440
+                    ? '1 dia antes'
+                    : `${schedule.reminderMinutesBefore} min antes`}
+              </span>
             </div>
 
             {schedule.description && (

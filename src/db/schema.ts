@@ -52,6 +52,9 @@ export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
   username: text('username').unique().notNull(),
   displayName: text('display_name').notNull(),
+  role: text('role'),
+  area: areaEnum('area'),
+  avatarUrl: text('avatar_url'),
   passwordHash: text('password_hash').notNull(),
   isAdmin: boolean('is_admin').default(false).notNull(),
   isActive: boolean('is_active').default(true).notNull(),
@@ -182,6 +185,8 @@ export const notificationPreferences = pgTable('notification_preferences', {
   commentMention: boolean('comment_mention').default(true).notNull(),
   dailyDigest: boolean('daily_digest').default(true).notNull(),
   emailEnabled: boolean('email_enabled').default(true).notNull(),
+  browserEnabled: boolean('browser_enabled').default(true).notNull(),
+  reminderLeadMinutes: integer('reminder_lead_minutes').default(30).notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
@@ -194,6 +199,8 @@ export const schedules = pgTable(
     scheduledDate: timestamp('scheduled_date').notNull(),
     area: areaEnum('area'),
     status: scheduleStatusEnum('status').default('pendente').notNull(),
+    reminderMinutesBefore: integer('reminder_minutes_before').default(30).notNull(),
+    repeatReminder: boolean('repeat_reminder').default(true).notNull(),
     authorId: uuid('author_id').references(() => users.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),

@@ -7,6 +7,7 @@ import {
   ArrowDown,
   ArrowUp,
   CornerDownLeft,
+  FileInput,
   Kanban,
   Laptop2,
   LayoutDashboard,
@@ -34,6 +35,13 @@ const NAV_ITEMS = [
   { label: copy.commandPalette.actions.kanban, href: '/kanban', icon: Kanban, admin: false },
   { label: copy.commandPalette.actions.tickets, href: '/tickets', icon: List, admin: false },
   { label: copy.commandPalette.actions.marketing, href: '/marketing', icon: Megaphone, admin: false },
+  {
+    label: copy.commandPalette.actions.publicRequests,
+    href: '/solicitacoes-publicas',
+    icon: FileInput,
+    admin: false,
+    keywords: copy.commandPalette.keywords.publicRequests,
+  },
   {
     label: copy.commandPalette.actions.chromebooks,
     href: '/chromebooks',

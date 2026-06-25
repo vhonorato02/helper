@@ -7,12 +7,12 @@ import {
   Activity,
   CalendarDays,
   ChevronDown,
+  FileInput,
   Kanban,
   KeyRound,
   LayoutDashboard,
   List,
   LogOut,
-  Laptop2,
   Megaphone,
   Menu,
   Plus,
@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { logoutAction } from '@/actions/auth';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,7 +49,7 @@ const NAV_LINKS = [
   { href: '/tickets', label: copy.nav.links.tickets, icon: List },
   { href: '/agendamentos', label: copy.nav.links.schedules, icon: CalendarDays },
   { href: '/marketing', label: copy.nav.links.marketing, icon: Megaphone },
-  { href: '/chromebooks', label: copy.nav.links.chromebooks, icon: Laptop2 },
+  { href: '/solicitacoes-publicas', label: copy.nav.links.publicRequests, icon: FileInput },
   { href: '/atividade', label: copy.nav.links.activity, icon: Activity },
 ] as const;
 
@@ -59,8 +59,11 @@ interface NavProps {
     name?: string | null;
     isAdmin?: boolean;
     username?: string;
+    role?: string | null;
+    area?: 'TI' | 'MKT' | 'PF' | null;
+    avatarUrl?: string | null;
   };
-  users: Pick<User, 'id' | 'displayName'>[];
+  users: Pick<User, 'id' | 'displayName' | 'role' | 'area' | 'avatarUrl'>[];
 }
 
 export function Nav({ user, users }: NavProps) {
@@ -209,6 +212,7 @@ export function Nav({ user, users }: NavProps) {
                   aria-label={copy.auth.menu.userMenu}
                 >
                   <Avatar className="size-8">
+                    {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt="" />}
                     <AvatarFallback className="bg-primary/10 text-[10px] font-semibold text-primary">
                       {initials(userName)}
                     </AvatarFallback>
@@ -280,6 +284,7 @@ export function Nav({ user, users }: NavProps) {
           >
             <div className="mb-3 flex items-center gap-3 rounded-lg border bg-card p-3">
               <Avatar className="size-9">
+                {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt="" />}
                 <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
                   {initials(userName)}
                 </AvatarFallback>

@@ -7,6 +7,7 @@ import { PwaInstallPrompt } from '@/components/pwa-install';
 import { auth } from '@/auth';
 import { getActiveUsersForAssignment } from '@/actions/users';
 import { PasswordChangeGuard } from '@/components/password-change-guard';
+import { BrowserNotificationAgent } from '@/components/notifications/browser-notification-agent';
 import { copy } from '@/lib/copy';
 import { APP_VERSION_LABEL } from '@/lib/version';
 import { BRAND } from '@/lib/brand';
@@ -83,7 +84,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const session = await auth();
   const isAuthenticated = !!session?.user?.id;
 
-  let users: { id: string; displayName: string }[] = [];
+  let users: Awaited<ReturnType<typeof getActiveUsersForAssignment>> = [];
   if (isAuthenticated && !session?.user?.mustChangePassword) {
     try {
       users = await getActiveUsersForAssignment();
@@ -125,6 +126,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               users={users}
             />
           )}
+          {isAuthenticated && !session.user.mustChangePassword && <BrowserNotificationAgent />}
           <main
             id="main-content"
             className={
