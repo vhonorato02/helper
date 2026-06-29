@@ -31,6 +31,10 @@ const TASK_ACTIONS = {
   task_deleted: 'removeu do checklist',
 } as const;
 
+const QUICK_RESPONSE_ACTIONS = {
+  quick_response_used: 'usou a resposta rápida',
+} as const;
+
 function TimeAgo({ date }: { date: Date }) {
   return (
     <span className="text-muted-foreground/70">
@@ -66,15 +70,17 @@ export function HistoryLog({ history }: { history: HistoryEntry[] }) {
         {history.map((entry) => {
           const commentAction = COMMENT_ACTIONS[entry.field as keyof typeof COMMENT_ACTIONS];
           const taskAction = TASK_ACTIONS[entry.field as keyof typeof TASK_ACTIONS];
+          const quickResponseAction =
+            QUICK_RESPONSE_ACTIONS[entry.field as keyof typeof QUICK_RESPONSE_ACTIONS];
           const authorName = entry.authorName ?? copy.common.removedUser;
 
-          if (commentAction || taskAction) {
+          if (commentAction || taskAction || quickResponseAction) {
             return (
               <li key={entry.id} className="relative text-xs">
                 <span className="absolute -left-[1.6875rem] top-1 size-2.5 rounded-full bg-background border-2 border-border" />
                 <div className="text-muted-foreground leading-relaxed">
                   <span className="font-medium text-foreground">{authorName}</span>
-                  {` ${commentAction ?? taskAction}`}
+                  {` ${commentAction ?? taskAction ?? quickResponseAction}`}
                   {entry.field === 'comment_edited' ? (
                     <>
                       {` ${copy.tickets.history.from} `}

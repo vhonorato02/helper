@@ -15,6 +15,7 @@ import {
   LogOut,
   Megaphone,
   Menu,
+  MessageSquareQuote,
   Plus,
   Search,
   Settings,
@@ -48,6 +49,7 @@ const NAV_LINKS = [
   { href: '/', label: copy.nav.links.dashboard, icon: LayoutDashboard },
   { href: '/kanban', label: copy.nav.links.kanban, icon: Kanban },
   { href: '/tickets', label: copy.nav.links.tickets, icon: List },
+  { href: '/respostas-rapidas', label: copy.nav.links.quickResponses, icon: MessageSquareQuote },
   { href: '/equipe', label: copy.nav.links.team, icon: UsersRound },
   { href: '/agendamentos', label: copy.nav.links.schedules, icon: CalendarDays },
   { href: '/marketing', label: copy.nav.links.marketing, icon: Megaphone },
@@ -162,7 +164,7 @@ export function Nav({ user, users }: NavProps) {
             </div>
           </Link>
 
-          <nav className="ml-3 hidden items-center gap-0.5 rounded-lg border border-border/70 bg-card/80 p-1 shadow-xs xl:flex">
+          <nav className="ml-3 hidden min-w-0 flex-1 items-center gap-0.5 overflow-x-auto rounded-lg border border-border/70 bg-card/80 p-1 shadow-xs xl:flex">
             {NAV_LINKS.map(({ href, label, icon: Icon }) => {
               const active = isActiveLink(href);
               return (
@@ -170,7 +172,7 @@ export function Nav({ user, users }: NavProps) {
                   key={href}
                   href={href}
                   className={cn(
-                    'flex h-8 items-center gap-1.5 rounded-md px-3 text-sm font-medium transition-all',
+                    'flex h-8 shrink-0 items-center gap-1.5 rounded-md px-3 text-sm font-medium transition-all',
                     active
                       ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
                       : 'text-muted-foreground hover:bg-accent hover:text-foreground',

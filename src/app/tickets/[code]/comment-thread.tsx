@@ -5,7 +5,15 @@ import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { Loader2, MessageSquare, MoreVertical, Pencil, SendHorizontal, Trash2 } from 'lucide-react';
+import {
+  Loader2,
+  MessageSquare,
+  MessageSquareQuote,
+  MoreVertical,
+  Pencil,
+  SendHorizontal,
+  Trash2,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -18,6 +26,7 @@ import {
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { addComment, deleteComment, updateComment } from '@/actions/comments';
 import { copy } from '@/lib/copy';
+import { AREA_LABELS } from '@/lib/constants';
 import { initials } from '@/lib/format';
 
 interface Comment {
@@ -28,9 +37,18 @@ interface Comment {
   authorName: string | null;
 }
 
+interface QuickResponseOption {
+  id: string;
+  area: keyof typeof AREA_LABELS | null;
+  title: string;
+  body: string;
+  usageCount: number;
+}
+
 interface CommentThreadProps {
   ticketCode: string;
   comments: Comment[];
+  quickResponses: QuickResponseOption[];
   currentUserId: string;
   currentUserIsAdmin: boolean;
 }
@@ -38,6 +56,7 @@ interface CommentThreadProps {
 export function CommentThread({
   ticketCode,
   comments,
+  quickResponses,
   currentUserId,
   currentUserIsAdmin,
 }: CommentThreadProps) {
@@ -45,14 +64,20 @@ export function CommentThread({
   const [isPending, startTransition] = useTransition();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingBody, setEditingBody] = useState('');
+  const [commentBody, setCommentBody] = useState('');
+  const [selectedQuickResponseId, setSelectedQuickResponseId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Comment | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const selectedQuickResponse = quickResponses.find((item) => item.id === selectedQuickResponseId);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const body = String(formData.get('body') ?? '').trim();
+    const body = commentBody.trim();
     if (!body) return;
+    formData.set('body', body);
+    if (selectedQuickResponseId) formData.set('quickResponseId', selectedQuickResponseId);
+    else formData.delete('quickResponseId');
 
     startTransition(async () => {
       const result = await addComment(ticketCode, formData);
@@ -63,9 +88,16 @@ export function CommentThread({
 
       if (result?.emailWarning) toast.warning(result.emailWarning);
 
+      setCommentBody('');
+      setSelectedQuickResponseId(null);
       formRef.current?.reset();
       router.refresh();
     });
+  };
+
+  const applyQuickResponse = (response: QuickResponseOption) => {
+    setCommentBody(response.body);
+    setSelectedQuickResponseId(response.id);
   };
 
   const startEdit = (comment: Comment) => {
@@ -226,12 +258,61 @@ export function CommentThread({
       )}
 
       <form ref={formRef} onSubmit={handleSubmit} className="space-y-2">
+        {quickResponses.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isPending}
+                  className="gap-1.5"
+                >
+                  <MessageSquareQuote className="size-3.5" />
+                  {copy.quickResponses.insert}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                className="w-[min(28rem,calc(100vw-2rem))]"
+              >
+                {quickResponses.map((response) => (
+                  <DropdownMenuItem
+                    key={response.id}
+                    onSelect={() => applyQuickResponse(response)}
+                    className="flex-col items-start gap-1 whitespace-normal"
+                  >
+                    <span className="flex w-full items-center justify-between gap-3">
+                      <span className="font-medium">{response.title}</span>
+                      <span className="shrink-0 text-[11px] text-muted-foreground">
+                        {response.area ? AREA_LABELS[response.area] : copy.quickResponses.global}
+                      </span>
+                    </span>
+                    <span className="line-clamp-2 text-xs text-muted-foreground">
+                      {response.body}
+                    </span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {selectedQuickResponse && (
+              <span className="rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary ring-1 ring-inset ring-primary/20">
+                {copy.quickResponses.selected(selectedQuickResponse.title)}
+              </span>
+            )}
+          </div>
+        )}
+
         <Textarea
           name="body"
           placeholder={copy.tickets.comments.placeholder}
           aria-label={copy.tickets.comments.title}
           className="min-h-[88px]"
+          value={commentBody}
           disabled={isPending}
+          onChange={(event) => setCommentBody(event.currentTarget.value)}
           onKeyDown={(event) => {
             if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
               event.currentTarget.form?.requestSubmit();
@@ -242,7 +323,12 @@ export function CommentThread({
           <p className="text-xs text-muted-foreground hidden sm:block">
             {copy.tickets.comments.shortcut}
           </p>
-          <Button type="submit" size="sm" disabled={isPending} className="ml-auto gap-1.5">
+          <Button
+            type="submit"
+            size="sm"
+            disabled={isPending || !commentBody.trim()}
+            className="ml-auto gap-1.5"
+          >
             {isPending ? (
               <Loader2 className="animate-spin" />
             ) : (

@@ -1,6 +1,6 @@
 # Helper
 
-Versão atual: `Helper 0.2.8`
+Versão atual: `Helper 0.2.9`
 
 Helper é uma central operacional para registrar, organizar e acompanhar demandas internas. O sistema reúne página pública de solicitações, tickets, Kanban, agenda, reservas de Chromebooks, notificações, rotinas administrativas e PWA em uma única aplicação.
 
@@ -32,6 +32,7 @@ Regras de trabalho:
 
 - Dashboard: visão de métricas, fila de atenção, prazos e atividade recente.
 - Tickets: criação, edição, responsáveis, prioridade, status, comentários e histórico.
+- Respostas rápidas: biblioteca global ou por área para comentários recorrentes em demandas.
 - Kanban: movimentação visual por status com feedback e rollback quando a mutation falha.
 - Agenda: compromissos e demandas com data marcada.
 - Marketing: calendário editorial, gravações, campanhas e solicitações da área.
@@ -60,6 +61,14 @@ Regras de trabalho:
 O runtime é estritamente Node 24.x LTS. O projeto usa `.node-version`, `.nvmrc`, `engines` e `engine-strict=true` para evitar builds em Node Current.
 
 Tailwind 4 usa tema CSS-first em `src/app/globals.css`; não há mais `tailwind.config.js`. A variante `dark` é baseada na classe `.dark`, pois o Helper usa alternância manual de tema.
+
+## Mudanças da Versão 0.2.9
+
+- Respostas rápidas ganharam rota própria em `/respostas-rapidas`, com criação, edição, desativação, reativação, escopo por área e contador de uso.
+- Comentários de tickets agora podem inserir uma resposta rápida ativa e compatível com a área da demanda.
+- O backend valida o escopo da resposta antes de registrar o comentário, incrementa uso e grava o histórico da demanda.
+- Navegação principal e Command Palette incluem a nova biblioteca.
+- Service worker atualizado para cache `helper-static-v15`.
 
 ## Mudanças da Versão 0.2.8
 

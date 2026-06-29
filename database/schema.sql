@@ -125,6 +125,25 @@ CREATE TABLE IF NOT EXISTS comments (
   created_at timestamp NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS quick_responses (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  area area,
+  title text NOT NULL,
+  body text NOT NULL,
+  is_active boolean NOT NULL DEFAULT true,
+  usage_count integer NOT NULL DEFAULT 0 CHECK (usage_count >= 0),
+  created_by_id uuid REFERENCES users(id) ON DELETE SET NULL,
+  created_at timestamp NOT NULL DEFAULT now(),
+  updated_at timestamp NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS quick_responses_area_active_idx
+  ON quick_responses (area, is_active, title);
+CREATE INDEX IF NOT EXISTS quick_responses_usage_idx
+  ON quick_responses (usage_count);
+CREATE INDEX IF NOT EXISTS quick_responses_creator_idx
+  ON quick_responses (created_by_id);
+
 CREATE TABLE IF NOT EXISTS ticket_history (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   ticket_id uuid NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,

@@ -29,6 +29,7 @@
 ## Domínios Principais
 
 - Tickets: `src/actions/tickets.ts`, `src/components/tickets/*`, `src/app/tickets/*`
+- Respostas rápidas: `src/actions/quick-responses.ts`, `src/app/respostas-rapidas`
 - Kanban: `src/components/kanban/*`, `src/app/kanban`
 - Solicitações públicas: `src/actions/public-requests.ts`, `src/app/solicitar/*`
 - Entrada externa: `src/actions/external-intake.ts`, dashboard e filtros de tickets/chromebooks

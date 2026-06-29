@@ -1,5 +1,13 @@
 # Changelog
 
+## Helper 0.2.9 - 2026-06-29
+
+- Adiciona biblioteca de respostas rápidas por área ou globais para comentários recorrentes em demandas.
+- Integra o seletor de respostas rápidas ao compositor de comentários dos tickets com validação server-side de escopo e status ativo.
+- Registra uso da resposta rápida no histórico da demanda e incrementa contador operacional da biblioteca.
+- Adiciona navegação e Command Palette para `/respostas-rapidas`, além de teste unitário para a regra de escopo por área.
+- Atualiza metadados operacionais para Helper 0.2.9 e service worker `helper-static-v15`.
+
 ## Helper 0.2.8 - 2026-06-24
 
 - Limita a altura de selects e menus Radix para evitar estouro em telas baixas e PWAs instalados.

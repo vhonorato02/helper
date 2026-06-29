@@ -4,14 +4,16 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import { db } from '@/db';
-import { comments, ticketHistory, ticketMentions, tickets, users } from '@/db/schema';
-import { and, eq, asc, inArray } from 'drizzle-orm';
+import { comments, quickResponses, ticketHistory, ticketMentions, tickets, users } from '@/db/schema';
+import { and, eq, asc, inArray, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { copy } from '@/lib/copy';
 import { sendTicketNotification } from '@/lib/email';
 import { extractMentions } from '@/lib/mentions';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { dispatchNotification } from '@/actions/notifications';
+import { isQuickResponseAvailableForTicket } from '@/lib/quick-responses';
+import { ensureQuickResponsesSchema } from '@/lib/quick-responses-schema';
 
 const COMMENT_RATE_LIMIT = { limit: 30, windowMs: 60_000, lockoutMs: 60_000 };
 
@@ -23,6 +25,7 @@ async function requireAuth() {
 
 const commentSchema = z.object({
   body: z.string().trim().min(1).max(4000),
+  quickResponseId: z.string().uuid().optional(),
 });
 
 const COMMENT_HISTORY_LIMIT = 220;
@@ -71,7 +74,10 @@ export async function addComment(ticketCode: string, formData: FormData) {
   });
   if (!rate.ok) return { error: copy.validation.rateLimited };
 
-  const parsed = commentSchema.safeParse({ body: formData.get('body') });
+  const parsed = commentSchema.safeParse({
+    body: formData.get('body'),
+    quickResponseId: formData.get('quickResponseId') || undefined,
+  });
   if (!parsed.success) return { error: copy.validation.invalidComment };
 
   const [ticket] = await db
@@ -90,6 +96,30 @@ export async function addComment(ticketCode: string, formData: FormData) {
     .limit(1);
 
   if (!ticket) return { error: copy.validation.invalidTicket };
+
+  let selectedQuickResponse: { id: string; title: string; area: typeof ticket.area | null } | null = null;
+  if (parsed.data.quickResponseId) {
+    await ensureQuickResponsesSchema();
+    const [response] = await db
+      .select({
+        id: quickResponses.id,
+        title: quickResponses.title,
+        area: quickResponses.area,
+      })
+      .from(quickResponses)
+      .where(
+        and(
+          eq(quickResponses.id, parsed.data.quickResponseId),
+          eq(quickResponses.isActive, true),
+        ),
+      )
+      .limit(1);
+
+    if (!response || !isQuickResponseAvailableForTicket(response.area, ticket.area)) {
+      return { error: copy.validation.invalidQuickResponse };
+    }
+    selectedQuickResponse = response;
+  }
 
   const [inserted] = await db
     .insert(comments)
@@ -111,6 +141,25 @@ export async function addComment(ticketCode: string, formData: FormData) {
     oldValue: null,
     newValue: commentHistorySnippet(parsed.data.body),
   });
+
+  if (selectedQuickResponse) {
+    await db
+      .update(quickResponses)
+      .set({
+        usageCount: sql`${quickResponses.usageCount} + 1`,
+        updatedAt: new Date(),
+      })
+      .where(eq(quickResponses.id, selectedQuickResponse.id));
+
+    await db.insert(ticketHistory).values({
+      ticketId: ticket.id,
+      authorId: user.id,
+      field: 'quick_response_used',
+      oldValue: null,
+      newValue: selectedQuickResponse.title,
+    });
+  }
+
   await db.update(tickets).set({ updatedAt: new Date() }).where(eq(tickets.code, ticketCode));
 
   const emailResult = await sendTicketNotification({
@@ -138,6 +187,7 @@ export async function addComment(ticketCode: string, formData: FormData) {
   });
 
   revalidateCommentSurfaces(ticketCode);
+  if (selectedQuickResponse) revalidatePath('/respostas-rapidas');
   return {
     ok: true,
     emailWarning: emailResult.ok ? undefined : copy.validation.emailNotificationFailed,

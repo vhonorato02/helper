@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   List,
   Megaphone,
+  MessageSquareQuote,
   Plus,
   Search,
   Settings,
@@ -35,6 +36,13 @@ const NAV_ITEMS = [
   { label: copy.commandPalette.actions.dashboard, href: '/', icon: LayoutDashboard, admin: false },
   { label: copy.commandPalette.actions.kanban, href: '/kanban', icon: Kanban, admin: false },
   { label: copy.commandPalette.actions.tickets, href: '/tickets', icon: List, admin: false },
+  {
+    label: copy.commandPalette.actions.quickResponses,
+    href: '/respostas-rapidas',
+    icon: MessageSquareQuote,
+    admin: false,
+    keywords: copy.commandPalette.keywords.quickResponses,
+  },
   {
     label: copy.commandPalette.actions.team,
     href: '/equipe',

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { AlertTriangle, ArrowLeft, Calendar, CalendarCheck, FileText, MapPin, Tag, User } from 'lucide-react';
 import { auth } from '@/auth';
 import { getComments } from '@/actions/comments';
+import { getActiveQuickResponsesForTicket } from '@/actions/quick-responses';
 import { getTicketTasks } from '@/actions/ticket-tasks';
 import { getTicket } from '@/actions/tickets';
 import { getActiveUsersForAssignment, getTicketHistory } from '@/actions/users';
@@ -54,11 +55,12 @@ export default async function TicketDetailPage({ params }: PageProps) {
   const ticket = await getTicket(code);
   if (!ticket) notFound();
 
-  const [comments, history, users, tasks] = await Promise.all([
+  const [comments, history, users, tasks, quickResponses] = await Promise.all([
     safeLoad('ticket_comments_load_failed', () => getComments(code), []),
     safeLoad('ticket_history_load_failed', () => getTicketHistory(code), []),
     safeLoad('ticket_users_load_failed', () => getActiveUsersForAssignment(), []),
     safeLoad('ticket_tasks_load_failed', () => getTicketTasks(code), []),
+    safeLoad('ticket_quick_responses_load_failed', () => getActiveQuickResponsesForTicket(code), []),
   ]);
 
   const authorName = ticket.author?.displayName ?? copy.common.removedUser;
@@ -171,6 +173,7 @@ export default async function TicketDetailPage({ params }: PageProps) {
           <CommentThread
             ticketCode={code}
             comments={comments}
+            quickResponses={quickResponses}
             currentUserId={currentUserId}
             currentUserIsAdmin={currentUserIsAdmin}
           />

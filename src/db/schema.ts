@@ -123,6 +123,26 @@ export const comments = pgTable('comments', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+export const quickResponses = pgTable(
+  'quick_responses',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    area: areaEnum('area'),
+    title: text('title').notNull(),
+    body: text('body').notNull(),
+    isActive: boolean('is_active').default(true).notNull(),
+    usageCount: integer('usage_count').default(0).notNull(),
+    createdById: uuid('created_by_id').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (t) => [
+    index('quick_responses_area_active_idx').on(t.area, t.isActive, t.title),
+    index('quick_responses_usage_idx').on(t.usageCount),
+    index('quick_responses_creator_idx').on(t.createdById),
+  ],
+);
+
 export const ticketHistory = pgTable('ticket_history', {
   id: uuid('id').defaultRandom().primaryKey(),
   ticketId: uuid('ticket_id')
@@ -345,6 +365,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   ticketTasks: many(ticketTasks),
   mentions: many(ticketMentions),
   notifications: many(notifications),
+  quickResponses: many(quickResponses),
 }));
 
 export const ticketsRelations = relations(tickets, ({ one, many }) => ({
@@ -369,6 +390,10 @@ export const commentsRelations = relations(comments, ({ one, many }) => ({
   ticket: one(tickets, { fields: [comments.ticketId], references: [tickets.id] }),
   author: one(users, { fields: [comments.authorId], references: [users.id] }),
   mentions: many(ticketMentions),
+}));
+
+export const quickResponsesRelations = relations(quickResponses, ({ one }) => ({
+  createdBy: one(users, { fields: [quickResponses.createdById], references: [users.id] }),
 }));
 
 export const ticketHistoryRelations = relations(ticketHistory, ({ one }) => ({
@@ -423,6 +448,8 @@ export type Ticket = typeof tickets.$inferSelect;
 export type NewTicket = typeof tickets.$inferInsert;
 export type Comment = typeof comments.$inferSelect;
 export type NewComment = typeof comments.$inferInsert;
+export type QuickResponse = typeof quickResponses.$inferSelect;
+export type NewQuickResponse = typeof quickResponses.$inferInsert;
 export type TicketHistory = typeof ticketHistory.$inferSelect;
 export type TicketTask = typeof ticketTasks.$inferSelect;
 export type Subcategory = typeof subcategories.$inferSelect;
