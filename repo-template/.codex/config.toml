@@ -1,0 +1,32 @@
+# Configuracao exclusiva da copia dedicada ao Helper Autopilot.
+# O projeto precisa ser marcado como confiavel no Codex.
+
+approval_policy = "never"
+default_permissions = "helper-autopilot"
+web_search = "live"
+model_reasoning_effort = "high"
+
+[permissions.helper-autopilot]
+description = "Edita somente o repositorio dedicado, permite Git e rede publica, protege configuracao e arquivos de ambiente."
+
+[permissions.helper-autopilot.filesystem]
+":minimal" = "read"
+glob_scan_max_depth = 4
+
+[permissions.helper-autopilot.filesystem.":workspace_roots"]
+"." = "write"
+".git" = "write"
+".codex" = "read"
+".env" = "deny"
+".env.local" = "deny"
+".env.production" = "deny"
+".env.development" = "deny"
+
+[permissions.helper-autopilot.network]
+enabled = true
+
+[permissions.helper-autopilot.network.domains]
+"*" = "allow"
+
+[windows]
+sandbox = "elevated"

@@ -1,0 +1,25 @@
+HELPER CODEX EM D:\helper
+
+CORRECAO DE ESTRUTURA
+
+- O unico repositorio local e D:\helper.
+- Nao existe clone paralelo.
+- Nao existe pasta helper-autopilot.
+- Nao existe worktree.
+- Nao existe workspace adicional.
+- Nao existe GitHub Action executando Codex.
+- Nao existe OPENAI_API_KEY.
+- Nao existe tarefa agendada do Windows.
+
+ORDEM
+
+1. Garanta que D:\helper esta sem alteracoes locais.
+2. Execute INSTALAR-EM-D-HELPER.cmd.
+3. Abra o Codex e adicione D:\helper como projeto Local.
+4. Abra D:\helper\.codex\CONFIGURAR-CODEX.md.
+5. Cole no Codex o conteudo de D:\helper\.codex\CRIAR-AS-4-AUTOMACOES.txt.
+6. Confira as quatro automacoes no painel.
+7. Execute a primeira manualmente uma vez.
+8. Execute VALIDAR-D-HELPER.cmd.
+
+Os arquivos operacionais ficam em D:\helper\.codex e sao enviados ao proprio GitHub.

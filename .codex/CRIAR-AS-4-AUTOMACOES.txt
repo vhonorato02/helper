@@ -1,0 +1,39 @@
+Voce esta no projeto Local `D:\helper`, que e o unico repositorio local usado para este aplicativo.
+
+Crie exatamente quatro automacoes standalone independentes para este projeto. Cada execucao deve iniciar uma conversa nova, trabalhar diretamente no projeto Local `D:\helper` e nunca usar worktree, clone, copia, workspace adicional ou outro diretorio.
+
+Use o horario local do Windows no fuso America/Sao_Paulo. Use raciocinio alto e o melhor modelo de programacao disponivel na conta, sem fixar um modelo antigo.
+
+Antes de criar, leia integralmente os quatro arquivos abaixo. Nao resuma, nao reescreva e nao misture os prompts.
+
+1. Nome: Helper 1 - Evolucao funcional
+   Agenda: todos os dias as 01:10
+   Projeto: D:\helper
+   Modo: Local
+   Tipo: Standalone
+   Prompt: conteudo integral de `.codex/automation-prompts/01-feature.md`
+
+2. Nome: Helper 2 - Revisao critica
+   Agenda: todos os dias as 07:10
+   Projeto: D:\helper
+   Modo: Local
+   Tipo: Standalone
+   Prompt: conteudo integral de `.codex/automation-prompts/02-review.md`
+
+3. Nome: Helper 3 - UI e UX
+   Agenda: todos os dias as 13:10
+   Projeto: D:\helper
+   Modo: Local
+   Tipo: Standalone
+   Prompt: conteudo integral de `.codex/automation-prompts/03-ui-ux.md`
+
+4. Nome: Helper 4 - Stack e manutencao
+   Agenda: todos os dias as 19:10
+   Projeto: D:\helper
+   Modo: Local
+   Tipo: Standalone
+   Prompt: conteudo integral de `.codex/automation-prompts/04-maintenance.md`
+
+Nao crie GitHub Action, tarefa do Windows, script PowerShell agendado, API key, branch paralela ou pull request.
+
+Depois de criar, mostre uma tabela com nome, horario, projeto, modo e arquivo de prompt. Confirme que as quatro estao habilitadas, apontam somente para `D:\helper` e usam execucao Local.

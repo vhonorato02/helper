@@ -1,0 +1,25 @@
+Voce esta no projeto local dedicado do repositorio https://github.com/vhonorato02/helper.git.
+
+Crie agora quatro standalone automations independentes para este projeto. Cada execucao deve comecar em uma conversa nova, usar o projeto Local atual e nao usar worktree. Use o horario local do Windows, no fuso America/Sao_Paulo. Use raciocinio alto e o melhor modelo de programacao disponivel na minha conta, sem fixar um modelo antigo.
+
+Crie exatamente estas automacoes:
+
+1. Nome: Helper 1 - Evolucao funcional
+   Agenda: todos os dias as 01:10
+   Prompt: use exatamente todo o conteudo do arquivo `.codex/automation-prompts/01-feature.md`.
+
+2. Nome: Helper 2 - Revisao critica
+   Agenda: todos os dias as 07:10
+   Prompt: use exatamente todo o conteudo do arquivo `.codex/automation-prompts/02-review.md`.
+
+3. Nome: Helper 3 - UI e UX
+   Agenda: todos os dias as 13:10
+   Prompt: use exatamente todo o conteudo do arquivo `.codex/automation-prompts/03-ui-ux.md`.
+
+4. Nome: Helper 4 - Stack e manutencao
+   Agenda: todos os dias as 19:10
+   Prompt: use exatamente todo o conteudo do arquivo `.codex/automation-prompts/04-maintenance.md`.
+
+Antes de criar, leia os quatro arquivos integralmente. Nao resuma, nao reescreva e nao misture os prompts. Nao crie GitHub Action, tarefa do Windows, script PowerShell agendado ou dependencia de OPENAI_API_KEY.
+
+Depois de criar, mostre uma tabela com nome, horario, projeto, modo de execucao e arquivo de prompt de cada automacao. Confirme que as quatro estao habilitadas e que nenhuma aponta para outro repositorio.

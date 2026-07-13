@@ -409,6 +409,23 @@ export const copy = {
     createTitle: 'Nova resposta',
     createDescription:
       'Use respostas globais para mensagens comuns e respostas por área para orientações específicas.',
+    libraryTitle: 'Biblioteca de respostas',
+    libraryDescription: 'Encontre modelos por texto, área ou status antes de comentar uma demanda.',
+    filters: {
+      search: 'Busca',
+      searchPlaceholder: 'Buscar por título, texto, área ou autor...',
+      clearSearch: 'Limpar busca de respostas rápidas',
+      area: 'Área',
+      status: 'Status',
+      allAreas: 'Todas as áreas',
+      globalOnly: 'Globais',
+      allStatuses: 'Todos',
+      activeOnly: 'Ativas',
+      inactiveOnly: 'Inativas',
+      clearFilters: 'Limpar filtros',
+      count: (filtered: number, total: number) =>
+        `${filtered} de ${total} ${total === 1 ? 'resposta' : 'respostas'}`,
+    },
     create: 'Criar resposta',
     created: 'Resposta rápida criada.',
     updated: 'Resposta rápida atualizada.',
@@ -426,7 +443,10 @@ export const copy = {
     usage: (total: number) => `${total} ${total === 1 ? 'uso' : 'usos'}`,
     createdBy: (name: string) => `criada por ${name}`,
     empty: 'Nenhuma resposta rápida cadastrada',
-    emptyHint: 'Crie uma resposta para acelerar comentários recorrentes em tickets.',
+    emptyHint: 'Crie uma resposta para acelerar comentários recorrentes em demandas.',
+    emptyFiltered: 'Nenhuma resposta combina com esses filtros',
+    emptyFilteredHint:
+      'Revise a busca, escolha outra área ou limpe os filtros para voltar à biblioteca completa.',
   },
   kanban: {
     page: {
