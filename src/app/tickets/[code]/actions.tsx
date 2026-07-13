@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { copy } from '@/lib/copy';
 import { DATE_FORMATS, formatPtBrDate } from '@/lib/format';
 import { PRIORITY_LABELS, PRIORITY_ORDER, STATUS_TRANSITIONS } from '@/lib/constants';
+import { isEligibleAssigneeForArea } from '@/lib/assignment';
 import type { Ticket, User } from '@/db/schema';
 import { EditTicketDialog } from './edit-ticket-dialog';
 import { TicketReminderDialog } from './ticket-reminder-dialog';
@@ -39,7 +40,7 @@ interface TicketActionsProps {
     author: { id: string; displayName: string; username: string } | null;
     assignee: { id: string; displayName: string; username: string } | null;
   };
-  users: Pick<User, 'id' | 'displayName'>[];
+  users: Pick<User, 'id' | 'displayName' | 'role' | 'area'>[];
   currentUserId: string;
   currentUserIsAdmin: boolean;
 }
@@ -201,6 +202,8 @@ export function TicketActions({
 
   const nextStatuses = STATUS_TRANSITIONS[ticket.status] as readonly Ticket['status'][];
   const confirmMeta = confirmStatus ? STATUS_ACTIONS[confirmStatus] : null;
+  const eligibleUsers = users.filter((user) => isEligibleAssigneeForArea(user, ticket.area));
+  const currentUserCanTake = eligibleUsers.some((user) => user.id === currentUserId);
 
   useEffect(() => {
     if (searchParams.get('edit') === '1') setEditOpen(true);
@@ -228,7 +231,7 @@ export function TicketActions({
 
           <TicketReminderDialog ticketCode={ticket.code} />
 
-          {ticket.status === 'aberto' && ticket.assigneeId !== currentUserId && (
+          {ticket.status === 'aberto' && ticket.assigneeId !== currentUserId && currentUserCanTake && (
             <Button
               variant="default"
               size="sm"
@@ -286,7 +289,7 @@ export function TicketActions({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">{copy.tickets.detail.noAssignee}</SelectItem>
-                {users.map((user) => (
+                {eligibleUsers.map((user) => (
                   <SelectItem key={user.id} value={user.id}>
                     {user.displayName}
                   </SelectItem>
@@ -294,7 +297,7 @@ export function TicketActions({
               </SelectContent>
             </Select>
 
-            {ticket.assigneeId !== currentUserId && (
+            {ticket.assigneeId !== currentUserId && currentUserCanTake && (
               <Button
                 variant="ghost"
                 size="sm"

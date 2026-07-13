@@ -74,6 +74,8 @@ export const copy = {
     invalidUser: 'Usuário não encontrado.',
     invalidDate: 'Data inválida.',
     invalidQuickResponse: 'Resposta rápida inválida para esta demanda.',
+    roleAreaMismatch: 'Cargo e área operacional não são compatíveis.',
+    ineligibleAssignee: 'Responsável não elegível para a área da demanda.',
     usernamePattern: 'Use apenas letras minúsculas, números, ponto, hífen ou sublinhado.',
     usernameExists: 'Este usuário já existe.',
     passwordTooShort: 'A senha precisa ter ao menos 10 caracteres.',

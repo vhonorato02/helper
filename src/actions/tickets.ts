@@ -28,7 +28,7 @@ import { isValidSubcategoryAsync } from '@/actions/subcategories';
 import { sendTicketNotification } from '@/lib/email';
 import { nextResolvedAt } from '@/lib/ticket-status';
 import { dispatchNotification } from '@/actions/notifications';
-import { getDefaultAssigneeForArea } from '@/actions/users';
+import { getDefaultAssigneeForArea, getEligibleAssigneeForArea } from '@/actions/users';
 
 const areaSchema = z.enum(['TI', 'MKT', 'PF']);
 const prioritySchema = z.enum(['baixa', 'media', 'alta', 'urgente']);
@@ -169,12 +169,8 @@ export async function createTicket(formData: FormData) {
 
   let activeAssigneeId: string | null = null;
   if (assigneeId) {
-    const [assignee] = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(and(eq(users.id, assigneeId), eq(users.isActive, true)))
-      .limit(1);
-    if (!assignee) return { error: copy.validation.invalidUser };
+    const assignee = await getEligibleAssigneeForArea(assigneeId, area);
+    if (!assignee) return { error: copy.validation.ineligibleAssignee };
     activeAssigneeId = assignee.id;
   } else {
     const defaultAssignee = await getDefaultAssigneeForArea(area);
@@ -371,12 +367,8 @@ async function normalizeFieldValue(
     const parsed = z.string().uuid().safeParse(value);
     if (!parsed.success) return { error: copy.validation.invalidData };
 
-    const [assignee] = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(and(eq(users.id, parsed.data), eq(users.isActive, true)))
-      .limit(1);
-    return assignee ? { value: assignee.id } : { error: copy.validation.invalidUser };
+    const assignee = await getEligibleAssigneeForArea(parsed.data, ticket.area);
+    return assignee ? { value: assignee.id } : { error: copy.validation.ineligibleAssignee };
   }
 
   return { error: copy.validation.invalidField };
@@ -521,6 +513,7 @@ export async function bulkUpdateTickets(input: {
     .select({
       id: tickets.id,
       code: tickets.code,
+      area: tickets.area,
       title: tickets.title,
       status: tickets.status,
       resolvedAt: tickets.resolvedAt,
@@ -605,12 +598,12 @@ export async function bulkUpdateTickets(input: {
     } else {
       const parsedId = z.string().uuid().safeParse(value);
       if (!parsedId.success) return { error: copy.validation.invalidData };
-      const [assignee] = await db
-        .select({ id: users.id, displayName: users.displayName })
-        .from(users)
-        .where(and(eq(users.id, parsedId.data), eq(users.isActive, true)))
-        .limit(1);
-      if (!assignee) return { error: copy.validation.invalidUser };
+
+      const areas = new Set(ticketsToUpdate.map((ticket) => ticket.area));
+      if (areas.size !== 1) return { error: copy.validation.ineligibleAssignee };
+      const [area] = [...areas];
+      const assignee = await getEligibleAssigneeForArea(parsedId.data, area);
+      if (!assignee) return { error: copy.validation.ineligibleAssignee };
       updates = { ...updates, assigneeId: assignee.id };
       historyField = 'responsavel';
       historyNewValue = assignee.displayName;

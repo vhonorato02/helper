@@ -47,12 +47,13 @@ import { getTicketRisk, isRiskVisible } from '@/lib/ticket-risk';
 import { bulkUpdateTickets, exportTicketRows, type TicketRow } from '@/actions/tickets';
 import { SavedViews } from './saved-views';
 import { CSV_BOM, csvDocument } from '@/lib/csv';
+import { isEligibleAssigneeForArea } from '@/lib/assignment';
 
 type ExportTicketRow = Awaited<ReturnType<typeof exportTicketRows>>['rows'][number];
 
 interface Props {
   tickets: TicketRow[];
-  users: { id: string; displayName: string }[];
+  users: { id: string; displayName: string; role: string | null; area: TicketRow['area'] | null }[];
   total: number;
   page: number;
   pageSize: number;
@@ -259,6 +260,12 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
   const totalPages = Math.max(Math.ceil(total / pageSize), 1);
   const pageStart = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const pageEnd = Math.min(page * pageSize, total);
+  const selectedTickets = tickets.filter((ticket) => selected.has(ticket.code));
+  const selectedAreas = new Set(selectedTickets.map((ticket) => ticket.area));
+  const selectedArea = selectedAreas.size === 1 ? selectedTickets[0]?.area : null;
+  const bulkAssigneeUsers = selectedArea
+    ? users.filter((user) => isEligibleAssigneeForArea(user, selectedArea))
+    : [];
 
   const goToPage = (nextPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -797,7 +804,7 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="unassigned">Sem responsável</SelectItem>
-              {users.map((u) => (
+              {bulkAssigneeUsers.map((u) => (
                 <SelectItem key={u.id} value={u.id}>
                   {u.displayName}
                 </SelectItem>

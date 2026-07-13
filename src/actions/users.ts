@@ -4,17 +4,12 @@ import { revalidatePath } from 'next/cache';
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { db } from '@/db';
-import { authEvents, comments, ticketHistory, tickets, users } from '@/db/schema';
+import { areaPrimaryAssignees, authEvents, comments, ticketHistory, tickets, users } from '@/db/schema';
 import { and, asc, count, desc, eq, sql } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { copy } from '@/lib/copy';
-import {
-  roleDefaultArea,
-  USER_ROLE_OPTIONS,
-  type Area,
-  type UserRole,
-} from '@/lib/constants';
+import { USER_ROLE_OPTIONS, type Area, type UserRole } from '@/lib/constants';
 import {
   currentPasswordSchema,
   displayNameSchema,
@@ -23,6 +18,11 @@ import {
   usernameSchema,
 } from '@/lib/validation';
 import { logger } from '@/lib/logger';
+import {
+  normalizeOperationalProfile,
+  PRIMARY_ROLE_BY_AREA,
+  resolveExplicitPrimaryAssignee,
+} from '@/lib/assignment';
 
 async function requireSession() {
   const session = await auth();
@@ -46,6 +46,31 @@ async function ensureUserProfileSchema() {
     await db.execute(sql`
       CREATE INDEX IF NOT EXISTS users_area_role_idx
       ON users (area, role) WHERE is_active = true
+    `);
+    await db.execute(sql`
+      DO $$ BEGIN
+        ALTER TABLE users ADD CONSTRAINT users_role_area_consistency_chk CHECK (
+          role IS NULL
+          OR role NOT IN ('ti', 'marketing', 'por_fora')
+          OR area IS NULL
+          OR (role = 'ti' AND area = 'TI')
+          OR (role = 'marketing' AND area = 'MKT')
+          OR (role = 'por_fora' AND area = 'PF')
+        ) NOT VALID;
+      EXCEPTION WHEN duplicate_object THEN NULL;
+      END $$
+    `);
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS area_primary_assignees (
+        area area PRIMARY KEY,
+        primary_user_id uuid REFERENCES users(id) ON DELETE SET NULL,
+        updated_by_id uuid REFERENCES users(id) ON DELETE SET NULL,
+        updated_at timestamp NOT NULL DEFAULT now()
+      )
+    `);
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS area_primary_assignees_user_idx
+      ON area_primary_assignees (primary_user_id)
     `);
   })();
   return userProfileSchemaPromise;
@@ -156,12 +181,15 @@ export async function createUser(formData: FormData) {
   const available = await ensureUsernameAvailable(parsed.data.username);
   if (!available) return { error: copy.validation.usernameExists };
 
+  const profile = normalizeOperationalProfile(parsed.data);
+  if (!profile.ok) return { error: copy.validation.roleAreaMismatch };
+
   const passwordHash = await bcrypt.hash(parsed.data.password, 12);
   await db.insert(users).values({
     username: parsed.data.username,
     displayName: parsed.data.displayName,
-    role: parsed.data.role || null,
-    area: (parsed.data.area || roleDefaultArea(parsed.data.role)) as Area | null,
+    role: profile.role,
+    area: profile.area,
     avatarUrl: parsed.data.avatarUrl || null,
     passwordHash,
     isAdmin: parsed.data.isAdmin,
@@ -212,13 +240,16 @@ export async function updateUser(formData: FormData) {
     }
   }
 
+  const profile = normalizeOperationalProfile(parsed.data);
+  if (!profile.ok) return { error: copy.validation.roleAreaMismatch };
+
   await db
     .update(users)
     .set({
       username: parsed.data.username,
       displayName: parsed.data.displayName,
-      role: parsed.data.role || null,
-      area: (parsed.data.area || roleDefaultArea(parsed.data.role)) as Area | null,
+      role: profile.role,
+      area: profile.area,
       avatarUrl: parsed.data.avatarUrl || null,
       isAdmin: parsed.data.isAdmin,
       updatedAt: new Date(),
@@ -229,34 +260,54 @@ export async function updateUser(formData: FormData) {
   return { ok: true };
 }
 
-const ROLE_BY_AREA: Record<Area, UserRole> = {
-  TI: 'ti',
-  MKT: 'marketing',
-  PF: 'por_fora',
-};
-
 export async function getDefaultAssigneeForArea(area: Area) {
   await ensureUserProfileSchema();
 
-  const rows = await db
+  const [primary, rows] = await Promise.all([
+    db
+      .select({ primaryUserId: areaPrimaryAssignees.primaryUserId })
+      .from(areaPrimaryAssignees)
+      .where(eq(areaPrimaryAssignees.area, area))
+      .limit(1),
+    db
+      .select({
+        id: users.id,
+        displayName: users.displayName,
+        role: users.role,
+        area: users.area,
+        isActive: users.isActive,
+      })
+      .from(users)
+      .where(eq(users.isActive, true))
+      .orderBy(asc(users.displayName)),
+  ]);
+
+  return resolveExplicitPrimaryAssignee(area, primary[0]?.primaryUserId, rows);
+}
+
+export async function getEligibleAssigneeForArea(userId: string, area: Area) {
+  await ensureUserProfileSchema();
+
+  const [assignee] = await db
     .select({
       id: users.id,
       displayName: users.displayName,
       role: users.role,
       area: users.area,
-      isAdmin: users.isAdmin,
+      isActive: users.isActive,
     })
     .from(users)
-    .where(eq(users.isActive, true))
-    .orderBy(asc(users.displayName));
+    .where(
+      and(
+        eq(users.id, userId),
+        eq(users.isActive, true),
+        eq(users.area, area),
+        eq(users.role, PRIMARY_ROLE_BY_AREA[area]),
+      ),
+    )
+    .limit(1);
 
-  const expectedRole = ROLE_BY_AREA[area];
-  return (
-    rows.find((user) => user.area === area && user.role === expectedRole) ??
-    rows.find((user) => user.area === area) ??
-    rows.find((user) => user.role === expectedRole) ??
-    null
-  );
+  return assignee ?? null;
 }
 
 export async function setUserAdmin(userId: string, isAdmin: boolean) {

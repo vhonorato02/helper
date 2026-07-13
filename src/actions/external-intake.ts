@@ -9,7 +9,7 @@ import { db } from '@/db';
 import { chromebookBookings, ticketHistory, tickets } from '@/db/schema';
 import { confirmChromebookBooking } from '@/actions/chromebooks';
 import { dispatchNotification } from '@/actions/notifications';
-import { getDefaultAssigneeForArea } from '@/actions/users';
+import { getDefaultAssigneeForArea, getEligibleAssigneeForArea } from '@/actions/users';
 import { formatChromebookPeriod } from '@/lib/chromebooks';
 import { AREA_LABELS, PRIORITY_LABELS, STATUS_LABELS } from '@/lib/constants';
 import { copy } from '@/lib/copy';
@@ -203,6 +203,7 @@ export async function startPublicTicket(code: string) {
     .select({
       id: tickets.id,
       code: tickets.code,
+      area: tickets.area,
       title: tickets.title,
       origin: tickets.origin,
       status: tickets.status,
@@ -215,7 +216,10 @@ export async function startPublicTicket(code: string) {
 
   if (!ticket || ticket.origin !== 'Pagina publica') return { error: copy.validation.invalidTicket };
 
-  const nextAssigneeId = ticket.assigneeId ?? user.id;
+  const selfAssignee = ticket.assigneeId ? null : await getEligibleAssigneeForArea(user.id, ticket.area);
+  if (!ticket.assigneeId && !selfAssignee) return { error: copy.validation.ineligibleAssignee };
+
+  const nextAssigneeId = ticket.assigneeId ?? selfAssignee!.id;
   const nextStatus = ticket.status === 'em_andamento' ? ticket.status : 'em_andamento';
   const now = new Date();
 

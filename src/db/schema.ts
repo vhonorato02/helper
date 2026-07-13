@@ -230,6 +230,17 @@ export const notificationPreferences = pgTable('notification_preferences', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+export const areaPrimaryAssignees = pgTable(
+  'area_primary_assignees',
+  {
+    area: areaEnum('area').primaryKey(),
+    primaryUserId: uuid('primary_user_id').references(() => users.id, { onDelete: 'set null' }),
+    updatedById: uuid('updated_by_id').references(() => users.id, { onDelete: 'set null' }),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (t) => [index('area_primary_assignees_user_idx').on(t.primaryUserId)],
+);
+
 export const schedules = pgTable(
   'schedules',
   {
@@ -366,6 +377,21 @@ export const usersRelations = relations(users, ({ many }) => ({
   mentions: many(ticketMentions),
   notifications: many(notifications),
   quickResponses: many(quickResponses),
+  primaryAreaAssignments: many(areaPrimaryAssignees, { relationName: 'primaryAreaAssignee' }),
+  updatedAreaAssignments: many(areaPrimaryAssignees, { relationName: 'areaAssignmentUpdater' }),
+}));
+
+export const areaPrimaryAssigneesRelations = relations(areaPrimaryAssignees, ({ one }) => ({
+  primaryUser: one(users, {
+    fields: [areaPrimaryAssignees.primaryUserId],
+    references: [users.id],
+    relationName: 'primaryAreaAssignee',
+  }),
+  updatedBy: one(users, {
+    fields: [areaPrimaryAssignees.updatedById],
+    references: [users.id],
+    relationName: 'areaAssignmentUpdater',
+  }),
 }));
 
 export const ticketsRelations = relations(tickets, ({ one, many }) => ({
@@ -444,6 +470,7 @@ export const recordingsRelations = relations(recordings, ({ one }) => ({
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+export type AreaPrimaryAssignee = typeof areaPrimaryAssignees.$inferSelect;
 export type Ticket = typeof tickets.$inferSelect;
 export type NewTicket = typeof tickets.$inferInsert;
 export type Comment = typeof comments.$inferSelect;
