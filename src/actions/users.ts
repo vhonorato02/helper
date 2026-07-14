@@ -22,6 +22,7 @@ import {
   normalizeOperationalProfile,
   PRIMARY_ROLE_BY_AREA,
   resolveExplicitPrimaryAssignee,
+  selectEligibleAssigneeForArea,
 } from '@/lib/assignment';
 
 async function requireSession() {
@@ -138,11 +139,53 @@ export async function getUsers() {
     .orderBy(asc(users.displayName));
 }
 
+export async function getAreaPrimaryAssigneeSettings() {
+  await requireAdmin();
+  await ensureUserProfileSchema();
+
+  const [primaryRows, userRows] = await Promise.all([
+    db
+      .select({
+        area: areaPrimaryAssignees.area,
+        primaryUserId: areaPrimaryAssignees.primaryUserId,
+        updatedAt: areaPrimaryAssignees.updatedAt,
+        updatedByName: users.displayName,
+      })
+      .from(areaPrimaryAssignees)
+      .leftJoin(users, eq(areaPrimaryAssignees.updatedById, users.id)),
+    db
+      .select({
+        id: users.id,
+        displayName: users.displayName,
+        role: users.role,
+        area: users.area,
+        isActive: users.isActive,
+      })
+      .from(users)
+      .where(eq(users.isActive, true))
+      .orderBy(asc(users.displayName)),
+  ]);
+
+  return (['TI', 'MKT', 'PF'] as const).map((area) => {
+    const primary = primaryRows.find((row) => row.area === area);
+    return {
+      area,
+      primaryUserId: primary?.primaryUserId ?? null,
+      updatedAt: primary?.updatedAt ?? null,
+      updatedByName: primary?.updatedByName ?? null,
+      eligibleUsers: userRows
+        .filter((user) => selectEligibleAssigneeForArea(user.id, area, userRows))
+        .map((user) => ({ id: user.id, displayName: user.displayName })),
+    };
+  });
+}
+
 const roleSchema = z
   .enum(USER_ROLE_OPTIONS.map((role) => role.value) as [UserRole, ...UserRole[]])
   .optional()
   .or(z.literal(''));
 const areaSchema = z.enum(['TI', 'MKT', 'PF']).optional().or(z.literal(''));
+const requiredAreaSchema = z.enum(['TI', 'MKT', 'PF']);
 const avatarUrlSchema = z
   .string()
   .trim()
@@ -308,6 +351,49 @@ export async function getEligibleAssigneeForArea(userId: string, area: Area) {
     .limit(1);
 
   return assignee ?? null;
+}
+
+const primaryAssigneeSchema = z.object({
+  area: requiredAreaSchema,
+  primaryUserId: z.string().uuid().optional().or(z.literal('')),
+});
+
+export async function setPrimaryAssigneeForArea(formData: FormData) {
+  const currentUser = await requireAdmin();
+  await ensureUserProfileSchema();
+
+  const parsed = primaryAssigneeSchema.safeParse({
+    area: formData.get('area'),
+    primaryUserId: formData.get('primaryUserId') || '',
+  });
+  if (!parsed.success) return { error: copy.validation.invalidData };
+
+  const primaryUserId = parsed.data.primaryUserId || null;
+  if (primaryUserId) {
+    const assignee = await getEligibleAssigneeForArea(primaryUserId, parsed.data.area);
+    if (!assignee) return { error: copy.validation.ineligibleAssignee };
+  }
+
+  const updatedAt = new Date();
+  await db
+    .insert(areaPrimaryAssignees)
+    .values({
+      area: parsed.data.area,
+      primaryUserId,
+      updatedById: currentUser.id,
+      updatedAt,
+    })
+    .onConflictDoUpdate({
+      target: areaPrimaryAssignees.area,
+      set: {
+        primaryUserId,
+        updatedById: currentUser.id,
+        updatedAt,
+      },
+    });
+
+  revalidateUserSurfaces();
+  return { ok: true };
 }
 
 export async function setUserAdmin(userId: string, isAdmin: boolean) {

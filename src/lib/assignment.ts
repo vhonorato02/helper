@@ -57,6 +57,15 @@ export function resolveExplicitPrimaryAssignee<T extends AreaAssigneeCandidate>(
   return candidate && isUserEnabledForArea(candidate, area) ? candidate : null;
 }
 
+export function selectEligibleAssigneeForArea<T extends AreaAssigneeCandidate>(
+  userId: string,
+  area: Area,
+  candidates: T[],
+) {
+  const candidate = candidates.find((user) => user.id === userId);
+  return candidate && isUserEnabledForArea(candidate, area) ? candidate : null;
+}
+
 export function pickPrimaryAssigneeForArea<T extends AreaAssigneeCandidate>(
   users: T[],
   area: Area,

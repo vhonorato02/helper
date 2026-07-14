@@ -4,6 +4,7 @@ import {
   isUserEnabledForArea,
   normalizeOperationalProfile,
   resolveExplicitPrimaryAssignee,
+  selectEligibleAssigneeForArea,
   type AreaAssigneeCandidate,
 } from '@/lib/assignment';
 
@@ -49,6 +50,14 @@ describe('area assignment rules', () => {
     assert.equal(resolveExplicitPrimaryAssignee('TI', 'mkt-primary', users), null);
     assert.equal(resolveExplicitPrimaryAssignee('TI', 'inactive-ti', users), null);
     assert.equal(resolveExplicitPrimaryAssignee('TI', 'legacy-contradictory', users), null);
+  });
+
+  it('valida seleção administrativa de responsável primário pela mesma regra de domínio', () => {
+    assert.equal(selectEligibleAssigneeForArea('ti-primary', 'TI', users)?.id, 'ti-primary');
+    assert.equal(selectEligibleAssigneeForArea('mkt-primary', 'TI', users), null);
+    assert.equal(selectEligibleAssigneeForArea('inactive-ti', 'TI', users), null);
+    assert.equal(selectEligibleAssigneeForArea('legacy-contradictory', 'TI', users), null);
+    assert.equal(selectEligibleAssigneeForArea('missing', 'TI', users), null);
   });
 
   it('não grava combinações novas de cargo e área contraditórias silenciosamente', () => {

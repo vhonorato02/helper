@@ -1,10 +1,11 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { Cog, Users } from 'lucide-react';
-import { getUsers } from '@/actions/users';
+import { getAreaPrimaryAssigneeSettings, getUsers } from '@/actions/users';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserList } from './user-list';
 import { CreateUserForm } from './create-user-form';
+import { PrimaryAssigneeSettings } from './primary-assignee-settings';
 import { SystemTools } from './system-tools';
 import { copy } from '@/lib/copy';
 
@@ -18,7 +19,10 @@ export default async function ConfiguracoesPage() {
   const session = await auth();
   if (!session?.user || !session.user.isAdmin) redirect('/');
 
-  const users = await getUsers();
+  const [users, primaryAssigneeSettings] = await Promise.all([
+    getUsers(),
+    getAreaPrimaryAssigneeSettings(),
+  ]);
   const currentUser = session.user;
 
   return (
@@ -59,13 +63,18 @@ export default async function ConfiguracoesPage() {
           </section>
 
           <section>
-            <div className="mb-3">
-              <h2 className="text-base font-semibold">{copy.users.page.addTitle}</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {copy.users.page.addDescription}
-              </p>
+            <div className="space-y-6">
+              <div>
+                <div className="mb-3">
+                  <h2 className="text-base font-semibold">{copy.users.page.addTitle}</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {copy.users.page.addDescription}
+                  </p>
+                </div>
+                <CreateUserForm />
+              </div>
+              <PrimaryAssigneeSettings settings={primaryAssigneeSettings} />
             </div>
-            <CreateUserForm />
           </section>
         </TabsContent>
 

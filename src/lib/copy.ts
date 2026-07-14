@@ -544,6 +544,16 @@ export const copy = {
       description: 'Atualize nome, identificador e permissão.',
       submit: 'Salvar usuário',
     },
+    primaryAssignee: {
+      title: 'Responsável primário',
+      description:
+        'Define a atribuição automática por área. Apenas usuários ativos com cargo e área compatíveis aparecem aqui.',
+      areaLabel: (area: string) => `Área ${area}`,
+      none: 'Sem responsável automático',
+      notConfigured: 'Nenhuma configuração auditada.',
+      updatedBy: (name: string) => `Última alteração por ${name}.`,
+      saved: (area: string) => `Responsável primário de ${area} atualizado.`,
+    },
     errors: {
       cannotDeactivateSelf: 'Você não pode desativar a própria conta.',
       cannotDeleteSelf: 'Você não pode excluir a própria conta.',
