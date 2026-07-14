@@ -498,8 +498,22 @@ export const copy = {
     form: {
       username: 'Usuário',
       displayName: 'Nome exibido',
+      role: 'Cargo',
+      area: 'Área operacional',
       password: 'Senha provisória',
       isAdmin: 'Conceder acesso de administrador',
+      noRole: 'Sem cargo',
+      noArea: 'Sem área operacional',
+      automaticAreaLabel: (area: string) => `${area} (definida pelo cargo)`,
+      operationalProfile: {
+        legend: 'Perfil operacional do usuário',
+        autoArea: (area: string) =>
+          `Este cargo direciona a pessoa para ${area}. A área entra na atribuição automática de demandas e na lista de responsáveis primários.`,
+        manualArea: (area: string) =>
+          `A pessoa fica vinculada a ${area}, mas só aparece como responsável primário quando cargo e área forem compatíveis.`,
+        noArea:
+          'Sem área operacional, a pessoa não entra na atribuição automática nem na lista de responsáveis primários.',
+      },
       placeholders: {
         username: 'nome.sobrenome',
         displayName: 'Ex: Natália Costa',
@@ -583,6 +597,12 @@ export const copy = {
       roleTitle: 'Cargo',
       areaTitle: 'Área operacional',
       permissionsTitle: 'Permissões',
+      primaryAssigneeTitle: 'Responsável primário',
+      primaryAssigneeNone: 'Nenhum responsável primário definido para sua área.',
+      primaryAssigneeNoArea: 'Sua conta ainda não tem área operacional definida.',
+      primaryAssigneeYou: (area: string) => `Você é o responsável primário de ${area}.`,
+      primaryAssigneePerson: (name: string, area: string) =>
+        `${name} recebe automaticamente as novas demandas de ${area}.`,
       passwordTitle: 'Senha',
       passwordDescription: 'Atualize sua senha periodicamente para manter a conta segura.',
       changePassword: 'Alterar senha',

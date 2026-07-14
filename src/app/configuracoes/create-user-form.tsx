@@ -7,9 +7,9 @@ import { Copy, Eye, EyeOff, Loader2, Plus, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { OperationalProfileFields } from '@/components/users/operational-profile-fields';
 import { createUser } from '@/actions/users';
 import { copy } from '@/lib/copy';
-import { AREA_OPTIONS, USER_ROLE_OPTIONS } from '@/lib/constants';
 
 function generateTemporaryPassword() {
   const groups = [
@@ -40,6 +40,7 @@ export function CreateUserForm() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [showPassword, setShowPassword] = useState(false);
+  const [profileResetKey, setProfileResetKey] = useState(0);
   const [error, setError] = useState('');
   const formRef = useRef<HTMLFormElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -73,6 +74,7 @@ export function CreateUserForm() {
       const name = String(formData.get('displayName') ?? copy.users.roles.user);
       toast.success(copy.users.form.added(name));
       formRef.current?.reset();
+      setProfileResetKey((value) => value + 1);
       setShowPassword(false);
       router.refresh();
     });
@@ -105,42 +107,7 @@ export function CreateUserForm() {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="role">Cargo</Label>
-          <select
-            id="role"
-            name="role"
-            defaultValue=""
-            disabled={isPending}
-            className="flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/55"
-          >
-            <option value="">Sem cargo</option>
-            {USER_ROLE_OPTIONS.map((role) => (
-              <option key={role.value} value={role.value}>
-                {role.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="area">Área padrão</Label>
-          <select
-            id="area"
-            name="area"
-            defaultValue=""
-            disabled={isPending}
-            className="flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/55"
-          >
-            <option value="">Inferir pelo cargo</option>
-            {AREA_OPTIONS.map((area) => (
-              <option key={area.value} value={area.value}>
-                {area.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+      <OperationalProfileFields idPrefix="create-user" disabled={isPending} resetKey={profileResetKey} />
 
       <div className="space-y-1.5">
         <Label htmlFor="avatarUrl">Avatar</Label>

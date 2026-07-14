@@ -1,7 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { BellRing, BriefcaseBusiness, KeyRound, MapPinned, ShieldCheck, User as UserIcon } from 'lucide-react';
+import {
+  BellRing,
+  BriefcaseBusiness,
+  KeyRound,
+  MapPinned,
+  ShieldCheck,
+  User as UserIcon,
+  UserCheck,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +31,8 @@ interface AccountSettingsProps {
   area: Area | null;
   avatarUrl?: string | null;
   isAdmin: boolean;
+  primaryAssigneeName?: string | null;
+  isPrimaryAssignee?: boolean;
   notificationPreferences: NotificationPreferences;
 }
 
@@ -38,12 +48,21 @@ export function AccountSettings({
   area,
   avatarUrl,
   isAdmin,
+  primaryAssigneeName,
+  isPrimaryAssignee = false,
   notificationPreferences,
 }: AccountSettingsProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const name = displayName || copy.dashboard.greeting.fallbackName;
   const roleLabel = isKnownRole(role) ? USER_ROLE_LABELS[role] : copy.common.none;
   const areaLabel = area ? AREA_LABELS[area] : copy.common.none;
+  const primaryAssigneeDescription = area
+    ? isPrimaryAssignee
+      ? copy.users.account.primaryAssigneeYou(AREA_LABELS[area])
+      : primaryAssigneeName
+        ? copy.users.account.primaryAssigneePerson(primaryAssigneeName, AREA_LABELS[area])
+        : copy.users.account.primaryAssigneeNone
+    : copy.users.account.primaryAssigneeNoArea;
 
   return (
     <>
@@ -75,7 +94,7 @@ export function AccountSettings({
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <section className="surface-panel rounded-lg p-4">
           <div className="flex items-start gap-3">
             <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted">
@@ -122,6 +141,18 @@ export function AccountSettings({
               <p className="mt-1 text-sm text-muted-foreground">
                 {isAdmin ? copy.users.roles.admin : copy.users.roles.user}
               </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="surface-panel rounded-lg p-4 md:col-span-2 xl:col-span-1">
+          <div className="flex items-start gap-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted">
+              <UserCheck className="size-4 text-muted-foreground" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold">{copy.users.account.primaryAssigneeTitle}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{primaryAssigneeDescription}</p>
             </div>
           </div>
         </section>

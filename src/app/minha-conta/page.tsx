@@ -1,7 +1,9 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { getNotificationPreferences } from '@/actions/notifications';
+import { getDefaultAssigneeForArea } from '@/actions/users';
 import { AccountSettings } from '@/app/configuracoes/account-settings';
+import type { Area } from '@/lib/constants';
 import { copy } from '@/lib/copy';
 
 export const dynamic = 'force-dynamic';
@@ -14,8 +16,12 @@ export default async function MinhaContaPage() {
   const session = await auth();
   if (!session?.user) redirect('/login');
 
-  const notificationPreferences = await getNotificationPreferences();
   const currentUser = session.user;
+  const currentArea = currentUser.area as Area | null;
+  const [notificationPreferences, primaryAssignee] = await Promise.all([
+    getNotificationPreferences(),
+    currentArea ? getDefaultAssigneeForArea(currentArea) : Promise.resolve(null),
+  ]);
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -34,9 +40,11 @@ export default async function MinhaContaPage() {
         username={currentUser.username}
         displayName={currentUser.name ?? ''}
         role={currentUser.role ?? null}
-        area={currentUser.area ?? null}
+        area={currentArea}
         avatarUrl={currentUser.avatarUrl ?? null}
         isAdmin={currentUser.isAdmin}
+        primaryAssigneeName={primaryAssignee?.displayName ?? null}
+        isPrimaryAssignee={primaryAssignee?.id === currentUser.id}
         notificationPreferences={notificationPreferences}
       />
     </div>
