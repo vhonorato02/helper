@@ -1,12 +1,10 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
-import { Cog, Shield, Users } from 'lucide-react';
+import { Cog, Users } from 'lucide-react';
 import { getUsers } from '@/actions/users';
-import { getNotificationPreferences } from '@/actions/notifications';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserList } from './user-list';
 import { CreateUserForm } from './create-user-form';
-import { AccountSettings } from './account-settings';
 import { SystemTools } from './system-tools';
 import { copy } from '@/lib/copy';
 
@@ -20,10 +18,7 @@ export default async function ConfiguracoesPage() {
   const session = await auth();
   if (!session?.user || !session.user.isAdmin) redirect('/');
 
-  const [users, notificationPreferences] = await Promise.all([
-    getUsers(),
-    getNotificationPreferences(),
-  ]);
+  const users = await getUsers();
   const currentUser = session.user;
 
   return (
@@ -43,10 +38,6 @@ export default async function ConfiguracoesPage() {
           <TabsTrigger value="usuarios" className="gap-1.5">
             <Users className="size-3.5" />
             {copy.users.page.usersTab}
-          </TabsTrigger>
-          <TabsTrigger value="minha-conta" className="gap-1.5">
-            <Shield className="size-3.5" />
-            {copy.users.page.accountTab}
           </TabsTrigger>
           <TabsTrigger value="sistema" className="gap-1.5">
             <Cog className="size-3.5" />
@@ -76,15 +67,6 @@ export default async function ConfiguracoesPage() {
             </div>
             <CreateUserForm />
           </section>
-        </TabsContent>
-
-        <TabsContent value="minha-conta" className="space-y-6 mt-6">
-          <AccountSettings
-            userId={currentUser.id}
-            displayName={currentUser.name ?? ''}
-            isAdmin={currentUser.isAdmin}
-            notificationPreferences={notificationPreferences}
-          />
         </TabsContent>
 
         <TabsContent value="sistema" className="space-y-6 mt-6">

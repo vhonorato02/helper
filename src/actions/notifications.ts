@@ -297,6 +297,7 @@ export async function updateNotificationPreferences(formData: FormData) {
     });
 
   revalidatePath('/configuracoes');
+  revalidatePath('/minha-conta');
   revalidatePath('/notificacoes');
   return { ok: true };
 }

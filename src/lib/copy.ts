@@ -35,6 +35,7 @@ export const copy = {
     dashboard: 'Painel',
     tickets: 'Demandas',
     kanban: 'Quadro',
+    account: 'Minha conta',
     settings: 'Configurações',
   },
   auth: {
@@ -103,6 +104,7 @@ export const copy = {
       publicRequests: 'Solicitações públicas',
       chromebooks: 'Chromebooks',
       activity: 'Atividade',
+      account: 'Minha conta',
       settings: 'Configurações',
     },
     search: 'Buscar',
@@ -137,6 +139,7 @@ export const copy = {
       team: 'Equipe',
       publicRequests: 'Solicitações públicas',
       chromebooks: 'Controle de Chromebooks',
+      account: 'Minha conta',
       settings: 'Configurações',
     },
     hints: {
@@ -151,6 +154,7 @@ export const copy = {
       publicRequests: 'publica publico solicitacoes pedidos escolas entrada externa triagem',
       team: 'equipe carga responsavel atribuicao pessoas usuarios fila',
       chromebooks: 'chromebook chromebooks computadores emprestimo agenda sala reserva',
+      account: 'minha conta perfil senha seguranca preferencias notificacoes integracoes',
       quickResponses: 'respostas prontas rapidas padrao modelo comentario atendimento base conhecimento',
     },
   },
@@ -474,9 +478,8 @@ export const copy = {
   users: {
     page: {
       title: 'Configurações',
-      description: 'Gerencie usuários, permissões e a sua conta.',
+      description: 'Administre usuários, permissões e ferramentas do sistema.',
       usersTab: 'Usuários',
-      accountTab: 'Minha conta',
       teamTitle: (total: number) => `Equipe (${total})`,
       teamDescription: 'Acesso, permissões, senha e remoção segura.',
       addTitle: 'Adicionar novo usuário',
@@ -562,9 +565,28 @@ export const copy = {
       userUpdated: (name: string) => `Senha de ${name} atualizada.`,
     },
     account: {
+      pageTitle: 'Minha conta',
+      pageDescription:
+        'Veja sua identidade operacional, preferências de notificação, segurança e integrações.',
+      identityTitle: 'Identidade',
+      identityDescription: 'Nome e usuário usados no histórico, comentários e atribuições.',
+      roleTitle: 'Cargo',
+      areaTitle: 'Área operacional',
+      permissionsTitle: 'Permissões',
       passwordTitle: 'Senha',
       passwordDescription: 'Atualize sua senha periodicamente para manter a conta segura.',
       changePassword: 'Alterar senha',
+      integrationsTitle: 'Integrações',
+      integrationsDescription: ({
+        emailEnabled,
+        browserEnabled,
+      }: {
+        emailEnabled: boolean;
+        browserEnabled: boolean;
+      }) =>
+        `E-mail ${emailEnabled ? 'ativo' : 'inativo'} · navegador/PWA ${
+          browserEnabled ? 'ativo' : 'inativo'
+        }.`,
     },
   },
   api: {

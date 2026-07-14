@@ -1,13 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { KeyRound, ShieldCheck, User as UserIcon } from 'lucide-react';
+import { BellRing, BriefcaseBusiness, KeyRound, MapPinned, ShieldCheck, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ChangePasswordDialog } from '@/components/change-password-dialog';
 import { copy } from '@/lib/copy';
 import { initials } from '@/lib/format';
+import { AREA_LABELS, USER_ROLE_LABELS, type Area, type UserRole } from '@/lib/constants';
+import { BrowserNotificationPermissionPanel } from '@/components/notifications/browser-notification-agent';
 import {
   NotificationPreferencesForm,
 } from './notification-preferences-form';
@@ -15,31 +17,47 @@ import type { NotificationPreferences } from '@/actions/notifications';
 
 interface AccountSettingsProps {
   userId: string;
+  username: string;
   displayName: string;
+  role: string | null;
+  area: Area | null;
+  avatarUrl?: string | null;
   isAdmin: boolean;
   notificationPreferences: NotificationPreferences;
 }
 
+function isKnownRole(value: string | null | undefined): value is UserRole {
+  return Boolean(value && value in USER_ROLE_LABELS);
+}
+
 export function AccountSettings({
   userId,
+  username,
   displayName,
+  role,
+  area,
+  avatarUrl,
   isAdmin,
   notificationPreferences,
 }: AccountSettingsProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const name = displayName || copy.dashboard.greeting.fallbackName;
+  const roleLabel = isKnownRole(role) ? USER_ROLE_LABELS[role] : copy.common.none;
+  const areaLabel = area ? AREA_LABELS[area] : copy.common.none;
 
   return (
     <>
       <div className="surface-panel rounded-lg p-5">
         <div className="flex items-center gap-4">
           <Avatar className="size-12">
+            {avatarUrl && <AvatarImage src={avatarUrl} alt="" />}
             <AvatarFallback className="bg-primary/10 text-primary font-semibold">
               {initials(name)}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
             <p className="font-semibold">{name}</p>
+            <p className="text-sm text-muted-foreground">@{username}</p>
             <div className="flex items-center gap-1.5 mt-1">
               {isAdmin ? (
                 <Badge variant="default" className="gap-1">
@@ -55,6 +73,58 @@ export function AccountSettings({
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-4">
+        <section className="surface-panel rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted">
+              <UserIcon className="size-4 text-muted-foreground" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold">{copy.users.account.identityTitle}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{copy.users.account.identityDescription}</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="surface-panel rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted">
+              <BriefcaseBusiness className="size-4 text-muted-foreground" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold">{copy.users.account.roleTitle}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{roleLabel}</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="surface-panel rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted">
+              <MapPinned className="size-4 text-muted-foreground" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold">{copy.users.account.areaTitle}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{areaLabel}</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="surface-panel rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted">
+              <ShieldCheck className="size-4 text-muted-foreground" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold">{copy.users.account.permissionsTitle}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {isAdmin ? copy.users.roles.admin : copy.users.roles.user}
+              </p>
+            </div>
+          </div>
+        </section>
       </div>
 
       <div className="surface-panel rounded-lg p-5">
@@ -76,6 +146,24 @@ export function AccountSettings({
         </div>
       </div>
 
+      <div className="surface-panel rounded-lg p-5">
+        <div className="flex items-start gap-3">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted">
+            <BellRing className="size-4 text-muted-foreground" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold">{copy.users.account.integrationsTitle}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {copy.users.account.integrationsDescription({
+                emailEnabled: notificationPreferences.emailEnabled,
+                browserEnabled: notificationPreferences.browserEnabled,
+              })}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <BrowserNotificationPermissionPanel />
       <NotificationPreferencesForm preferences={notificationPreferences} />
 
       <ChangePasswordDialog

@@ -19,6 +19,7 @@ import {
   Plus,
   Search,
   Settings,
+  UserRound,
   UsersRound,
   X,
 } from 'lucide-react';
@@ -236,6 +237,12 @@ export function Nav({ user, users }: NavProps) {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/minha-conta">
+                    <UserRound className="size-4" />
+                    {copy.nav.links.account}
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => setPasswordDialogOpen(true)}>
                   <KeyRound className="size-4" />
                   {copy.auth.menu.changeOwnPassword}
@@ -329,6 +336,14 @@ export function Nav({ user, users }: NavProps) {
                 {label}
               </Link>
             ))}
+            <Link
+              href="/minha-conta"
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-accent/60"
+            >
+              <UserRound className="size-4" />
+              {copy.nav.links.account}
+            </Link>
             <button
               onClick={() => {
                 setMobileOpen(false);

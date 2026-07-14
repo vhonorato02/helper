@@ -65,6 +65,13 @@ const NAV_ITEMS = [
     admin: false,
     keywords: copy.commandPalette.keywords.chromebooks,
   },
+  {
+    label: copy.commandPalette.actions.account,
+    href: '/minha-conta',
+    icon: UserRound,
+    admin: false,
+    keywords: copy.commandPalette.keywords.account,
+  },
   { label: copy.commandPalette.actions.settings, href: '/configuracoes', icon: Settings, admin: true },
 ] as const;
 
