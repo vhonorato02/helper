@@ -5,7 +5,7 @@ import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { db } from '@/db';
 import { areaPrimaryAssignees, authEvents, comments, ticketHistory, tickets, users } from '@/db/schema';
-import { and, asc, count, desc, eq, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { copy } from '@/lib/copy';
@@ -37,46 +37,6 @@ async function requireAdmin() {
   return user;
 }
 
-let userProfileSchemaPromise: Promise<void> | null = null;
-
-async function ensureUserProfileSchema() {
-  userProfileSchemaPromise ??= (async () => {
-    await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS role text`);
-    await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS area area`);
-    await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url text`);
-    await db.execute(sql`
-      CREATE INDEX IF NOT EXISTS users_area_role_idx
-      ON users (area, role) WHERE is_active = true
-    `);
-    await db.execute(sql`
-      DO $$ BEGIN
-        ALTER TABLE users ADD CONSTRAINT users_role_area_consistency_chk CHECK (
-          role IS NULL
-          OR role NOT IN ('ti', 'marketing', 'por_fora')
-          OR area IS NULL
-          OR (role = 'ti' AND area = 'TI')
-          OR (role = 'marketing' AND area = 'MKT')
-          OR (role = 'por_fora' AND area = 'PF')
-        ) NOT VALID;
-      EXCEPTION WHEN duplicate_object THEN NULL;
-      END $$
-    `);
-    await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS area_primary_assignees (
-        area area PRIMARY KEY,
-        primary_user_id uuid REFERENCES users(id) ON DELETE SET NULL,
-        updated_by_id uuid REFERENCES users(id) ON DELETE SET NULL,
-        updated_at timestamp NOT NULL DEFAULT now()
-      )
-    `);
-    await db.execute(sql`
-      CREATE INDEX IF NOT EXISTS area_primary_assignees_user_idx
-      ON area_primary_assignees (primary_user_id)
-    `);
-  })();
-  return userProfileSchemaPromise;
-}
-
 async function getActiveAdminCount() {
   const [result] = await db
     .select({ total: count() })
@@ -105,7 +65,6 @@ function revalidateUserSurfaces() {
 export async function getActiveUsersForAssignment() {
   const session = await auth();
   if (!session?.user?.id) redirect('/login');
-  await ensureUserProfileSchema();
 
   return db
     .select({
@@ -122,7 +81,6 @@ export async function getActiveUsersForAssignment() {
 
 export async function getUsers() {
   await requireAdmin();
-  await ensureUserProfileSchema();
   return db
     .select({
       id: users.id,
@@ -141,7 +99,6 @@ export async function getUsers() {
 
 export async function getAreaPrimaryAssigneeSettings() {
   await requireAdmin();
-  await ensureUserProfileSchema();
 
   const [primaryRows, userRows] = await Promise.all([
     db
@@ -206,7 +163,6 @@ const createUserSchema = z.object({
 
 export async function createUser(formData: FormData) {
   await requireAdmin();
-  await ensureUserProfileSchema();
 
   const parsed = createUserSchema.safeParse({
     username: formData.get('username'),
@@ -255,7 +211,6 @@ const updateUserSchema = z.object({
 
 export async function updateUser(formData: FormData) {
   const currentUser = await requireAdmin();
-  await ensureUserProfileSchema();
 
   const parsed = updateUserSchema.safeParse({
     userId: formData.get('userId'),
@@ -304,8 +259,6 @@ export async function updateUser(formData: FormData) {
 }
 
 export async function getDefaultAssigneeForArea(area: Area) {
-  await ensureUserProfileSchema();
-
   const [primary, rows] = await Promise.all([
     db
       .select({ primaryUserId: areaPrimaryAssignees.primaryUserId })
@@ -329,8 +282,6 @@ export async function getDefaultAssigneeForArea(area: Area) {
 }
 
 export async function getEligibleAssigneeForArea(userId: string, area: Area) {
-  await ensureUserProfileSchema();
-
   const [assignee] = await db
     .select({
       id: users.id,
@@ -360,7 +311,6 @@ const primaryAssigneeSchema = z.object({
 
 export async function setPrimaryAssigneeForArea(formData: FormData) {
   const currentUser = await requireAdmin();
-  await ensureUserProfileSchema();
 
   const parsed = primaryAssigneeSchema.safeParse({
     area: formData.get('area'),
