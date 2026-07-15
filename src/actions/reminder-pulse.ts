@@ -34,22 +34,6 @@ async function requireAuth() {
   return session.user;
 }
 
-let pulseSchemaPromise: Promise<void> | null = null;
-
-async function ensurePulseSchema() {
-  pulseSchemaPromise ??= (async () => {
-    await db.execute(sql`
-      ALTER TABLE schedules
-      ADD COLUMN IF NOT EXISTS reminder_minutes_before integer NOT NULL DEFAULT 30
-    `);
-    await db.execute(sql`
-      ALTER TABLE schedules
-      ADD COLUMN IF NOT EXISTS repeat_reminder boolean NOT NULL DEFAULT true
-    `);
-  })();
-  return pulseSchemaPromise;
-}
-
 function priorityFor(dueAt: Date, now: Date): ReminderPulseItem['priority'] {
   const minutes = Math.round((dueAt.getTime() - now.getTime()) / 60_000);
   if (minutes < 0) return 'overdue';
@@ -70,7 +54,6 @@ function areaLabel(area: Area | null) {
 }
 
 async function loadOperationalReminders(user: Awaited<ReturnType<typeof requireAuth>>, limit = 20) {
-  await ensurePulseSchema();
   const now = new Date();
   const horizon = new Date(now.getTime() + 24 * 60 * 60 * 1000);
   const recentlyPast = new Date(now.getTime() - 6 * 60 * 60 * 1000);
@@ -231,7 +214,6 @@ export async function getOperationalReminders(limit = 16) {
 
 export async function getBrowserNotificationPulse() {
   const user = await requireAuth();
-  await ensurePulseSchema();
   const preferences = await getNotificationPreferences();
 
   if (!preferences.browserEnabled) {

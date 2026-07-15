@@ -9,7 +9,6 @@ import { and, asc, desc, eq, isNull, ne, or } from 'drizzle-orm';
 import { z } from 'zod';
 import { copy } from '@/lib/copy';
 import type { Area } from '@/lib/constants';
-import { ensureQuickResponsesSchema } from '@/lib/quick-responses-schema';
 
 const areaSchema = z.enum(['TI', 'MKT', 'PF']);
 const idSchema = z.string().uuid();
@@ -46,7 +45,6 @@ function revalidateQuickResponseSurfaces() {
 }
 
 async function hasActiveDuplicate(title: string, area: Area | null, ignoreId?: string) {
-  await ensureQuickResponsesSchema();
   const conditions = [
     eq(quickResponses.title, title),
     eq(quickResponses.isActive, true),
@@ -65,7 +63,6 @@ async function hasActiveDuplicate(title: string, area: Area | null, ignoreId?: s
 
 export async function getQuickResponses(includeInactive = false) {
   await requireAuth();
-  await ensureQuickResponsesSchema();
 
   return db
     .select({
@@ -88,7 +85,6 @@ export async function getQuickResponses(includeInactive = false) {
 
 export async function getActiveQuickResponsesForTicket(ticketCode: string) {
   await requireAuth();
-  await ensureQuickResponsesSchema();
   const parsed = z.string().trim().min(1).max(24).safeParse(ticketCode);
   if (!parsed.success) return [];
 
@@ -119,7 +115,6 @@ export async function getActiveQuickResponsesForTicket(ticketCode: string) {
 
 export async function createQuickResponse(formData: FormData) {
   const user = await requireAuth();
-  await ensureQuickResponsesSchema();
 
   const parsed = quickResponseFormSchema.safeParse({
     area: formData.get('area') ?? null,
@@ -145,7 +140,6 @@ export async function createQuickResponse(formData: FormData) {
 
 export async function updateQuickResponse(id: string, formData: FormData) {
   const user = await requireAuth();
-  await ensureQuickResponsesSchema();
   const parsedId = idSchema.safeParse(id);
   const parsed = quickResponseFormSchema.safeParse({
     area: formData.get('area') ?? null,
@@ -183,7 +177,6 @@ export async function updateQuickResponse(id: string, formData: FormData) {
 
 export async function toggleQuickResponseActive(id: string) {
   const user = await requireAuth();
-  await ensureQuickResponsesSchema();
   const parsedId = idSchema.safeParse(id);
   if (!parsedId.success) return { error: copy.validation.invalidData };
 

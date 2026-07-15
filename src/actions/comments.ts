@@ -13,7 +13,6 @@ import { extractMentions } from '@/lib/mentions';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { dispatchNotification } from '@/actions/notifications';
 import { isQuickResponseAvailableForTicket } from '@/lib/quick-responses';
-import { ensureQuickResponsesSchema } from '@/lib/quick-responses-schema';
 
 const COMMENT_RATE_LIMIT = { limit: 30, windowMs: 60_000, lockoutMs: 60_000 };
 
@@ -99,7 +98,6 @@ export async function addComment(ticketCode: string, formData: FormData) {
 
   let selectedQuickResponse: { id: string; title: string; area: typeof ticket.area | null } | null = null;
   if (parsed.data.quickResponseId) {
-    await ensureQuickResponsesSchema();
     const [response] = await db
       .select({
         id: quickResponses.id,

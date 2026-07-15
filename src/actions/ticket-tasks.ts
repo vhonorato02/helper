@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { and, asc, eq, sql } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { auth } from '@/auth';
 import { db } from '@/db';
@@ -12,35 +12,6 @@ import { copy } from '@/lib/copy';
 
 const taskTitleSchema = z.string().trim().min(1).max(160);
 const taskIdSchema = z.string().uuid();
-
-let ticketTaskSchemaPromise: Promise<void> | null = null;
-
-async function ensureTicketTaskSchema() {
-  ticketTaskSchemaPromise ??= (async () => {
-    await db.execute(sql`CREATE EXTENSION IF NOT EXISTS pgcrypto`);
-    await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS ticket_tasks (
-        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-        ticket_id uuid NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
-        title text NOT NULL,
-        is_done boolean NOT NULL DEFAULT false,
-        author_id uuid REFERENCES users(id) ON DELETE SET NULL,
-        completed_at timestamp,
-        created_at timestamp NOT NULL DEFAULT now(),
-        updated_at timestamp NOT NULL DEFAULT now()
-      )
-    `);
-    await db.execute(sql`
-      CREATE INDEX IF NOT EXISTS ticket_tasks_ticket_idx
-      ON ticket_tasks (ticket_id, is_done, created_at)
-    `);
-    await db.execute(sql`
-      CREATE INDEX IF NOT EXISTS ticket_tasks_author_idx
-      ON ticket_tasks (author_id)
-    `);
-  })();
-  return ticketTaskSchemaPromise;
-}
 
 async function requireAuth() {
   const session = await auth();
@@ -80,7 +51,6 @@ async function recordTaskHistory(
 
 export async function getTicketTasks(code: string) {
   await requireAuth();
-  await ensureTicketTaskSchema();
 
   const ticket = await getTaskTicket(code);
   if (!ticket) return [];
@@ -104,7 +74,6 @@ export type TicketTaskRow = Awaited<ReturnType<typeof getTicketTasks>>[number];
 
 export async function createTicketTask(code: string, formData: FormData) {
   const user = await requireAuth();
-  await ensureTicketTaskSchema();
 
   const parsed = taskTitleSchema.safeParse(formData.get('title'));
   if (!parsed.success) return { error: copy.validation.invalidData };
@@ -140,7 +109,6 @@ export async function createTicketTask(code: string, formData: FormData) {
 
 export async function toggleTicketTask(id: string, done: boolean) {
   const user = await requireAuth();
-  await ensureTicketTaskSchema();
 
   const parsed = taskIdSchema.safeParse(id);
   if (!parsed.success) return { error: copy.validation.invalidData };
@@ -191,7 +159,6 @@ export async function toggleTicketTask(id: string, done: boolean) {
 
 export async function deleteTicketTask(id: string) {
   const user = await requireAuth();
-  await ensureTicketTaskSchema();
 
   const parsed = taskIdSchema.safeParse(id);
   if (!parsed.success) return { error: copy.validation.invalidData };

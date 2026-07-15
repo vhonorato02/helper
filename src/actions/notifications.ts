@@ -14,56 +14,6 @@ async function requireAuth() {
   return session.user;
 }
 
-let notificationSchemaPromise: Promise<void> | null = null;
-
-async function ensureNotificationSchema() {
-  notificationSchemaPromise ??= (async () => {
-    await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS notifications (
-        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-        user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        type text NOT NULL,
-        title text NOT NULL,
-        body text,
-        link text,
-        ticket_id uuid REFERENCES tickets(id) ON DELETE CASCADE,
-        read_at timestamp,
-        created_at timestamp NOT NULL DEFAULT now()
-      )
-    `);
-    await db.execute(sql`
-      CREATE INDEX IF NOT EXISTS notifications_user_unread_idx
-      ON notifications (user_id, read_at)
-    `);
-    await db.execute(sql`
-      CREATE INDEX IF NOT EXISTS notifications_created_idx
-      ON notifications (created_at)
-    `);
-    await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS notification_preferences (
-        user_id uuid PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-        ticket_created boolean NOT NULL DEFAULT true,
-        ticket_status boolean NOT NULL DEFAULT true,
-        comment_mention boolean NOT NULL DEFAULT true,
-        daily_digest boolean NOT NULL DEFAULT true,
-        email_enabled boolean NOT NULL DEFAULT true,
-        browser_enabled boolean NOT NULL DEFAULT true,
-        reminder_lead_minutes integer NOT NULL DEFAULT 30,
-        updated_at timestamp NOT NULL DEFAULT now()
-      )
-    `);
-    await db.execute(sql`
-      ALTER TABLE notification_preferences
-      ADD COLUMN IF NOT EXISTS browser_enabled boolean NOT NULL DEFAULT true
-    `);
-    await db.execute(sql`
-      ALTER TABLE notification_preferences
-      ADD COLUMN IF NOT EXISTS reminder_lead_minutes integer NOT NULL DEFAULT 30
-    `);
-  })();
-  return notificationSchemaPromise;
-}
-
 const DEFAULT_NOTIFICATION_PREFERENCES = {
   ticketCreated: true,
   ticketStatus: true,
@@ -130,7 +80,6 @@ export async function dispatchNotification(input: {
     const userIds = Array.from(new Set(input.userIds.filter(Boolean)));
     if (userIds.length === 0) return;
 
-    await ensureNotificationSchema();
     const enabledUserIds = await filterUserIdsByPreference(userIds, input.type);
     if (enabledUserIds.length === 0) return;
 
@@ -177,7 +126,6 @@ export async function dispatchNotificationToAdmins(input: {
 
 export async function getUnreadNotificationCount() {
   const user = await requireAuth();
-  await ensureNotificationSchema();
   const [row] = await db
     .select({ value: count() })
     .from(notifications)
@@ -187,7 +135,6 @@ export async function getUnreadNotificationCount() {
 
 export async function getMyNotifications(limit = 40) {
   const user = await requireAuth();
-  await ensureNotificationSchema();
   return db
     .select({
       id: notifications.id,
@@ -206,7 +153,6 @@ export async function getMyNotifications(limit = 40) {
 
 export async function markNotificationRead(id: string) {
   const user = await requireAuth();
-  await ensureNotificationSchema();
   await db
     .update(notifications)
     .set({ readAt: new Date() })
@@ -217,7 +163,6 @@ export async function markNotificationRead(id: string) {
 
 export async function markAllNotificationsRead() {
   const user = await requireAuth();
-  await ensureNotificationSchema();
   const unread = await db
     .select({ id: notifications.id })
     .from(notifications)
@@ -234,7 +179,6 @@ export async function markAllNotificationsRead() {
 
 export async function getNotificationPreferences() {
   const user = await requireAuth();
-  await ensureNotificationSchema();
 
   const [row] = await db
     .select({
@@ -257,7 +201,6 @@ export type NotificationPreferences = Awaited<ReturnType<typeof getNotificationP
 
 export async function updateNotificationPreferences(formData: FormData) {
   const user = await requireAuth();
-  await ensureNotificationSchema();
 
   const next = Object.fromEntries(
     Object.entries(preferenceSchema).map(([fieldName, key]) => [key, formData.has(fieldName)]),
@@ -303,7 +246,6 @@ export async function updateNotificationPreferences(formData: FormData) {
 }
 
 export async function pruneReadNotifications(days = 90) {
-  await ensureNotificationSchema();
   const cutoff = Math.max(30, Math.min(days, 365));
   const deleted = await db
     .delete(notifications)
