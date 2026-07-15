@@ -35,7 +35,9 @@ import type { User } from '@/db/schema';
 type UserItem = Pick<
   User,
   'id' | 'username' | 'displayName' | 'role' | 'area' | 'avatarUrl' | 'isAdmin' | 'isActive' | 'createdAt'
->;
+> & {
+  operationalAreas: Array<NonNullable<User['area']>>;
+};
 
 interface UserListProps {
   users: UserItem[];
@@ -176,7 +178,9 @@ export function UserList({ users, currentUserId }: UserListProps) {
                     </Badge>
                   )}
                   {roleLabel && <Badge variant="outline">{roleLabel}</Badge>}
-                  {user.area && <Badge variant="secondary">{AREA_LABELS[user.area]}</Badge>}
+                  {user.operationalAreas.map((area) => (
+                    <Badge key={area} variant="secondary">{AREA_LABELS[area]}</Badge>
+                  ))}
                   {!user.isActive && <Badge variant="outline">{copy.users.status.inactive}</Badge>}
                   {isSelf && <Badge variant="secondary">{copy.users.status.you}</Badge>}
                 </div>

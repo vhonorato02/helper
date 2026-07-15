@@ -53,7 +53,13 @@ type ExportTicketRow = Awaited<ReturnType<typeof exportTicketRows>>['rows'][numb
 
 interface Props {
   tickets: TicketRow[];
-  users: { id: string; displayName: string; role: string | null; area: TicketRow['area'] | null }[];
+  users: {
+    id: string;
+    displayName: string;
+    role: string | null;
+    area: TicketRow['area'] | null;
+    operationalAreas?: TicketRow['area'][];
+  }[];
   total: number;
   page: number;
   pageSize: number;

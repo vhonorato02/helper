@@ -71,17 +71,23 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS area area;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url text;
 CREATE INDEX IF NOT EXISTS users_area_role_idx ON users (area, role) WHERE is_active = true;
 
-DO $$ BEGIN
-  ALTER TABLE users ADD CONSTRAINT users_role_area_consistency_chk CHECK (
-    role IS NULL
-    OR role NOT IN ('ti', 'marketing', 'por_fora')
-    OR area IS NULL
-    OR (role = 'ti' AND area = 'TI')
-    OR (role = 'marketing' AND area = 'MKT')
-    OR (role = 'por_fora' AND area = 'PF')
-  ) NOT VALID;
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
+CREATE TABLE IF NOT EXISTS user_areas (
+  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  area area NOT NULL,
+  created_at timestamp NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, area)
+);
+
+CREATE INDEX IF NOT EXISTS user_areas_area_idx
+  ON user_areas (area);
+
+INSERT INTO user_areas (user_id, area)
+SELECT id, area
+FROM users
+WHERE area IS NOT NULL
+ON CONFLICT (user_id, area) DO NOTHING;
+
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_area_consistency_chk;
 
 CREATE TABLE IF NOT EXISTS area_primary_assignees (
   area area PRIMARY KEY,

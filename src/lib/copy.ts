@@ -500,6 +500,7 @@ export const copy = {
       displayName: 'Nome exibido',
       role: 'Cargo',
       area: 'Área operacional',
+      areas: 'Áreas operacionais',
       password: 'Senha provisória',
       isAdmin: 'Conceder acesso de administrador',
       noRole: 'Sem cargo',
@@ -510,7 +511,9 @@ export const copy = {
         autoArea: (area: string) =>
           `Este cargo direciona a pessoa para ${area}. A área entra na atribuição automática de demandas e na lista de responsáveis primários.`,
         manualArea: (area: string) =>
-          `A pessoa fica vinculada a ${area}, mas só aparece como responsável primário quando cargo e área forem compatíveis.`,
+          `A pessoa fica habilitada para receber demandas de ${area}. Cargo e área são configurados separadamente.`,
+        multipleAreas: (areas: string) =>
+          `A pessoa fica habilitada para receber demandas de: ${areas}.`,
         noArea:
           'Sem área operacional, a pessoa não entra na atribuição automática nem na lista de responsáveis primários.',
       },
@@ -561,7 +564,7 @@ export const copy = {
     primaryAssignee: {
       title: 'Responsável primário',
       description:
-        'Define a atribuição automática por área. Apenas usuários ativos com cargo e área compatíveis aparecem aqui.',
+        'Define a atribuição automática por área. Apenas usuários ativos habilitados na área aparecem aqui.',
       areaLabel: (area: string) => `Área ${area}`,
       none: 'Sem responsável automático',
       notConfigured: 'Nenhuma configuração auditada.',
@@ -599,6 +602,8 @@ export const copy = {
       permissionsTitle: 'Permissões',
       primaryAssigneeTitle: 'Responsável primário',
       primaryAssigneeNone: 'Nenhum responsável primário definido para sua área.',
+      primaryAssigneeNoneForArea: (area: string) =>
+        `Nenhum responsável primário definido para ${area}.`,
       primaryAssigneeNoArea: 'Sua conta ainda não tem área operacional definida.',
       primaryAssigneeYou: (area: string) => `Você é o responsável primário de ${area}.`,
       primaryAssigneePerson: (name: string, area: string) =>

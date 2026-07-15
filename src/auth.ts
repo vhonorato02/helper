@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db';
-import { users } from '@/db/schema';
+import { userAreas, users } from '@/db/schema';
 import {
   AUTH_COOKIE_NAME,
   type SessionUser,
@@ -27,13 +27,20 @@ async function loadActiveUser(userId: string): Promise<SessionUser | null> {
 
   if (!row?.isActive) return null;
 
+  const areaRows = await db
+    .select({ area: userAreas.area })
+    .from(userAreas)
+    .where(eq(userAreas.userId, row.id));
+  const areas = areaRows.map((item) => item.area);
+
   return {
     id: row.id,
     username: row.username,
     isAdmin: row.isAdmin,
     name: row.displayName,
     role: row.role,
-    area: row.area,
+    area: areas[0] ?? row.area,
+    areas: areas.length > 0 ? areas : row.area ? [row.area] : [],
     avatarUrl: row.avatarUrl,
     mustChangePassword: row.mustChangePassword,
   };

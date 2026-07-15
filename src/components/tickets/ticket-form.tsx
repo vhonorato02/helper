@@ -61,7 +61,9 @@ type FormData = z.infer<typeof schema>;
 interface TicketFormProps {
   open: boolean;
   onClose: () => void;
-  users: Pick<User, 'id' | 'displayName' | 'role' | 'area' | 'avatarUrl'>[];
+  users: (Pick<User, 'id' | 'displayName' | 'role' | 'area' | 'avatarUrl'> & {
+    operationalAreas?: Array<NonNullable<User['area']>>;
+  })[];
 }
 
 const defaultValues: FormData = {
@@ -334,7 +336,11 @@ export function TicketForm({ open, onClose, users }: TicketFormProps) {
                   {eligibleUsers.map((user) => (
                     <SelectItem key={user.id} value={user.id}>
                       {user.displayName}
-                      {user.area ? ` · ${AREA_LABELS[user.area]}` : ''}
+                      {user.operationalAreas?.length
+                        ? ` · ${user.operationalAreas.map((item) => AREA_LABELS[item]).join(', ')}`
+                        : user.area
+                          ? ` · ${AREA_LABELS[user.area]}`
+                          : ''}
                     </SelectItem>
                   ))}
                 </SelectContent>

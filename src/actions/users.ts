@@ -4,8 +4,16 @@ import { revalidatePath } from 'next/cache';
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { db } from '@/db';
-import { areaPrimaryAssignees, authEvents, comments, ticketHistory, tickets, users } from '@/db/schema';
-import { and, asc, count, desc, eq } from 'drizzle-orm';
+import {
+  areaPrimaryAssignees,
+  authEvents,
+  comments,
+  ticketHistory,
+  tickets,
+  userAreas,
+  users,
+} from '@/db/schema';
+import { and, asc, count, desc, eq, inArray, notInArray } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { copy } from '@/lib/copy';
@@ -20,7 +28,6 @@ import {
 import { logger } from '@/lib/logger';
 import {
   normalizeOperationalProfile,
-  PRIMARY_ROLE_BY_AREA,
   resolveExplicitPrimaryAssignee,
   selectEligibleAssigneeForArea,
 } from '@/lib/assignment';
@@ -55,6 +62,84 @@ async function ensureUsernameAvailable(username: string, ignoreUserId?: string) 
   return !existing || existing.id === ignoreUserId;
 }
 
+type UserAreaRow = { userId: string; area: Area };
+type WithOperationalAreas<T extends { id: string; area: Area | null }> = T & {
+  operationalAreas: Area[];
+};
+
+function attachOperationalAreas<T extends { id: string; area: Area | null }>(
+  rows: T[],
+  areaRows: UserAreaRow[],
+): WithOperationalAreas<T>[] {
+  const areasByUser = new Map<string, Area[]>();
+
+  for (const row of areaRows) {
+    const areas = areasByUser.get(row.userId) ?? [];
+    if (!areas.includes(row.area)) areas.push(row.area);
+    areasByUser.set(row.userId, areas);
+  }
+
+  return rows.map((row) => ({
+    ...row,
+    operationalAreas: areasByUser.get(row.id) ?? (row.area ? [row.area] : []),
+  }));
+}
+
+async function getAreaRowsForUsers(userIds: string[]) {
+  if (userIds.length === 0) return [];
+
+  return db
+    .select({
+      userId: userAreas.userId,
+      area: userAreas.area,
+    })
+    .from(userAreas)
+    .where(inArray(userAreas.userId, userIds));
+}
+
+async function syncUserAreas(userId: string, areas: Area[]) {
+  await db.delete(userAreas).where(eq(userAreas.userId, userId));
+
+  if (areas.length > 0) {
+    await db.insert(userAreas).values(areas.map((area) => ({ userId, area })));
+  }
+
+  if (areas.length === 0) {
+    await db
+      .update(areaPrimaryAssignees)
+      .set({ primaryUserId: null, updatedAt: new Date() })
+      .where(eq(areaPrimaryAssignees.primaryUserId, userId));
+    return;
+  }
+
+  await db
+    .update(areaPrimaryAssignees)
+    .set({ primaryUserId: null, updatedAt: new Date() })
+    .where(
+      and(
+        eq(areaPrimaryAssignees.primaryUserId, userId),
+        notInArray(areaPrimaryAssignees.area, areas),
+      ),
+    );
+}
+
+async function getActiveAssigneeCandidates() {
+  const rows = await db
+    .select({
+      id: users.id,
+      displayName: users.displayName,
+      role: users.role,
+      area: users.area,
+      avatarUrl: users.avatarUrl,
+      isActive: users.isActive,
+    })
+    .from(users)
+    .where(eq(users.isActive, true))
+    .orderBy(asc(users.displayName));
+
+  return attachOperationalAreas(rows, await getAreaRowsForUsers(rows.map((user) => user.id)));
+}
+
 function revalidateUserSurfaces() {
   revalidatePath('/');
   revalidatePath('/tickets');
@@ -66,7 +151,7 @@ export async function getActiveUsersForAssignment() {
   const session = await auth();
   if (!session?.user?.id) redirect('/login');
 
-  return db
+  const rows = await db
     .select({
       id: users.id,
       displayName: users.displayName,
@@ -77,11 +162,13 @@ export async function getActiveUsersForAssignment() {
     .from(users)
     .where(eq(users.isActive, true))
     .orderBy(asc(users.displayName));
+
+  return attachOperationalAreas(rows, await getAreaRowsForUsers(rows.map((user) => user.id)));
 }
 
 export async function getUsers() {
   await requireAdmin();
-  return db
+  const rows = await db
     .select({
       id: users.id,
       username: users.username,
@@ -95,6 +182,8 @@ export async function getUsers() {
     })
     .from(users)
     .orderBy(asc(users.displayName));
+
+  return attachOperationalAreas(rows, await getAreaRowsForUsers(rows.map((user) => user.id)));
 }
 
 export async function getAreaPrimaryAssigneeSettings() {
@@ -110,17 +199,7 @@ export async function getAreaPrimaryAssigneeSettings() {
       })
       .from(areaPrimaryAssignees)
       .leftJoin(users, eq(areaPrimaryAssignees.updatedById, users.id)),
-    db
-      .select({
-        id: users.id,
-        displayName: users.displayName,
-        role: users.role,
-        area: users.area,
-        isActive: users.isActive,
-      })
-      .from(users)
-      .where(eq(users.isActive, true))
-      .orderBy(asc(users.displayName)),
+    getActiveAssigneeCandidates(),
   ]);
 
   return (['TI', 'MKT', 'PF'] as const).map((area) => {
@@ -157,6 +236,7 @@ const createUserSchema = z.object({
   password: passwordSchema,
   role: roleSchema,
   area: areaSchema,
+  areas: z.array(requiredAreaSchema.or(z.literal(''))).default([]),
   avatarUrl: avatarUrlSchema,
   isAdmin: z.boolean().default(false),
 });
@@ -170,6 +250,7 @@ export async function createUser(formData: FormData) {
     password: formData.get('password'),
     role: formData.get('role') || undefined,
     area: formData.get('area') || undefined,
+    areas: formData.getAll('areas'),
     avatarUrl: formData.get('avatarUrl') || undefined,
     isAdmin: formData.get('isAdmin') === 'true',
   });
@@ -181,10 +262,10 @@ export async function createUser(formData: FormData) {
   if (!available) return { error: copy.validation.usernameExists };
 
   const profile = normalizeOperationalProfile(parsed.data);
-  if (!profile.ok) return { error: copy.validation.roleAreaMismatch };
+  if (!profile.ok) return { error: copy.validation.invalidData };
 
   const passwordHash = await bcrypt.hash(parsed.data.password, 12);
-  await db.insert(users).values({
+  const [created] = await db.insert(users).values({
     username: parsed.data.username,
     displayName: parsed.data.displayName,
     role: profile.role,
@@ -193,7 +274,9 @@ export async function createUser(formData: FormData) {
     passwordHash,
     isAdmin: parsed.data.isAdmin,
     mustChangePassword: true,
-  });
+  }).returning({ id: users.id });
+
+  if (created) await syncUserAreas(created.id, profile.areas);
 
   revalidatePath('/configuracoes');
   return { ok: true };
@@ -205,6 +288,7 @@ const updateUserSchema = z.object({
   displayName: displayNameSchema,
   role: roleSchema,
   area: areaSchema,
+  areas: z.array(requiredAreaSchema.or(z.literal(''))).default([]),
   avatarUrl: avatarUrlSchema,
   isAdmin: z.boolean().default(false),
 });
@@ -218,6 +302,7 @@ export async function updateUser(formData: FormData) {
     displayName: formData.get('displayName'),
     role: formData.get('role') || undefined,
     area: formData.get('area') || undefined,
+    areas: formData.getAll('areas'),
     avatarUrl: formData.get('avatarUrl') || undefined,
     isAdmin: formData.get('isAdmin') === 'true',
   });
@@ -239,7 +324,7 @@ export async function updateUser(formData: FormData) {
   }
 
   const profile = normalizeOperationalProfile(parsed.data);
-  if (!profile.ok) return { error: copy.validation.roleAreaMismatch };
+  if (!profile.ok) return { error: copy.validation.invalidData };
 
   await db
     .update(users)
@@ -253,6 +338,7 @@ export async function updateUser(formData: FormData) {
       updatedAt: new Date(),
     })
     .where(eq(users.id, parsed.data.userId));
+  await syncUserAreas(parsed.data.userId, profile.areas);
 
   revalidateUserSurfaces();
   return { ok: true };
@@ -265,17 +351,7 @@ export async function getDefaultAssigneeForArea(area: Area) {
       .from(areaPrimaryAssignees)
       .where(eq(areaPrimaryAssignees.area, area))
       .limit(1),
-    db
-      .select({
-        id: users.id,
-        displayName: users.displayName,
-        role: users.role,
-        area: users.area,
-        isActive: users.isActive,
-      })
-      .from(users)
-      .where(eq(users.isActive, true))
-      .orderBy(asc(users.displayName)),
+    getActiveAssigneeCandidates(),
   ]);
 
   return resolveExplicitPrimaryAssignee(area, primary[0]?.primaryUserId, rows);
@@ -291,17 +367,16 @@ export async function getEligibleAssigneeForArea(userId: string, area: Area) {
       isActive: users.isActive,
     })
     .from(users)
+    .innerJoin(userAreas, and(eq(userAreas.userId, users.id), eq(userAreas.area, area)))
     .where(
       and(
         eq(users.id, userId),
         eq(users.isActive, true),
-        eq(users.area, area),
-        eq(users.role, PRIMARY_ROLE_BY_AREA[area]),
       ),
     )
     .limit(1);
 
-  return assignee ?? null;
+  return assignee ? { ...assignee, operationalAreas: [area] } : null;
 }
 
 const primaryAssigneeSchema = z.object({

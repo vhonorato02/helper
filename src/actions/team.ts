@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { asc, eq, inArray } from 'drizzle-orm';
 import { auth } from '@/auth';
 import { db } from '@/db';
-import { tickets, users } from '@/db/schema';
+import { tickets, userAreas, users } from '@/db/schema';
 import { AREA_LABELS, type Area } from '@/lib/constants';
 import { getTicketRisk } from '@/lib/ticket-risk';
 
@@ -64,6 +64,19 @@ export async function getTeamWorkload() {
       .from(tickets)
       .where(inArray(tickets.status, [...ACTIVE_STATUSES])),
   ]);
+  const teamAreaRows = team.length
+    ? await db
+        .select({ userId: userAreas.userId, area: userAreas.area })
+        .from(userAreas)
+        .where(inArray(userAreas.userId, team.map((member) => member.id)))
+    : [];
+  const areasByUser = new Map<string, Area[]>();
+
+  for (const row of teamAreaRows) {
+    const areas = areasByUser.get(row.userId) ?? [];
+    if (!areas.includes(row.area)) areas.push(row.area);
+    areasByUser.set(row.userId, areas);
+  }
 
   const rowsByUser = new Map(team.map((member) => [member.id, [] as typeof activeTickets]));
   const unassignedByArea = Object.fromEntries(
@@ -99,6 +112,7 @@ export async function getTeamWorkload() {
 
     return {
       ...member,
+      operationalAreas: areasByUser.get(member.id) ?? (member.area ? [member.area] : []),
       stats,
       score,
       loadLabel: loadLabel(score),

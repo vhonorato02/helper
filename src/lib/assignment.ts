@@ -1,4 +1,4 @@
-import { roleDefaultArea, type Area, type UserRole } from '@/lib/constants';
+import { type Area, type UserRole } from '@/lib/constants';
 
 export const PRIMARY_ROLE_BY_AREA = {
   TI: 'ti',
@@ -10,39 +10,61 @@ export type AreaAssigneeCandidate = {
   id: string;
   role: string | null;
   area: Area | null;
+  operationalAreas?: readonly Area[];
   isActive?: boolean | null;
 };
 
 export type OperationalProfileInput = {
   role?: string | null | undefined;
   area?: Area | '' | null | undefined;
+  areas?: readonly (Area | '' | null | undefined)[] | null | undefined;
 };
 
 export type OperationalProfileResult =
-  | { ok: true; role: string | null; area: Area | null }
-  | { ok: false; error: 'role_area_mismatch' };
+  | { ok: true; role: string | null; area: Area | null; areas: Area[] }
+  | { ok: false; error: 'invalid_area' };
+
+const AREA_VALUES = ['TI', 'MKT', 'PF'] as const;
+
+function isArea(value: string | null | undefined): value is Area {
+  return AREA_VALUES.some((area) => area === value);
+}
+
+function normalizeAreaMemberships(input: OperationalProfileInput) {
+  const values = input.areas?.length ? input.areas : [input.area];
+  const areas: Area[] = [];
+
+  for (const value of values) {
+    if (!value) continue;
+    if (!isArea(value)) return null;
+    if (!areas.includes(value)) areas.push(value);
+  }
+
+  return areas;
+}
 
 export function normalizeOperationalProfile({
   role,
   area,
+  areas,
 }: OperationalProfileInput): OperationalProfileResult {
   const normalizedRole = role || null;
-  const normalizedArea = area || null;
-  const expectedArea = roleDefaultArea(normalizedRole);
+  const normalizedAreas = normalizeAreaMemberships({ area, areas });
 
-  if (normalizedArea && expectedArea && normalizedArea !== expectedArea) {
-    return { ok: false, error: 'role_area_mismatch' };
-  }
+  if (!normalizedAreas) return { ok: false, error: 'invalid_area' };
 
   return {
     ok: true,
     role: normalizedRole,
-    area: normalizedArea ?? expectedArea,
+    area: normalizedAreas[0] ?? null,
+    areas: normalizedAreas,
   };
 }
 
 export function isUserEnabledForArea(user: AreaAssigneeCandidate, area: Area) {
-  return user.isActive !== false && user.area === area && user.role === PRIMARY_ROLE_BY_AREA[area];
+  if (user.isActive === false) return false;
+  if (user.operationalAreas) return user.operationalAreas.includes(area);
+  return user.area === area;
 }
 
 export const isEligibleAssigneeForArea = isUserEnabledForArea;

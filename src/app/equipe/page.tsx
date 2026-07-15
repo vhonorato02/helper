@@ -103,7 +103,9 @@ export default async function TeamPage() {
                   <p className="truncate text-sm font-semibold">{member.displayName}</p>
                   <p className="truncate text-xs text-muted-foreground">
                     {roleLabel(member.role)}
-                    {member.area ? ` · ${AREA_LABELS[member.area]}` : ''}
+                    {member.operationalAreas.length > 0
+                      ? ` · ${member.operationalAreas.map((area) => AREA_LABELS[area]).join(', ')}`
+                      : ''}
                   </p>
                 </div>
               </div>

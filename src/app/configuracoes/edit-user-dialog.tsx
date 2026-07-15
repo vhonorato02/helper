@@ -20,7 +20,9 @@ import { updateUser } from '@/actions/users';
 import { copy } from '@/lib/copy';
 import type { User } from '@/db/schema';
 
-type UserItem = Pick<User, 'id' | 'username' | 'displayName' | 'role' | 'area' | 'avatarUrl' | 'isAdmin'>;
+type UserItem = Pick<User, 'id' | 'username' | 'displayName' | 'role' | 'area' | 'avatarUrl' | 'isAdmin'> & {
+  operationalAreas: Array<NonNullable<User['area']>>;
+};
 
 interface EditUserDialogProps {
   open: boolean;
@@ -104,6 +106,7 @@ export function EditUserDialog({ open, onOpenChange, user, isSelf }: EditUserDia
             idPrefix={`edit-user-${user.id}`}
             initialRole={user.role}
             initialArea={user.area}
+            initialAreas={user.operationalAreas}
             disabled={isPending}
           />
 

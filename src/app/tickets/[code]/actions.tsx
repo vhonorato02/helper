@@ -40,7 +40,9 @@ interface TicketActionsProps {
     author: { id: string; displayName: string; username: string } | null;
     assignee: { id: string; displayName: string; username: string } | null;
   };
-  users: Pick<User, 'id' | 'displayName' | 'role' | 'area'>[];
+  users: (Pick<User, 'id' | 'displayName' | 'role' | 'area'> & {
+    operationalAreas?: Array<NonNullable<User['area']>>;
+  })[];
   currentUserId: string;
   currentUserIsAdmin: boolean;
 }

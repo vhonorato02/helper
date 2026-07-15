@@ -7,6 +7,7 @@ import {
   timestamp,
   integer,
   index,
+  primaryKey,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
@@ -230,6 +231,21 @@ export const notificationPreferences = pgTable('notification_preferences', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+export const userAreas = pgTable(
+  'user_areas',
+  {
+    userId: uuid('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    area: areaEnum('area').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.area] }),
+    index('user_areas_area_idx').on(t.area),
+  ],
+);
+
 export const areaPrimaryAssignees = pgTable(
   'area_primary_assignees',
   {
@@ -377,8 +393,13 @@ export const usersRelations = relations(users, ({ many }) => ({
   mentions: many(ticketMentions),
   notifications: many(notifications),
   quickResponses: many(quickResponses),
+  operationalAreas: many(userAreas),
   primaryAreaAssignments: many(areaPrimaryAssignees, { relationName: 'primaryAreaAssignee' }),
   updatedAreaAssignments: many(areaPrimaryAssignees, { relationName: 'areaAssignmentUpdater' }),
+}));
+
+export const userAreasRelations = relations(userAreas, ({ one }) => ({
+  user: one(users, { fields: [userAreas.userId], references: [users.id] }),
 }));
 
 export const areaPrimaryAssigneesRelations = relations(areaPrimaryAssignees, ({ one }) => ({
@@ -470,6 +491,7 @@ export const recordingsRelations = relations(recordings, ({ one }) => ({
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+export type UserArea = typeof userAreas.$inferSelect;
 export type AreaPrimaryAssignee = typeof areaPrimaryAssignees.$inferSelect;
 export type Ticket = typeof tickets.$inferSelect;
 export type NewTicket = typeof tickets.$inferInsert;

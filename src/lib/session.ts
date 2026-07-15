@@ -10,6 +10,7 @@ export type SessionUser = {
   name?: string | null;
   role?: string | null;
   area?: 'TI' | 'MKT' | 'PF' | null;
+  areas?: ('TI' | 'MKT' | 'PF')[];
   avatarUrl?: string | null;
   mustChangePassword?: boolean;
 };
@@ -21,6 +22,7 @@ export type SessionClaims = JWTPayload & {
   mustChangePassword: boolean;
   role?: string | null;
   area?: 'TI' | 'MKT' | 'PF' | null;
+  areas?: ('TI' | 'MKT' | 'PF')[];
   avatarUrl?: string | null;
 };
 
@@ -50,6 +52,7 @@ export async function signSessionToken(user: SessionUser) {
     mustChangePassword: Boolean(user.mustChangePassword),
     role: user.role ?? null,
     area: user.area ?? null,
+    areas: user.areas ?? [],
     avatarUrl: user.avatarUrl ?? null,
   })
     .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
@@ -82,6 +85,7 @@ export function userFromClaims(claims: SessionClaims): SessionUser {
     name: claims.displayName || null,
     role: claims.role ?? null,
     area: claims.area ?? null,
+    areas: claims.areas ?? (claims.area ? [claims.area] : []),
     avatarUrl: claims.avatarUrl ?? null,
     mustChangePassword: Boolean(claims.mustChangePassword),
   };

@@ -12,7 +12,6 @@ import { Label } from '@/components/ui/label';
 import {
   AREA_LABELS,
   AREA_OPTIONS,
-  roleDefaultArea,
   USER_ROLE_OPTIONS,
   type Area,
   type UserRole,
@@ -20,12 +19,12 @@ import {
 import { copy } from '@/lib/copy';
 
 const NO_ROLE_VALUE = '__no_role';
-const NO_AREA_VALUE = '__no_area';
 
 interface OperationalProfileFieldsProps {
   idPrefix: string;
   initialRole?: string | null;
   initialArea?: Area | null;
+  initialAreas?: readonly Area[] | null;
   disabled?: boolean;
   resetKey?: number;
 }
@@ -42,40 +41,60 @@ export function OperationalProfileFields({
   idPrefix,
   initialRole,
   initialArea,
+  initialAreas,
   disabled = false,
   resetKey = 0,
 }: OperationalProfileFieldsProps) {
   const normalizedInitialRole = isKnownRole(initialRole) ? initialRole : null;
   const normalizedInitialArea = isKnownArea(initialArea) ? initialArea : null;
+  const normalizedInitialAreas = initialAreas?.filter(isKnownArea) ?? [];
   const [role, setRole] = useState<UserRole | null>(normalizedInitialRole);
-  const [area, setArea] = useState<Area | null>(
-    roleDefaultArea(normalizedInitialRole) ?? normalizedInitialArea,
+  const [areas, setAreas] = useState<Area[]>(
+    normalizedInitialAreas.length > 0
+      ? normalizedInitialAreas
+      : normalizedInitialArea
+        ? [normalizedInitialArea]
+        : [],
   );
 
   useEffect(() => {
     const nextRole = isKnownRole(initialRole) ? initialRole : null;
+    const nextAreas = initialAreas?.filter(isKnownArea) ?? [];
     setRole(nextRole);
-    setArea(roleDefaultArea(nextRole) ?? (isKnownArea(initialArea) ? initialArea : null));
-  }, [initialArea, initialRole, resetKey]);
+    setAreas(
+      nextAreas.length > 0
+        ? nextAreas
+        : isKnownArea(initialArea)
+          ? [initialArea]
+          : [],
+    );
+  }, [initialArea, initialAreas, initialRole, resetKey]);
 
-  const automaticArea = roleDefaultArea(role);
-  const effectiveArea = automaticArea ?? area;
   const helpText = useMemo(() => {
-    if (automaticArea) {
-      return copy.users.form.operationalProfile.autoArea(AREA_LABELS[automaticArea]);
+    if (areas.length > 1) {
+      return copy.users.form.operationalProfile.multipleAreas(
+        areas.map((item) => AREA_LABELS[item]).join(', '),
+      );
     }
 
-    if (effectiveArea) {
-      return copy.users.form.operationalProfile.manualArea(AREA_LABELS[effectiveArea]);
+    if (areas.length === 1) {
+      return copy.users.form.operationalProfile.manualArea(AREA_LABELS[areas[0]]);
     }
 
     return copy.users.form.operationalProfile.noArea;
-  }, [automaticArea, effectiveArea]);
+  }, [areas]);
 
   const handleRoleChange = (value: string) => {
     const nextRole = value === NO_ROLE_VALUE ? null : (value as UserRole);
     setRole(nextRole);
-    setArea(roleDefaultArea(nextRole));
+  };
+
+  const toggleArea = (area: Area, checked: boolean) => {
+    setAreas((current) => {
+      if (checked && !current.includes(area)) return [...current, area];
+      if (!checked) return current.filter((item) => item !== area);
+      return current;
+    });
   };
 
   return (
@@ -101,27 +120,30 @@ export function OperationalProfileFields({
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor={`${idPrefix}-area`}>{copy.users.form.area}</Label>
-          <input type="hidden" name="area" value={effectiveArea ?? ''} />
-          <Select
-            value={effectiveArea ?? NO_AREA_VALUE}
-            onValueChange={(value) => setArea(value === NO_AREA_VALUE ? null : (value as Area))}
-            disabled={disabled || Boolean(automaticArea)}
+          <Label>{copy.users.form.areas}</Label>
+          <input type="hidden" name="area" value={areas[0] ?? ''} />
+          <div
+            className="grid gap-2 rounded-md border border-input bg-background px-3 py-2"
+            aria-describedby={`${idPrefix}-profile-help`}
           >
-            <SelectTrigger id={`${idPrefix}-area`} aria-describedby={`${idPrefix}-profile-help`}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={NO_AREA_VALUE}>{copy.users.form.noArea}</SelectItem>
-              {AREA_OPTIONS.map((item) => (
-                <SelectItem key={item.value} value={item.value}>
-                  {automaticArea === item.value
-                    ? copy.users.form.automaticAreaLabel(item.label)
-                    : item.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            {AREA_OPTIONS.map((item) => (
+              <label
+                key={item.value}
+                className="flex items-center gap-2 text-sm cursor-pointer select-none"
+              >
+                <input
+                  type="checkbox"
+                  name="areas"
+                  value={item.value}
+                  checked={areas.includes(item.value)}
+                  onChange={(event) => toggleArea(item.value, event.currentTarget.checked)}
+                  disabled={disabled}
+                  className="size-4 rounded border-input accent-primary cursor-pointer disabled:cursor-not-allowed"
+                />
+                <span>{item.label}</span>
+              </label>
+            ))}
+          </div>
         </div>
       </div>
 

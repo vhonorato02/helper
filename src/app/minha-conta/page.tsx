@@ -17,10 +17,15 @@ export default async function MinhaContaPage() {
   if (!session?.user) redirect('/login');
 
   const currentUser = session.user;
-  const currentArea = currentUser.area as Area | null;
-  const [notificationPreferences, primaryAssignee] = await Promise.all([
+  const currentAreas = ((currentUser.areas?.length ? currentUser.areas : currentUser.area ? [currentUser.area] : []) as Area[]);
+  const [notificationPreferences, primaryAssignees] = await Promise.all([
     getNotificationPreferences(),
-    currentArea ? getDefaultAssigneeForArea(currentArea) : Promise.resolve(null),
+    Promise.all(
+      currentAreas.map(async (area) => ({
+        area,
+        assignee: await getDefaultAssigneeForArea(area),
+      })),
+    ),
   ]);
 
   return (
@@ -40,11 +45,14 @@ export default async function MinhaContaPage() {
         username={currentUser.username}
         displayName={currentUser.name ?? ''}
         role={currentUser.role ?? null}
-        area={currentArea}
+        areas={currentAreas}
         avatarUrl={currentUser.avatarUrl ?? null}
         isAdmin={currentUser.isAdmin}
-        primaryAssigneeName={primaryAssignee?.displayName ?? null}
-        isPrimaryAssignee={primaryAssignee?.id === currentUser.id}
+        primaryAssignees={primaryAssignees.map((item) => ({
+          area: item.area,
+          id: item.assignee?.id ?? null,
+          displayName: item.assignee?.displayName ?? null,
+        }))}
         notificationPreferences={notificationPreferences}
       />
     </div>

@@ -28,11 +28,10 @@ interface AccountSettingsProps {
   username: string;
   displayName: string;
   role: string | null;
-  area: Area | null;
+  areas: Area[];
   avatarUrl?: string | null;
   isAdmin: boolean;
-  primaryAssigneeName?: string | null;
-  isPrimaryAssignee?: boolean;
+  primaryAssignees: Array<{ area: Area; id: string | null; displayName: string | null }>;
   notificationPreferences: NotificationPreferences;
 }
 
@@ -45,23 +44,28 @@ export function AccountSettings({
   username,
   displayName,
   role,
-  area,
+  areas,
   avatarUrl,
   isAdmin,
-  primaryAssigneeName,
-  isPrimaryAssignee = false,
+  primaryAssignees,
   notificationPreferences,
 }: AccountSettingsProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const name = displayName || copy.dashboard.greeting.fallbackName;
   const roleLabel = isKnownRole(role) ? USER_ROLE_LABELS[role] : copy.common.none;
-  const areaLabel = area ? AREA_LABELS[area] : copy.common.none;
-  const primaryAssigneeDescription = area
-    ? isPrimaryAssignee
-      ? copy.users.account.primaryAssigneeYou(AREA_LABELS[area])
-      : primaryAssigneeName
-        ? copy.users.account.primaryAssigneePerson(primaryAssigneeName, AREA_LABELS[area])
-        : copy.users.account.primaryAssigneeNone
+  const areaLabel = areas.length > 0
+    ? areas.map((area) => AREA_LABELS[area]).join(', ')
+    : copy.common.none;
+  const primaryAssigneeDescription = primaryAssignees.length > 0
+    ? primaryAssignees
+        .map((item) =>
+          item.id === userId
+            ? copy.users.account.primaryAssigneeYou(AREA_LABELS[item.area])
+            : item.displayName
+              ? copy.users.account.primaryAssigneePerson(item.displayName, AREA_LABELS[item.area])
+              : copy.users.account.primaryAssigneeNoneForArea(AREA_LABELS[item.area]),
+        )
+        .join(' ')
     : copy.users.account.primaryAssigneeNoArea;
 
   return (
