@@ -1,4 +1,4 @@
-import { type Area, type UserRole } from '@/lib/constants';
+import { roleDefaultArea, type Area, type UserRole } from '@/lib/constants';
 
 export const PRIMARY_ROLE_BY_AREA = {
   TI: 'ti',
@@ -22,7 +22,7 @@ export type OperationalProfileInput = {
 
 export type OperationalProfileResult =
   | { ok: true; role: string | null; area: Area | null; areas: Area[] }
-  | { ok: false; error: 'invalid_area' };
+  | { ok: false; error: 'invalid_area' | 'role_area_mismatch' };
 
 const AREA_VALUES = ['TI', 'MKT', 'PF'] as const;
 
@@ -52,19 +52,32 @@ export function normalizeOperationalProfile({
   const normalizedAreas = normalizeAreaMemberships({ area, areas });
 
   if (!normalizedAreas) return { ok: false, error: 'invalid_area' };
+  const requiredArea = roleDefaultArea(normalizedRole);
+
+  if (requiredArea && !normalizedAreas.includes(requiredArea)) {
+    return { ok: false, error: 'role_area_mismatch' };
+  }
+
+  const orderedAreas = requiredArea
+    ? [requiredArea, ...normalizedAreas.filter((item) => item !== requiredArea)]
+    : normalizedAreas;
 
   return {
     ok: true,
     role: normalizedRole,
-    area: normalizedAreas[0] ?? null,
-    areas: normalizedAreas,
+    area: orderedAreas[0] ?? null,
+    areas: orderedAreas,
   };
 }
 
 export function isUserEnabledForArea(user: AreaAssigneeCandidate, area: Area) {
   if (user.isActive === false) return false;
-  if (user.operationalAreas) return user.operationalAreas.includes(area);
-  return user.area === area;
+  const operationalAreas = user.operationalAreas ?? (user.area ? [user.area] : []);
+  const requiredArea = roleDefaultArea(user.role);
+
+  if (requiredArea && !operationalAreas.includes(requiredArea)) return false;
+
+  return operationalAreas.includes(area);
 }
 
 export const isEligibleAssigneeForArea = isUserEnabledForArea;

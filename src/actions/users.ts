@@ -81,7 +81,9 @@ function attachOperationalAreas<T extends { id: string; area: Area | null }>(
 
   return rows.map((row) => ({
     ...row,
-    operationalAreas: areasByUser.get(row.id) ?? (row.area ? [row.area] : []),
+    operationalAreas: [
+      ...new Set([...(row.area ? [row.area] : []), ...(areasByUser.get(row.id) ?? [])]),
+    ],
   }));
 }
 
@@ -262,7 +264,14 @@ export async function createUser(formData: FormData) {
   if (!available) return { error: copy.validation.usernameExists };
 
   const profile = normalizeOperationalProfile(parsed.data);
-  if (!profile.ok) return { error: copy.validation.invalidData };
+  if (!profile.ok) {
+    return {
+      error:
+        profile.error === 'role_area_mismatch'
+          ? copy.validation.roleAreaMismatch
+          : copy.validation.invalidData,
+    };
+  }
 
   const passwordHash = await bcrypt.hash(parsed.data.password, 12);
   const [created] = await db.insert(users).values({
@@ -324,7 +333,14 @@ export async function updateUser(formData: FormData) {
   }
 
   const profile = normalizeOperationalProfile(parsed.data);
-  if (!profile.ok) return { error: copy.validation.invalidData };
+  if (!profile.ok) {
+    return {
+      error:
+        profile.error === 'role_area_mismatch'
+          ? copy.validation.roleAreaMismatch
+          : copy.validation.invalidData,
+    };
+  }
 
   await db
     .update(users)
@@ -358,7 +374,7 @@ export async function getDefaultAssigneeForArea(area: Area) {
 }
 
 export async function getEligibleAssigneeForArea(userId: string, area: Area) {
-  const [assignee] = await db
+  const rows = await db
     .select({
       id: users.id,
       displayName: users.displayName,
@@ -367,7 +383,6 @@ export async function getEligibleAssigneeForArea(userId: string, area: Area) {
       isActive: users.isActive,
     })
     .from(users)
-    .innerJoin(userAreas, and(eq(userAreas.userId, users.id), eq(userAreas.area, area)))
     .where(
       and(
         eq(users.id, userId),
@@ -376,7 +391,8 @@ export async function getEligibleAssigneeForArea(userId: string, area: Area) {
     )
     .limit(1);
 
-  return assignee ? { ...assignee, operationalAreas: [area] } : null;
+  const [assignee] = attachOperationalAreas(rows, await getAreaRowsForUsers(rows.map((user) => user.id)));
+  return assignee ? selectEligibleAssigneeForArea(assignee.id, area, [assignee]) : null;
 }
 
 const primaryAssigneeSchema = z.object({

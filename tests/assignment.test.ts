@@ -17,6 +17,13 @@ const users: AreaAssigneeCandidate[] = [
     operationalAreas: ['MKT', 'PF'],
     isActive: true,
   },
+  {
+    id: 'cross-trained',
+    role: 'marketing',
+    area: 'MKT',
+    operationalAreas: ['MKT', 'TI'],
+    isActive: true,
+  },
   { id: 'pf-primary', role: 'por_fora', area: 'PF', operationalAreas: ['PF'], isActive: true },
   { id: 'inactive-ti', role: 'ti', area: 'TI', operationalAreas: ['TI'], isActive: false },
   { id: 'legacy-contradictory', role: 'marketing', area: 'TI', operationalAreas: ['TI'], isActive: true },
@@ -29,22 +36,25 @@ describe('area assignment rules', () => {
   it('usa habilitação operacional, não cargo, para TI', () => {
     assert.equal(isUserEnabledForArea(users[0], 'TI'), true);
     assert.equal(isUserEnabledForArea(users[1], 'TI'), false);
-    assert.equal(isUserEnabledForArea(users[4], 'TI'), true);
+    assert.equal(isUserEnabledForArea(users[2], 'TI'), true);
     assert.equal(isUserEnabledForArea(users[5], 'TI'), false);
-    assert.equal(isUserEnabledForArea(users[6], 'TI'), true);
-    assert.equal(isUserEnabledForArea(users[7], 'TI'), false);
+    assert.equal(isUserEnabledForArea(users[6], 'TI'), false);
+    assert.equal(isUserEnabledForArea(users[7], 'TI'), true);
+    assert.equal(isUserEnabledForArea(users[8], 'TI'), false);
   });
 
   it('aceita usuário habilitado em múltiplas áreas', () => {
     assert.equal(isUserEnabledForArea(users[1], 'MKT'), true);
     assert.equal(isUserEnabledForArea(users[1], 'PF'), true);
-    assert.equal(isUserEnabledForArea(users[2], 'PF'), true);
+    assert.equal(isUserEnabledForArea(users[2], 'MKT'), true);
+    assert.equal(isUserEnabledForArea(users[2], 'TI'), true);
+    assert.equal(isUserEnabledForArea(users[3], 'PF'), true);
     assert.equal(isUserEnabledForArea(users[0], 'MKT'), false);
-    assert.equal(isUserEnabledForArea(users[2], 'TI'), false);
+    assert.equal(isUserEnabledForArea(users[3], 'TI'), false);
   });
 
   it('rejeita usuário inativo mesmo com cargo e área corretos', () => {
-    assert.equal(isUserEnabledForArea(users[3], 'TI'), false);
+    assert.equal(isUserEnabledForArea(users[4], 'TI'), false);
   });
 
   it('usa apenas responsável primário explícito e elegível', () => {
@@ -58,34 +68,38 @@ describe('area assignment rules', () => {
     assert.equal(resolveExplicitPrimaryAssignee('TI', 'missing', users), null);
     assert.equal(resolveExplicitPrimaryAssignee('TI', 'mkt-primary', users), null);
     assert.equal(resolveExplicitPrimaryAssignee('TI', 'inactive-ti', users), null);
+    assert.equal(resolveExplicitPrimaryAssignee('TI', 'legacy-contradictory', users), null);
   });
 
   it('valida seleção administrativa de responsável primário pela mesma regra de domínio', () => {
     assert.equal(selectEligibleAssigneeForArea('ti-primary', 'TI', users)?.id, 'ti-primary');
+    assert.equal(selectEligibleAssigneeForArea('cross-trained', 'TI', users)?.id, 'cross-trained');
     assert.equal(selectEligibleAssigneeForArea('mkt-primary', 'TI', users), null);
     assert.equal(selectEligibleAssigneeForArea('inactive-ti', 'TI', users), null);
-    assert.equal(selectEligibleAssigneeForArea('legacy-contradictory', 'TI', users)?.id, 'legacy-contradictory');
+    assert.equal(selectEligibleAssigneeForArea('legacy-contradictory', 'TI', users), null);
     assert.equal(selectEligibleAssigneeForArea('missing', 'TI', users), null);
   });
 
   it('normaliza cargo e áreas operacionais sem tratar como sinônimos', () => {
-    assert.deepEqual(normalizeOperationalProfile({ role: 'ti', areas: ['TI', 'MKT', 'TI'] }), {
+    assert.deepEqual(normalizeOperationalProfile({ role: 'ti', areas: ['MKT', 'TI', 'TI'] }), {
       ok: true,
       role: 'ti',
       area: 'TI',
       areas: ['TI', 'MKT'],
     });
-    assert.deepEqual(normalizeOperationalProfile({ role: 'marketing', area: '' }), {
+    assert.deepEqual(normalizeOperationalProfile({ role: 'coordenacao', area: 'TI' }), {
       ok: true,
-      role: 'marketing',
-      area: null,
-      areas: [],
-    });
-    assert.deepEqual(normalizeOperationalProfile({ role: 'marketing', area: 'TI' }), {
-      ok: true,
-      role: 'marketing',
+      role: 'coordenacao',
       area: 'TI',
       areas: ['TI'],
+    });
+    assert.deepEqual(normalizeOperationalProfile({ role: 'marketing', area: 'TI' }), {
+      ok: false,
+      error: 'role_area_mismatch',
+    });
+    assert.deepEqual(normalizeOperationalProfile({ role: 'marketing', area: '' }), {
+      ok: false,
+      error: 'role_area_mismatch',
     });
   });
 });
