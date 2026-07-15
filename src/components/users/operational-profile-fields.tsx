@@ -18,6 +18,7 @@ import {
   type UserRole,
 } from '@/lib/constants';
 import { copy } from '@/lib/copy';
+import { cn } from '@/lib/utils';
 
 const NO_ROLE_VALUE = '__no_role';
 
@@ -152,24 +153,37 @@ export function OperationalProfileFields({
             className="grid gap-2 rounded-md border border-input bg-background px-3 py-2"
             aria-describedby={`${idPrefix}-profile-help`}
           >
-            {AREA_OPTIONS.map((item) => (
-              <label
-                key={item.value}
-                className="flex items-center gap-2 text-sm cursor-pointer select-none"
-              >
-                <input
-                  type="checkbox"
-                  name="areas"
-                  value={item.value}
-                  checked={areas.includes(item.value)}
-                  onChange={(event) => toggleArea(item.value, event.currentTarget.checked)}
-                  disabled={disabled}
-                  aria-disabled={requiredArea === item.value}
-                  className="size-4 rounded border-input accent-primary cursor-pointer disabled:cursor-not-allowed"
-                />
-                <span>{item.label}</span>
-              </label>
-            ))}
+            {AREA_OPTIONS.map((item) => {
+              const checked = areas.includes(item.value);
+              const isRequiredArea = requiredArea === item.value;
+
+              return (
+                <label
+                  key={item.value}
+                  className={cn(
+                    'flex min-h-9 items-center gap-2 rounded-md px-2 text-sm select-none transition-colors',
+                    isRequiredArea
+                      ? 'border border-primary/30 bg-primary/5 text-foreground'
+                      : 'cursor-pointer hover:bg-muted/70',
+                    disabled && 'cursor-not-allowed opacity-60 hover:bg-transparent',
+                  )}
+                >
+                  {isRequiredArea && <input type="hidden" name="areas" value={item.value} />}
+                  <input
+                    type="checkbox"
+                    name="areas"
+                    value={item.value}
+                    checked={checked}
+                    onChange={(event) => toggleArea(item.value, event.currentTarget.checked)}
+                    disabled={disabled || isRequiredArea}
+                    className="size-4 rounded border-input accent-primary cursor-pointer disabled:cursor-not-allowed"
+                  />
+                  <span className="min-w-0">
+                    {isRequiredArea ? copy.users.form.automaticAreaLabel(item.label) : item.label}
+                  </span>
+                </label>
+              );
+            })}
           </div>
         </div>
       </div>
