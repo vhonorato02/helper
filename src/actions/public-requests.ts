@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
-import { desc, like, sql } from 'drizzle-orm';
+import { desc, like } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/db';
 import { ticketHistory, tickets } from '@/db/schema';
@@ -38,15 +38,6 @@ const publicRequestSchema = z.object({
 type PublicRequestInput = z.infer<typeof publicRequestSchema>;
 
 const PUBLIC_LIMIT = { limit: 5, windowMs: 60_000, lockoutMs: 5 * 60_000 };
-
-let publicRequestSchemaPromise: Promise<void> | null = null;
-
-async function ensurePublicRequestSchema() {
-  publicRequestSchemaPromise ??= db
-    .execute(sql`ALTER TABLE tickets ADD COLUMN IF NOT EXISTS public_contact text`)
-    .then(() => undefined);
-  return publicRequestSchemaPromise;
-}
 
 const REQUEST_META: Record<
   PublicRequestInput['kind'],
@@ -170,7 +161,6 @@ export async function createPublicRequest(formData: FormData) {
   const origin = 'Pagina publica';
   const publicContact = normalizeOptionalText(input.requesterContact);
   const defaultAssignee = await getDefaultAssigneeForArea(meta.area);
-  await ensurePublicRequestSchema();
 
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const code = await generateCode(meta.area);

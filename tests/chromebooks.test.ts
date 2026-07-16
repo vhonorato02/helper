@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { getTableName } from 'drizzle-orm';
-import { chromebookBookingLocks } from '@/db/schema';
+import { getTableConfig } from 'drizzle-orm/pg-core';
+import { chromebookBookingLocks, chromebookBookings } from '@/db/schema';
 import {
   calculateMaxChromebooksUsed,
   combineDateTimeInSaoPaulo,
@@ -9,6 +10,13 @@ import {
   isActiveChromebookBookingStatus,
   validateChromebookHolidayPolicy,
 } from '@/lib/chromebooks';
+
+function getIndexColumnName(column: unknown) {
+  if (typeof column === 'object' && column !== null && 'name' in column && typeof column.name === 'string') {
+    return column.name;
+  }
+  return null;
+}
 
 describe('Chromebook scheduling rules', () => {
   it('calculates concurrent usage for partially overlapping intervals', () => {
@@ -65,5 +73,15 @@ describe('Chromebook scheduling rules', () => {
     assert.equal(chromebookBookingLocks.id.name, 'id');
     assert.equal(chromebookBookingLocks.owner.name, 'owner');
     assert.equal(chromebookBookingLocks.expiresAt.name, 'expires_at');
+  });
+
+  it('keeps Chromebook booking protocols unique when present', () => {
+    const protocolIndex = getTableConfig(chromebookBookings).indexes.find(
+      (index) => index.config.name === 'chromebook_bookings_protocol_idx',
+    );
+
+    assert.equal(protocolIndex?.config.unique, true);
+    assert.equal(getIndexColumnName(protocolIndex?.config.columns[0]), chromebookBookings.protocol.name);
+    assert.ok(protocolIndex?.config.where);
   });
 });

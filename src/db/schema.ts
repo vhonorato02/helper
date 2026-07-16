@@ -10,7 +10,7 @@ import {
   primaryKey,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 
 export const areaEnum = pgEnum('area', ['TI', 'MKT', 'PF']);
 export const scheduleStatusEnum = pgEnum('schedule_status', ['pendente', 'concluido', 'cancelado']);
@@ -329,6 +329,9 @@ export const chromebookBookings = pgTable(
     index('chromebook_bookings_status_idx').on(t.status),
     index('chromebook_bookings_room_idx').on(t.room),
     index('chromebook_bookings_responsible_idx').on(t.responsibleId),
+    uniqueIndex('chromebook_bookings_protocol_idx')
+      .on(t.protocol)
+      .where(sql`${t.protocol} IS NOT NULL`),
   ],
 );
 

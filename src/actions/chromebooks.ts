@@ -228,29 +228,7 @@ function isUniqueConstraintError(error: unknown) {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-let lockTablePromise: Promise<void> | null = null;
-
-async function ensureChromebookLockTable() {
-  lockTablePromise ??= (async () => {
-    await db.execute(sql`ALTER TABLE chromebook_bookings ADD COLUMN IF NOT EXISTS requester_contact text`);
-    await db.execute(sql`ALTER TABLE chromebook_bookings ADD COLUMN IF NOT EXISTS protocol text`);
-    await db.execute(sql`
-      CREATE UNIQUE INDEX IF NOT EXISTS chromebook_bookings_protocol_idx
-      ON chromebook_bookings (protocol) WHERE protocol IS NOT NULL
-    `);
-    await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS chromebook_booking_locks (
-        id text PRIMARY KEY,
-        owner text NOT NULL,
-        expires_at timestamp NOT NULL
-      )
-    `);
-  })();
-  return lockTablePromise;
-}
-
 async function withChromebookBookingLock<T>(callback: () => Promise<T>) {
-  await ensureChromebookLockTable();
   const owner = crypto.randomUUID();
   const deadline = Date.now() + 5_000;
 
@@ -594,7 +572,6 @@ export async function getChromebookBookings(filters?: {
   quantity?: string;
 }) {
   await requireAuth();
-  await ensureChromebookLockTable();
 
   const conditions = [];
   const parsedDate = filters?.date ? dateSchema.safeParse(filters.date) : null;
