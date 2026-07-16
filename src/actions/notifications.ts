@@ -8,6 +8,7 @@ import { auth } from '@/auth';
 import { db } from '@/db';
 import { notificationPreferences, notifications, users } from '@/db/schema';
 import { logger } from '@/lib/logger';
+import { normalizeInternalNotificationLink } from '@/lib/notification-links';
 import {
   countMyPushSubscriptions,
   getPublicVapidKey,
@@ -91,6 +92,7 @@ export async function dispatchNotification(input: {
 
     const enabledUserIds = await filterUserIdsByPreference(userIds, input.type);
     if (enabledUserIds.length === 0) return;
+    const link = normalizeInternalNotificationLink(input.link);
 
     await db.insert(notifications).values(
       enabledUserIds.map((userId) => ({
@@ -98,7 +100,7 @@ export async function dispatchNotification(input: {
         type: input.type,
         title: input.title,
         body: input.body ?? null,
-        link: input.link ?? null,
+        link,
         ticketId: input.ticketId ?? null,
       })),
     );
@@ -108,7 +110,7 @@ export async function dispatchNotification(input: {
       payload: {
         title: input.title,
         body: input.body,
-        link: input.link,
+        link,
         tag: input.ticketId ?? input.type,
       },
     });

@@ -15,6 +15,7 @@ import {
 import { getNotificationPreferences } from '@/actions/notifications';
 import { formatChromebookPeriod } from '@/lib/chromebooks';
 import { AREA_LABELS, PRIORITY_LABELS, STATUS_LABELS, type Area } from '@/lib/constants';
+import { notificationLinkOrDefault } from '@/lib/notification-links';
 
 export type ReminderPulseItem = {
   id: string;
@@ -240,7 +241,7 @@ export async function getBrowserNotificationPulse() {
     kind: 'notification' as const,
     title: item.title,
     body: item.body ?? 'Nova notificação no Helper.',
-    href: item.link ?? '/notificacoes',
+    href: notificationLinkOrDefault(item.link),
     dueAt: item.createdAt.toISOString(),
     priority: 'now' as const,
     repeat: false,

@@ -4,6 +4,7 @@ import { and, eq, inArray, isNotNull, lt, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { notificationPreferences, pushSubscriptions } from '@/db/schema';
 import { logger } from '@/lib/logger';
+import { notificationLinkOrDefault } from '@/lib/notification-links';
 
 export type PushSubscriptionPayload = {
   endpoint: string;
@@ -181,7 +182,7 @@ export async function sendPushNotificationToUsers(input: {
   const payload = JSON.stringify({
     title: input.payload.title,
     body: input.payload.body ?? '',
-    link: input.payload.link ?? '/notificacoes',
+    link: notificationLinkOrDefault(input.payload.link),
     tag: input.payload.tag ?? undefined,
   });
 

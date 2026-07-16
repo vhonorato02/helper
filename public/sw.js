@@ -41,6 +41,22 @@ function isStaticAsset(url) {
   );
 }
 
+function normalizeNotificationLink(link) {
+  if (typeof link !== 'string') return '/notificacoes';
+  const value = link.trim();
+  if (!value || value.startsWith('//')) return '/notificacoes';
+
+  try {
+    const url = value.startsWith('/')
+      ? new URL(value, self.location.origin)
+      : new URL(value);
+    if (url.origin !== self.location.origin) return '/notificacoes';
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return '/notificacoes';
+  }
+}
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
@@ -96,14 +112,14 @@ self.addEventListener('push', (event) => {
       icon: '/icon-192.png',
       badge: '/favicon-32.png',
       tag: payload.tag || 'helper-notification',
-      data: { url: payload.link || '/notificacoes' },
+      data: { url: normalizeNotificationLink(payload.link) },
     }),
   );
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const targetUrl = event.notification.data?.url || '/notificacoes';
+  const targetUrl = normalizeNotificationLink(event.notification.data?.url);
   const url = new URL(targetUrl, self.location.origin).href;
 
   event.waitUntil(
