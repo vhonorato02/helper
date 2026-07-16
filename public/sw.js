@@ -76,6 +76,31 @@ self.addEventListener('message', (event) => {
   if (event.data === 'SKIP_WAITING') self.skipWaiting();
 });
 
+self.addEventListener('push', (event) => {
+  let payload = {
+    title: 'Helper',
+    body: 'Você tem uma nova notificação.',
+    link: '/notificacoes',
+    tag: 'helper-notification',
+  };
+
+  try {
+    if (event.data) payload = { ...payload, ...event.data.json() };
+  } catch {
+    if (event.data) payload.body = event.data.text();
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title || 'Helper', {
+      body: payload.body || 'Você tem uma nova notificação.',
+      icon: '/icon-192.png',
+      badge: '/favicon-32.png',
+      tag: payload.tag || 'helper-notification',
+      data: { url: payload.link || '/notificacoes' },
+    }),
+  );
+});
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const targetUrl = event.notification.data?.url || '/notificacoes';

@@ -1,15 +1,21 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
-import { BellRing, Loader2 } from 'lucide-react';
+import { useCallback, useEffect, useState, useTransition } from 'react';
+import { BellRing, Loader2, Smartphone } from 'lucide-react';
 import { toast } from 'sonner';
 import { getBrowserNotificationPulse } from '@/actions/reminder-pulse';
+import {
+  getPushRegistrationState,
+  registerPushSubscription,
+  unregisterPushSubscription,
+} from '@/actions/notifications';
 import { Button } from '@/components/ui/button';
 
 const STORAGE_KEY = 'helper.browser-notification-ledger';
 const POLL_MS = 60_000;
 
 type Ledger = Record<string, number>;
+type PushPanelStatus = 'loading' | 'unsupported' | 'unconfigured' | 'denied' | 'active' | 'expired';
 
 function readLedger(): Ledger {
   try {
@@ -48,6 +54,34 @@ async function showBrowserNotification(input: {
     window.focus();
     window.location.href = input.href;
   };
+}
+
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = `${base64String}${padding}`.replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let index = 0; index < rawData.length; index += 1) {
+    outputArray[index] = rawData.charCodeAt(index);
+  }
+
+  return outputArray;
+}
+
+async function readCurrentSubscription() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return null;
+  const registration = await navigator.serviceWorker.ready;
+  return registration.pushManager.getSubscription();
+}
+
+async function loadPublicVapidKey() {
+  const response = await fetch('/api/push/public-key', {
+    headers: { accept: 'application/json' },
+  });
+  if (!response.ok) return null;
+  const payload = (await response.json()) as { publicKey?: unknown };
+  return typeof payload.publicKey === 'string' && payload.publicKey ? payload.publicKey : null;
 }
 
 export function BrowserNotificationAgent() {
@@ -108,23 +142,100 @@ export function BrowserNotificationAgent() {
 }
 
 export function BrowserNotificationPermissionPanel() {
-  const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>(() => {
-    if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported';
-    return Notification.permission;
-  });
+  const [status, setStatus] = useState<PushPanelStatus>('loading');
+  const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>('unsupported');
+  const [deviceCount, setDeviceCount] = useState(0);
   const [isPending, startTransition] = useTransition();
+
+  const refresh = useCallback(async () => {
+    if (
+      typeof window === 'undefined' ||
+      !('Notification' in window) ||
+      !('serviceWorker' in navigator) ||
+      !('PushManager' in window)
+    ) {
+      setPermission('unsupported');
+      setStatus('unsupported');
+      return;
+    }
+
+    setPermission(Notification.permission);
+
+    if (Notification.permission === 'denied') {
+      setStatus('denied');
+      return;
+    }
+
+    const state = await getPushRegistrationState();
+    setDeviceCount(state.subscriptionCount);
+    if (!state.publicKey) {
+      setStatus('unconfigured');
+      return;
+    }
+
+    const subscription = await readCurrentSubscription();
+    setStatus(subscription ? 'active' : 'expired');
+  }, []);
+
+  useEffect(() => {
+    refresh().catch(() => setStatus('unsupported'));
+  }, [refresh]);
 
   const enable = () => {
     startTransition(async () => {
-      if (!('Notification' in window)) {
+      if (
+        !('Notification' in window) ||
+        !('serviceWorker' in navigator) ||
+        !('PushManager' in window)
+      ) {
         setPermission('unsupported');
+        setStatus('unsupported');
         return;
       }
 
       const nextPermission = await Notification.requestPermission();
       setPermission(nextPermission);
-      if (nextPermission === 'granted') toast.success('Notificações do navegador ativadas.');
+      if (nextPermission === 'granted') {
+        const publicKey = await loadPublicVapidKey();
+        if (!publicKey) {
+          setStatus('unconfigured');
+          toast.error('Web Push ainda não está configurado no servidor.');
+          return;
+        }
+
+        const registration = await navigator.serviceWorker.ready;
+        const existingSubscription = await registration.pushManager.getSubscription();
+        const subscription =
+          existingSubscription ??
+          (await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(publicKey),
+          }));
+
+        const result = await registerPushSubscription(subscription.toJSON());
+        if (!result.ok) {
+          toast.error(result.error);
+          return;
+        }
+
+        setStatus('active');
+        setDeviceCount((current) => Math.max(current, 1));
+        toast.success('Notificações PWA ativadas neste dispositivo.');
+      }
       if (nextPermission === 'denied') toast.error('O navegador bloqueou as notificações para este site.');
+    });
+  };
+
+  const disable = () => {
+    startTransition(async () => {
+      const subscription = await readCurrentSubscription();
+      if (subscription) {
+        await unregisterPushSubscription(subscription.endpoint);
+        await subscription.unsubscribe();
+      }
+      setStatus('expired');
+      setDeviceCount((current) => Math.max(0, current - 1));
+      toast.success('Notificações PWA desativadas neste dispositivo.');
     });
   };
 
@@ -140,35 +251,55 @@ export function BrowserNotificationPermissionPanel() {
     });
   };
 
-  if (permission === 'unsupported') return null;
+  if (status === 'loading') return null;
+
+  const descriptionByStatus: Record<PushPanelStatus, string> = {
+    loading: '',
+    unsupported: 'Este navegador não oferece Web Push para o Helper.',
+    unconfigured: 'O servidor ainda precisa das variáveis VAPID para ativar push real.',
+    denied: 'O navegador bloqueou notificações para este site.',
+    active: 'Ativas neste dispositivo. O Helper pode avisar mesmo com a janela fechada.',
+    expired: deviceCount > 0
+      ? 'Este dispositivo não está inscrito. Há outro dispositivo salvo na sua conta.'
+      : 'Permita neste dispositivo para receber avisos fora da inbox interna.',
+  };
 
   return (
     <section className="surface-elevated rounded-lg p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-start gap-3">
           <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-            <BellRing className="size-4" />
+            <Smartphone className="size-4" />
           </div>
           <div className="min-w-0">
-            <h2 className="text-sm font-semibold">Alertas no navegador e PWA</h2>
+            <h2 className="text-sm font-semibold">Push no PWA</h2>
             <p className="mt-0.5 text-sm text-muted-foreground">
-              {permission === 'granted'
-                ? 'Ativos neste dispositivo. O Helper avisa lembretes, atribuições e pendências próximas.'
-                : 'Permita neste dispositivo para receber lembretes fora da inbox interna.'}
+              {descriptionByStatus[status]}
             </p>
           </div>
         </div>
 
         <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
-          {permission !== 'granted' ? (
+          {status === 'active' ? (
+            <>
+              <Button type="button" variant="outline" size="sm" onClick={sendTest} disabled={isPending}>
+                {isPending && <Loader2 className="animate-spin" />}
+                Testar
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={disable} disabled={isPending}>
+                {isPending && <Loader2 className="animate-spin" />}
+                Desativar
+              </Button>
+            </>
+          ) : status === 'unsupported' || status === 'unconfigured' || permission === 'denied' ? (
+            <Button type="button" variant="outline" size="sm" disabled>
+              <BellRing className="size-4" />
+              Indisponível
+            </Button>
+          ) : (
             <Button type="button" size="sm" onClick={enable} disabled={isPending}>
               {isPending && <Loader2 className="animate-spin" />}
               Ativar
-            </Button>
-          ) : (
-            <Button type="button" variant="outline" size="sm" onClick={sendTest} disabled={isPending}>
-              {isPending && <Loader2 className="animate-spin" />}
-              Testar
             </Button>
           )}
         </div>

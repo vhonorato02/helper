@@ -49,6 +49,7 @@
     "react-hook-form": "^7.81.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0",
+    "web-push": "^3.6.7",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -58,6 +59,7 @@
     "@types/node": "24.13.3",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "@types/web-push": "^3.6.4",
     "eslint": "^10.7.0",
     "postcss": "^8.5.19",
     "tailwindcss": "^4.3.2",

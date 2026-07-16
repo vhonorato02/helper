@@ -1,12 +1,21 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { and, count, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { auth } from '@/auth';
 import { db } from '@/db';
 import { notificationPreferences, notifications, users } from '@/db/schema';
 import { logger } from '@/lib/logger';
+import {
+  countMyPushSubscriptions,
+  getPublicVapidKey,
+  normalizePushSubscriptionPayload,
+  removePushSubscription,
+  sendPushNotificationToUsers,
+  upsertPushSubscription,
+} from '@/lib/web-push';
 
 async function requireAuth() {
   const session = await auth();
@@ -93,6 +102,16 @@ export async function dispatchNotification(input: {
         ticketId: input.ticketId ?? null,
       })),
     );
+
+    await sendPushNotificationToUsers({
+      userIds: enabledUserIds,
+      payload: {
+        title: input.title,
+        body: input.body,
+        link: input.link,
+        tag: input.ticketId ?? input.type,
+      },
+    });
   } catch (error) {
     logger.warn('notification_dispatch_failed', {
       type: input.type,
@@ -198,6 +217,45 @@ export async function getNotificationPreferences() {
 }
 
 export type NotificationPreferences = Awaited<ReturnType<typeof getNotificationPreferences>>;
+
+export async function getPushRegistrationState() {
+  const user = await requireAuth();
+  return {
+    publicKey: getPublicVapidKey(),
+    subscriptionCount: await countMyPushSubscriptions(user.id),
+  };
+}
+
+export async function registerPushSubscription(subscription: unknown) {
+  const user = await requireAuth();
+  const payload = normalizePushSubscriptionPayload(subscription);
+
+  if (!payload) {
+    return { ok: false, error: 'Assinatura push inválida.' };
+  }
+
+  const requestHeaders = await headers();
+  await upsertPushSubscription({
+    userId: user.id,
+    subscription: payload,
+    userAgent: requestHeaders.get('user-agent'),
+  });
+
+  revalidatePath('/configuracoes');
+  revalidatePath('/minha-conta');
+  revalidatePath('/notificacoes');
+  return { ok: true };
+}
+
+export async function unregisterPushSubscription(endpoint: string) {
+  const user = await requireAuth();
+  await removePushSubscription({ userId: user.id, endpoint });
+
+  revalidatePath('/configuracoes');
+  revalidatePath('/minha-conta');
+  revalidatePath('/notificacoes');
+  return { ok: true };
+}
 
 export async function updateNotificationPreferences(formData: FormData) {
   const user = await requireAuth();

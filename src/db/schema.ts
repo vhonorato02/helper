@@ -231,6 +231,27 @@ export const notificationPreferences = pgTable('notification_preferences', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+export const pushSubscriptions = pgTable(
+  'push_subscriptions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    endpoint: text('endpoint').unique().notNull(),
+    p256dh: text('p256dh').notNull(),
+    auth: text('auth').notNull(),
+    expirationTime: timestamp('expiration_time'),
+    userAgent: text('user_agent'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    lastSeenAt: timestamp('last_seen_at').defaultNow().notNull(),
+  },
+  (t) => [
+    index('push_subscriptions_user_idx').on(t.userId),
+    index('push_subscriptions_last_seen_idx').on(t.lastSeenAt),
+  ],
+);
+
 export const userAreas = pgTable(
   'user_areas',
   {
@@ -392,6 +413,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   ticketTasks: many(ticketTasks),
   mentions: many(ticketMentions),
   notifications: many(notifications),
+  pushSubscriptions: many(pushSubscriptions),
   quickResponses: many(quickResponses),
   operationalAreas: many(userAreas),
   primaryAreaAssignments: many(areaPrimaryAssignees, { relationName: 'primaryAreaAssignee' }),
@@ -468,6 +490,10 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
   ticket: one(tickets, { fields: [notifications.ticketId], references: [tickets.id] }),
 }));
 
+export const pushSubscriptionsRelations = relations(pushSubscriptions, ({ one }) => ({
+  user: one(users, { fields: [pushSubscriptions.userId], references: [users.id] }),
+}));
+
 export const chromebookBookingsRelations = relations(chromebookBookings, ({ one }) => ({
   responsible: one(users, {
     fields: [chromebookBookings.responsibleId],
@@ -505,6 +531,7 @@ export type Subcategory = typeof subcategories.$inferSelect;
 export type NewSubcategory = typeof subcategories.$inferInsert;
 export type AuthEvent = typeof authEvents.$inferSelect;
 export type TicketMention = typeof ticketMentions.$inferSelect;
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
 export type Schedule = typeof schedules.$inferSelect;
 export type NewSchedule = typeof schedules.$inferInsert;
 export type ChromebookSetting = typeof chromebookSettings.$inferSelect;
