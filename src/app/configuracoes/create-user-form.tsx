@@ -178,15 +178,21 @@ export function CreateUserForm() {
         </div>
       </div>
 
-      <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+      <label className="flex items-start gap-2 text-sm cursor-pointer select-none">
         <input
           type="checkbox"
           name="isAdmin"
           value="true"
-          className="size-4 rounded border-input accent-primary cursor-pointer"
+          aria-describedby="create-user-admin-description"
+          className="mt-0.5 size-4 rounded border-input accent-primary cursor-pointer"
           disabled={isPending}
         />
-        <span>{copy.users.form.isAdmin}</span>
+        <span>
+          <span className="block">{copy.users.form.isAdmin}</span>
+          <span id="create-user-admin-description" className="block text-xs leading-relaxed text-muted-foreground">
+            {copy.users.form.adminHelper}
+          </span>
+        </span>
       </label>
 
       {error && (

@@ -495,6 +495,11 @@ export const copy = {
       you: 'Você',
       joinedAt: (username: string, date: string) => `@${username} ingressou em ${date}`,
     },
+    profile: {
+      role: 'Cargo',
+      areas: 'Áreas',
+      permissions: 'Permissões',
+    },
     form: {
       username: 'Usuário',
       displayName: 'Nome exibido',
@@ -503,6 +508,10 @@ export const copy = {
       areas: 'Áreas operacionais',
       password: 'Senha provisória',
       isAdmin: 'Conceder acesso de administrador',
+      adminHelper:
+        'Administradores podem gerenciar usuários, permissões, responsáveis primários e ferramentas do sistema.',
+      adminSelfHelper:
+        'Você não pode remover a própria permissão administrativa nesta tela.',
       noRole: 'Sem cargo',
       noArea: 'Sem área operacional',
       automaticAreaLabel: (area: string) => `${area} (definida pelo cargo)`,
@@ -558,7 +567,7 @@ export const copy = {
     },
     editDialog: {
       title: 'Editar usuário',
-      description: 'Atualize nome, identificador e permissão.',
+      description: 'Atualize identidade, cargo, áreas operacionais e permissões.',
       submit: 'Salvar usuário',
     },
     primaryAssignee: {
@@ -598,7 +607,7 @@ export const copy = {
       identityTitle: 'Identidade',
       identityDescription: 'Nome e usuário usados no histórico, comentários e atribuições.',
       roleTitle: 'Cargo',
-      areaTitle: 'Área operacional',
+      areaTitle: 'Áreas operacionais',
       permissionsTitle: 'Permissões',
       primaryAssigneeTitle: 'Responsável primário',
       primaryAssigneeNone: 'Nenhum responsável primário definido para sua área.',

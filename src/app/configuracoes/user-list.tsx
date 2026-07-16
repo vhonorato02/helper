@@ -49,6 +49,12 @@ type ConfirmState =
   | { type: 'delete'; user: UserItem }
   | { type: 'role'; user: UserItem; nextAdmin: boolean };
 
+function formatAreas(user: UserItem) {
+  return user.operationalAreas.length > 0
+    ? user.operationalAreas.map((area) => AREA_LABELS[area]).join(', ')
+    : copy.common.none;
+}
+
 function getConfirmContent(state: ConfirmState | null) {
   if (!state) {
     return { title: '', description: '', confirmLabel: copy.common.confirm, destructive: false };
@@ -153,15 +159,17 @@ export function UserList({ users, currentUserId }: UserListProps) {
           const isSelf = user.id === currentUserId;
           const roleLabel = user.role
             ? USER_ROLE_LABELS[user.role as UserRole] ?? user.role
-            : null;
+            : copy.common.none;
+          const areaLabel = formatAreas(user);
+          const permissionLabel = user.isAdmin ? copy.users.roles.admin : copy.users.roles.user;
           return (
             <div
               key={user.id}
-              className={`flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-muted/30 ${
+              className={`flex items-start gap-3.5 px-4 py-3.5 transition-colors hover:bg-muted/30 ${
                 !user.isActive ? 'opacity-60' : ''
               }`}
             >
-              <Avatar className="size-9 shrink-0">
+              <Avatar className="mt-0.5 size-9 shrink-0">
                 {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt="" />}
                 <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">
                   {initials(user.displayName)}
@@ -177,12 +185,22 @@ export function UserList({ users, currentUserId }: UserListProps) {
                       {copy.users.roles.adminShort}
                     </Badge>
                   )}
-                  {roleLabel && <Badge variant="outline">{roleLabel}</Badge>}
-                  {user.operationalAreas.map((area) => (
-                    <Badge key={area} variant="secondary">{AREA_LABELS[area]}</Badge>
-                  ))}
                   {!user.isActive && <Badge variant="outline">{copy.users.status.inactive}</Badge>}
                   {isSelf && <Badge variant="secondary">{copy.users.status.you}</Badge>}
+                </div>
+                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                  <span>
+                    <span className="font-medium text-foreground">{copy.users.profile.role}:</span>{' '}
+                    {roleLabel}
+                  </span>
+                  <span>
+                    <span className="font-medium text-foreground">{copy.users.profile.areas}:</span>{' '}
+                    {areaLabel}
+                  </span>
+                  <span>
+                    <span className="font-medium text-foreground">{copy.users.profile.permissions}:</span>{' '}
+                    {permissionLabel}
+                  </span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {copy.users.status.joinedAt(
@@ -197,6 +215,7 @@ export function UserList({ users, currentUserId }: UserListProps) {
                   <Button
                     variant="ghost"
                     size="icon-sm"
+                    className="mt-0.5"
                     aria-label={copy.users.list.actionsFor(user.displayName)}
                     disabled={isPending}
                   >

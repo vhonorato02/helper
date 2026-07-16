@@ -83,6 +83,8 @@ export function OperationalProfileFields({
   }, [initialArea, initialAreas, initialRole, resetKey]);
 
   const requiredArea = roleDefaultArea(role);
+  const helpId = `${idPrefix}-profile-help`;
+  const areaGroupId = `${idPrefix}-areas-label`;
 
   const helpText = useMemo(() => {
     if (requiredArea && areas.length === 1) {
@@ -132,7 +134,7 @@ export function OperationalProfileFields({
           <Label htmlFor={`${idPrefix}-role`}>{copy.users.form.role}</Label>
           <input type="hidden" name="role" value={role ?? ''} />
           <Select value={role ?? NO_ROLE_VALUE} onValueChange={handleRoleChange} disabled={disabled}>
-            <SelectTrigger id={`${idPrefix}-role`} aria-describedby={`${idPrefix}-profile-help`}>
+            <SelectTrigger id={`${idPrefix}-role`} aria-describedby={helpId}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -147,11 +149,13 @@ export function OperationalProfileFields({
         </div>
 
         <div className="space-y-1.5">
-          <Label>{copy.users.form.areas}</Label>
+          <Label id={areaGroupId}>{copy.users.form.areas}</Label>
           <input type="hidden" name="area" value={areas[0] ?? ''} />
           <div
-            className="grid gap-2 rounded-md border border-input bg-background px-3 py-2"
-            aria-describedby={`${idPrefix}-profile-help`}
+            role="group"
+            aria-labelledby={areaGroupId}
+            aria-describedby={helpId}
+            className="grid gap-2 rounded-md border border-input bg-background p-2"
           >
             {AREA_OPTIONS.map((item) => {
               const checked = areas.includes(item.value);
@@ -161,7 +165,7 @@ export function OperationalProfileFields({
                 <label
                   key={item.value}
                   className={cn(
-                    'flex min-h-9 items-center gap-2 rounded-md px-2 text-sm select-none transition-colors',
+                    'flex min-h-10 items-center gap-2 rounded-md px-2 text-sm select-none transition-colors',
                     isRequiredArea
                       ? 'border border-primary/30 bg-primary/5 text-foreground'
                       : 'cursor-pointer hover:bg-muted/70',
@@ -176,7 +180,7 @@ export function OperationalProfileFields({
                     checked={checked}
                     onChange={(event) => toggleArea(item.value, event.currentTarget.checked)}
                     disabled={disabled || isRequiredArea}
-                    className="size-4 rounded border-input accent-primary cursor-pointer disabled:cursor-not-allowed"
+                    className="size-4 shrink-0 rounded border-input accent-primary cursor-pointer disabled:cursor-not-allowed"
                   />
                   <span className="min-w-0">
                     {isRequiredArea ? copy.users.form.automaticAreaLabel(item.label) : item.label}
@@ -188,7 +192,7 @@ export function OperationalProfileFields({
         </div>
       </div>
 
-      <p id={`${idPrefix}-profile-help`} className="text-xs leading-relaxed text-muted-foreground">
+      <p id={helpId} className="text-xs leading-relaxed text-muted-foreground">
         {helpText}
       </p>
     </fieldset>

@@ -36,6 +36,7 @@ export function EditUserDialog({ open, onOpenChange, user, isSelf }: EditUserDia
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState('');
   const formRef = useRef<HTMLFormElement>(null);
+  const adminDescriptionId = `edit-user-${user.id}-admin-description`;
 
   useEffect(() => {
     if (!open) setError('');
@@ -123,7 +124,7 @@ export function EditUserDialog({ open, onOpenChange, user, isSelf }: EditUserDia
             />
           </div>
 
-          <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+          <label className="flex items-start gap-2 text-sm cursor-pointer select-none">
             {isSelf && user.isAdmin && <input type="hidden" name="isAdmin" value="true" />}
             <input
               type="checkbox"
@@ -131,9 +132,15 @@ export function EditUserDialog({ open, onOpenChange, user, isSelf }: EditUserDia
               value="true"
               defaultChecked={user.isAdmin}
               disabled={isPending || isSelf}
-              className="size-4 rounded border-input accent-primary cursor-pointer disabled:cursor-not-allowed"
+              aria-describedby={adminDescriptionId}
+              className="mt-0.5 size-4 rounded border-input accent-primary cursor-pointer disabled:cursor-not-allowed"
             />
-            <span>{copy.users.form.isAdmin}</span>
+            <span>
+              <span className="block">{copy.users.form.isAdmin}</span>
+              <span id={adminDescriptionId} className="block text-xs leading-relaxed text-muted-foreground">
+                {isSelf ? copy.users.form.adminSelfHelper : copy.users.form.adminHelper}
+              </span>
+            </span>
           </label>
 
           {error && (

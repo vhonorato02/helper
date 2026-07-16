@@ -172,6 +172,7 @@ export function Nav({ user, users }: NavProps) {
                 <Link
                   key={href}
                   href={href}
+                  aria-current={active ? 'page' : undefined}
                   className={cn(
                     'flex h-8 shrink-0 items-center gap-1.5 rounded-md px-3 text-sm font-medium transition-all',
                     active
@@ -188,6 +189,7 @@ export function Nav({ user, users }: NavProps) {
 
           <div className="ml-auto flex items-center gap-1.5">
             <button
+              type="button"
               onClick={() => setPaletteOpen(true)}
               className="hidden h-8 items-center gap-2 rounded-md border border-border/80 bg-card/90 px-3 text-xs font-medium text-muted-foreground shadow-xs transition-all hover:border-foreground/20 hover:bg-accent hover:text-foreground 2xl:inline-flex"
               aria-label={copy.commandPalette.title}
@@ -324,6 +326,7 @@ export function Nav({ user, users }: NavProps) {
               <Link
                 key={href}
                 href={href}
+                aria-current={isActiveLink(href) ? 'page' : undefined}
                 onClick={() => setMobileOpen(false)}
                 className={cn(
                   'flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition-colors',
@@ -338,13 +341,20 @@ export function Nav({ user, users }: NavProps) {
             ))}
             <Link
               href="/minha-conta"
+              aria-current={isActiveLink('/minha-conta') ? 'page' : undefined}
               onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-accent/60"
+              className={cn(
+                'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
+                isActiveLink('/minha-conta')
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+              )}
             >
               <UserRound className="size-4" />
               {copy.nav.links.account}
             </Link>
             <button
+              type="button"
               onClick={() => {
                 setMobileOpen(false);
                 setPasswordDialogOpen(true);
@@ -357,14 +367,21 @@ export function Nav({ user, users }: NavProps) {
             {user.isAdmin && (
               <Link
                 href="/configuracoes"
+                aria-current={isActiveLink('/configuracoes') ? 'page' : undefined}
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-accent/60"
+                className={cn(
+                  'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
+                  isActiveLink('/configuracoes')
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+                )}
               >
                 <Settings className="size-4" />
                 {copy.nav.links.settings}
               </Link>
             )}
             <button
+              type="button"
               onClick={handleSignOut}
               disabled={isSigningOut}
               className="flex w-full items-center gap-2 px-3 py-2 rounded-md text-sm text-destructive hover:bg-destructive/10"
