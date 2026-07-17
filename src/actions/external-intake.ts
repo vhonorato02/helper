@@ -11,6 +11,7 @@ import { confirmChromebookBooking } from '@/actions/chromebooks';
 import { dispatchNotification } from '@/actions/notifications';
 import { getDefaultAssigneeForArea, getEligibleAssigneeForArea } from '@/actions/users';
 import { formatChromebookPeriod } from '@/lib/chromebooks';
+import { canManageChromebookBookings } from '@/lib/chromebook-permissions';
 import { AREA_LABELS, PRIORITY_LABELS, STATUS_LABELS } from '@/lib/constants';
 import { copy } from '@/lib/copy';
 
@@ -44,7 +45,8 @@ function revalidateIntakeSurfaces(code?: string) {
 }
 
 export async function getExternalIntakeSummary(limit = 6) {
-  await requireAuth();
+  const user = await requireAuth();
+  const canManageChromebooks = canManageChromebookBookings(user);
 
   const [
     publicTicketCountRow,
@@ -129,7 +131,7 @@ export async function getExternalIntakeSummary(limit = 6) {
     detail: formatChromebookPeriod(booking.startAt, booking.endAt),
     status: 'pendente' as const,
     location: booking.room,
-    contact: booking.requesterContact,
+    contact: canManageChromebooks ? booking.requesterContact : null,
     href: '/chromebooks?status=pendente',
     createdAt: booking.createdAt,
   }));
