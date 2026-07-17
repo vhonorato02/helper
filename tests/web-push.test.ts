@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   getPublicVapidKey,
+  isValidPushEndpoint,
   normalizePushSubscriptionPayload,
   sendPushNotificationToUsers,
 } from '@/lib/web-push';
@@ -12,6 +13,13 @@ function restoreEnv(name: string, value: string | undefined) {
 }
 
 describe('web push helpers', () => {
+  it('aceita somente endpoints push seguros e limitados', () => {
+    assert.equal(isValidPushEndpoint('https://push.example.test/send/abc'), true);
+    assert.equal(isValidPushEndpoint('http://push.example.test/send/abc'), false);
+    assert.equal(isValidPushEndpoint(''), false);
+    assert.equal(isValidPushEndpoint(`https://${'a'.repeat(2050)}`), false);
+  });
+
   it('normaliza assinatura PushSubscriptionJSON valida', () => {
     const payload = normalizePushSubscriptionPayload({
       endpoint: 'https://push.example.test/send/abc',

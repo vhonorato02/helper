@@ -12,6 +12,8 @@ import { normalizeInternalNotificationLink } from '@/lib/notification-links';
 import {
   countMyPushSubscriptions,
   getPublicVapidKey,
+  hasPushSubscriptionForUser,
+  isValidPushEndpoint,
   normalizePushSubscriptionPayload,
   removePushSubscription,
   sendPushNotificationToUsers,
@@ -220,11 +222,18 @@ export async function getNotificationPreferences() {
 
 export type NotificationPreferences = Awaited<ReturnType<typeof getNotificationPreferences>>;
 
-export async function getPushRegistrationState() {
+export async function getPushRegistrationState(endpoint?: string | null) {
   const user = await requireAuth();
+  const normalizedEndpoint = typeof endpoint === 'string' && isValidPushEndpoint(endpoint)
+    ? endpoint
+    : null;
+
   return {
     publicKey: getPublicVapidKey(),
     subscriptionCount: await countMyPushSubscriptions(user.id),
+    currentEndpointRegistered: normalizedEndpoint
+      ? await hasPushSubscriptionForUser({ userId: user.id, endpoint: normalizedEndpoint })
+      : false,
   };
 }
 

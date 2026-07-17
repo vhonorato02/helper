@@ -52,6 +52,10 @@ function endpointFingerprint(endpoint: string) {
   return crypto.createHash('sha256').update(endpoint).digest('hex').slice(0, 16);
 }
 
+export function isValidPushEndpoint(endpoint: string) {
+  return endpoint.startsWith('https://') && endpoint.length <= MAX_ENDPOINT_LENGTH;
+}
+
 function isGoneWebPushError(error: unknown) {
   if (!error || typeof error !== 'object') return false;
   const statusCode = (error as { statusCode?: unknown }).statusCode;
@@ -73,9 +77,7 @@ export function normalizePushSubscriptionPayload(
   };
 
   if (typeof value.endpoint !== 'string') return null;
-  if (!value.endpoint.startsWith('https://') || value.endpoint.length > MAX_ENDPOINT_LENGTH) {
-    return null;
-  }
+  if (!isValidPushEndpoint(value.endpoint)) return null;
   const p256dh = value.keys?.p256dh;
   const auth = value.keys?.auth;
   if (typeof p256dh !== 'string' || typeof auth !== 'string') return null;
@@ -129,7 +131,7 @@ export async function upsertPushSubscription(input: {
 }
 
 export async function removePushSubscription(input: { userId: string; endpoint: string }) {
-  if (!input.endpoint) return { deleted: 0 };
+  if (!isValidPushEndpoint(input.endpoint)) return { deleted: 0 };
   const deleted = await db
     .delete(pushSubscriptions)
     .where(
@@ -226,4 +228,21 @@ export async function countMyPushSubscriptions(userId: string) {
     .from(pushSubscriptions)
     .where(eq(pushSubscriptions.userId, userId));
   return row?.value ?? 0;
+}
+
+export async function hasPushSubscriptionForUser(input: { userId: string; endpoint: string }) {
+  if (!isValidPushEndpoint(input.endpoint)) return false;
+
+  const [row] = await db
+    .select({ id: pushSubscriptions.id })
+    .from(pushSubscriptions)
+    .where(
+      and(
+        eq(pushSubscriptions.userId, input.userId),
+        eq(pushSubscriptions.endpoint, input.endpoint),
+      ),
+    )
+    .limit(1);
+
+  return Boolean(row);
 }

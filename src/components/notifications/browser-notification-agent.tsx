@@ -75,6 +75,10 @@ async function readCurrentSubscription() {
   return registration.pushManager.getSubscription();
 }
 
+function isExpiredSubscription(subscription: PushSubscription | null) {
+  return Boolean(subscription?.expirationTime && subscription.expirationTime <= Date.now());
+}
+
 async function loadPublicVapidKey() {
   const response = await fetch('/api/push/public-key', {
     headers: { accept: 'application/json' },
@@ -166,15 +170,23 @@ export function BrowserNotificationPermissionPanel() {
       return;
     }
 
-    const state = await getPushRegistrationState();
+    const subscription = await readCurrentSubscription();
+    const state = await getPushRegistrationState(subscription?.endpoint ?? null);
     setDeviceCount(state.subscriptionCount);
     if (!state.publicKey) {
       setStatus('unconfigured');
       return;
     }
 
-    const subscription = await readCurrentSubscription();
-    setStatus(subscription ? 'active' : 'expired');
+    if (isExpiredSubscription(subscription)) {
+      await unregisterPushSubscription(subscription!.endpoint);
+      await subscription!.unsubscribe();
+      setDeviceCount((current) => Math.max(0, current - 1));
+      setStatus('expired');
+      return;
+    }
+
+    setStatus(subscription && state.currentEndpointRegistered ? 'active' : 'expired');
   }, []);
 
   useEffect(() => {
@@ -218,8 +230,7 @@ export function BrowserNotificationPermissionPanel() {
           return;
         }
 
-        setStatus('active');
-        setDeviceCount((current) => Math.max(current, 1));
+        await refresh();
         toast.success('Notificações PWA ativadas neste dispositivo.');
       }
       if (nextPermission === 'denied') toast.error('O navegador bloqueou as notificações para este site.');
@@ -233,8 +244,7 @@ export function BrowserNotificationPermissionPanel() {
         await unregisterPushSubscription(subscription.endpoint);
         await subscription.unsubscribe();
       }
-      setStatus('expired');
-      setDeviceCount((current) => Math.max(0, current - 1));
+      await refresh();
       toast.success('Notificações PWA desativadas neste dispositivo.');
     });
   };
@@ -260,8 +270,8 @@ export function BrowserNotificationPermissionPanel() {
     denied: 'O navegador bloqueou notificações para este site.',
     active: 'Ativas neste dispositivo. O Helper pode avisar mesmo com a janela fechada.',
     expired: deviceCount > 0
-      ? 'Este dispositivo não está inscrito. Há outro dispositivo salvo na sua conta.'
-      : 'Permita neste dispositivo para receber avisos fora da inbox interna.',
+      ? 'Este dispositivo precisa ser reativado. Há outro dispositivo salvo na sua conta.'
+      : 'Ative neste dispositivo para receber avisos fora da inbox interna.',
   };
 
   return (
