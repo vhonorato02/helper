@@ -194,11 +194,13 @@ function BookingDialog({
   onOpenChange,
   initial,
   currentUserName,
+  canManage,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initial?: ChromebookBookingRow | null;
   currentUserName: string;
+  canManage: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -215,6 +217,10 @@ function BookingDialog({
 
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!canManage) {
+      toast.error('Sem permissão.');
+      return;
+    }
     const formData = new FormData(event.currentTarget);
 
     startTransition(async () => {
@@ -480,11 +486,13 @@ export function ChromebookAdminClient({
   );
 
   const openCreate = () => {
+    if (!isAdmin) return;
     setEditing(null);
     setDialogOpen(true);
   };
 
   const openEdit = (booking: ChromebookBookingRow) => {
+    if (!isAdmin) return;
     setEditing(booking);
     setDialogOpen(true);
   };
@@ -604,12 +612,19 @@ export function ChromebookAdminClient({
                   {isExporting ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
                   Exportar CSV
                 </Button>
-                <Button onClick={openCreate}>
-                  <Plus className="size-4" />
-                  Inserir agendamento
-                </Button>
+                {isAdmin && (
+                  <Button onClick={openCreate}>
+                    <Plus className="size-4" />
+                    Inserir agendamento
+                  </Button>
+                )}
               </div>
             </div>
+            {!isAdmin && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                Apenas administradores podem aprovar, editar, cancelar ou inserir reservas.
+              </p>
+            )}
 
             {filtersOpen && (
               <form
@@ -770,7 +785,7 @@ export function ChromebookAdminClient({
                     {booking.notes && <p className="text-muted-foreground">{booking.notes}</p>}
                   </div>
                   <div className="mt-4 flex flex-wrap justify-end gap-2">
-                    {booking.status === 'pendente' && (
+                    {isAdmin && booking.status === 'pendente' && (
                       <>
                         <Button
                           size="sm"
@@ -791,10 +806,12 @@ export function ChromebookAdminClient({
                         </Button>
                       </>
                     )}
-                    <Button variant="ghost" size="sm" onClick={() => openEdit(booking)} disabled={isPending}>
-                      <Pencil className="size-3.5" />
-                      Editar
-                    </Button>
+                    {isAdmin && (
+                      <Button variant="ghost" size="sm" onClick={() => openEdit(booking)} disabled={isPending}>
+                        <Pencil className="size-3.5" />
+                        Editar
+                      </Button>
+                    )}
                     {isAdmin && (
                       <Button
                         variant="ghost"
@@ -854,7 +871,7 @@ export function ChromebookAdminClient({
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-1">
-                          {booking.status === 'pendente' && (
+                          {isAdmin && booking.status === 'pendente' && (
                             <>
                               <Button
                                 variant="ghost"
@@ -878,17 +895,19 @@ export function ChromebookAdminClient({
                               </Button>
                             </>
                           )}
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => openEdit(booking)}
-                            title="Editar"
-                            aria-label={`Editar agendamento de ${booking.requesterName}`}
-                            disabled={isPending}
-                          >
-                            <Pencil className="size-3.5" aria-hidden="true" />
-                          </Button>
-                          {booking.status === 'confirmado' && (
+                          {isAdmin && (
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => openEdit(booking)}
+                              title="Editar"
+                              aria-label={`Editar agendamento de ${booking.requesterName}`}
+                              disabled={isPending}
+                            >
+                              <Pencil className="size-3.5" aria-hidden="true" />
+                            </Button>
+                          )}
+                          {isAdmin && booking.status === 'confirmado' && (
                             <Button
                               variant="ghost"
                               size="icon-sm"
@@ -947,6 +966,7 @@ export function ChromebookAdminClient({
         onOpenChange={setDialogOpen}
         initial={editing}
         currentUserName={currentUserName}
+        canManage={isAdmin}
       />
 
       <ConfirmDialog

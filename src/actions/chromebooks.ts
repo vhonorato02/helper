@@ -22,6 +22,7 @@ import {
   validateChromebookHolidayPolicy,
   type ChromebookBookingStatus,
 } from '@/lib/chromebooks';
+import { canManageChromebookBookings } from '@/lib/chromebook-permissions';
 import { buildSimpleEmail, sendGenericEmail } from '@/lib/email';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { dispatchNotificationToAdmins } from '@/actions/notifications';
@@ -59,7 +60,7 @@ async function requireAuth() {
 
 async function requireAdmin() {
   const user = await requireAuth();
-  if (!user.isAdmin) return null;
+  if (!canManageChromebookBookings(user)) return null;
   return user;
 }
 
@@ -365,21 +366,24 @@ export async function createPublicChromebookBooking(formData: FormData) {
 }
 
 export async function createChromebookBooking(formData: FormData) {
-  const user = await requireAuth();
+  const user = await requireAdmin();
+  if (!user) return { error: copy.auth.errors.permissionDenied };
   const parsed = parseBookingForm(formData, user.name ?? user.username);
   if (!parsed.success) return { error: copy.validation.invalidData };
   return saveBooking(parsed.data, { responsibleId: user.id });
 }
 
 export async function updateChromebookBooking(id: string, formData: FormData) {
-  const user = await requireAuth();
+  const user = await requireAdmin();
+  if (!user) return { error: copy.auth.errors.permissionDenied };
   const parsed = parseBookingForm(formData, user.name ?? user.username);
   if (!parsed.success) return { error: copy.validation.invalidData };
   return saveBooking(parsed.data, { id, responsibleId: user.id });
 }
 
 export async function cancelChromebookBooking(id: string) {
-  await requireAuth();
+  const user = await requireAdmin();
+  if (!user) return { error: copy.auth.errors.permissionDenied };
   const [existing] = await db
     .select({ id: chromebookBookings.id })
     .from(chromebookBookings)
@@ -399,7 +403,8 @@ export async function cancelChromebookBooking(id: string) {
 }
 
 export async function confirmChromebookBooking(id: string) {
-  const user = await requireAuth();
+  const user = await requireAdmin();
+  if (!user) return { error: copy.auth.errors.permissionDenied };
   return withChromebookBookingLock(async () => {
     const [existing] = await db
       .select({
@@ -571,7 +576,7 @@ export async function getChromebookBookings(filters?: {
   room?: string;
   quantity?: string;
 }) {
-  await requireAuth();
+  const user = await requireAuth();
 
   const conditions = [];
   const parsedDate = filters?.date ? dateSchema.safeParse(filters.date) : null;
@@ -597,7 +602,7 @@ export async function getChromebookBookings(filters?: {
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;
 
-  return db
+  const rows = await db
     .select({
       id: chromebookBookings.id,
       startAt: chromebookBookings.startAt,
@@ -618,6 +623,13 @@ export async function getChromebookBookings(filters?: {
     .leftJoin(users, eq(chromebookBookings.responsibleId, users.id))
     .where(where)
     .orderBy(asc(chromebookBookings.startAt), asc(chromebookBookings.room));
+
+  if (canManageChromebookBookings(user)) return rows;
+
+  return rows.map((booking) => ({
+    ...booking,
+    requesterContact: null,
+  }));
 }
 
 export async function getChromebookDaySummary(date?: string) {

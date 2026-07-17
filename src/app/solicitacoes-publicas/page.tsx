@@ -160,7 +160,7 @@ export default async function SolicitacoesPublicasPage() {
                   </div>
                 </Link>
                 <div className="shrink-0 sm:pt-1">
-                  <PublicIntakeActions item={item} />
+                  <PublicIntakeActions item={item} canManageChromebooks={!!session.user.isAdmin} />
                 </div>
               </div>
             ))}

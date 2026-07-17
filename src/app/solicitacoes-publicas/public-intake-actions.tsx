@@ -23,7 +23,13 @@ type ChromebookItem = {
   id: string;
 };
 
-export function PublicIntakeActions({ item }: { item: TicketItem | ChromebookItem }) {
+export function PublicIntakeActions({
+  item,
+  canManageChromebooks,
+}: {
+  item: TicketItem | ChromebookItem;
+  canManageChromebooks: boolean;
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -42,7 +48,7 @@ export function PublicIntakeActions({ item }: { item: TicketItem | ChromebookIte
     });
   };
 
-  if (item.kind === 'chromebook') {
+  if (item.kind === 'chromebook' && canManageChromebooks) {
     return (
       <Button
         size="sm"
@@ -56,6 +62,8 @@ export function PublicIntakeActions({ item }: { item: TicketItem | ChromebookIte
       </Button>
     );
   }
+
+  if (item.kind === 'chromebook') return null;
 
   return (
     <div className="flex flex-wrap gap-2">

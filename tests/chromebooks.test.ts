@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 import { getTableName } from 'drizzle-orm';
 import { getTableConfig } from 'drizzle-orm/pg-core';
 import { chromebookBookingLocks, chromebookBookings } from '@/db/schema';
+import { canManageChromebookBookings } from '@/lib/chromebook-permissions';
 import {
   calculateMaxChromebooksUsed,
   combineDateTimeInSaoPaulo,
@@ -19,6 +20,13 @@ function getIndexColumnName(column: unknown) {
 }
 
 describe('Chromebook scheduling rules', () => {
+  it('allows only admins to manage Chromebook bookings', () => {
+    assert.equal(canManageChromebookBookings({ isAdmin: true }), true);
+    assert.equal(canManageChromebookBookings({ isAdmin: false }), false);
+    assert.equal(canManageChromebookBookings({ isAdmin: null }), false);
+    assert.equal(canManageChromebookBookings(null), false);
+  });
+
   it('calculates concurrent usage for partially overlapping intervals', () => {
     const requestedStart = combineDateTimeInSaoPaulo('2026-08-10', '08:00');
     const requestedEnd = combineDateTimeInSaoPaulo('2026-08-10', '10:00');
