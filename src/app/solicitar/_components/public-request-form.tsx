@@ -7,6 +7,13 @@ import { createPublicRequest } from '@/actions/public-requests';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { validatePublicContact, validatePublicRequestSchedule } from '@/lib/public-requests';
 
@@ -158,18 +165,20 @@ export function PublicRequestForm({
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="public-priority">Urgência</Label>
-          <select
-            id="public-priority"
-            name="priority"
-            defaultValue="media"
-            disabled={isPending}
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <option value="baixa">Baixa</option>
-            <option value="media">Média</option>
-            <option value="alta">Alta</option>
-            <option value="urgente">Urgente</option>
-          </select>
+          <Select name="priority" defaultValue="media" disabled={isPending}>
+            <SelectTrigger id="public-priority" aria-describedby="public-priority-help">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="baixa">Baixa</SelectItem>
+              <SelectItem value="media">Média</SelectItem>
+              <SelectItem value="alta">Alta</SelectItem>
+              <SelectItem value="urgente">Urgente</SelectItem>
+            </SelectContent>
+          </Select>
+          <p id="public-priority-help" className="text-xs text-muted-foreground">
+            Use urgente apenas quando a solicitação precisa de ação imediata.
+          </p>
         </div>
       </div>
 

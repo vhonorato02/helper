@@ -119,6 +119,16 @@ async function expectPublicContactValidation(page, name) {
   await page.goto(`${baseURL}/solicitar/ti`, { waitUntil: 'networkidle' });
   await page.locator('#public-name').fill('QA Visual');
   await page.locator('#public-location').fill('Sala QA');
+  await page.getByRole('combobox', { name: 'Urgência' }).click();
+  await expectVisible(
+    page.getByRole('option', { name: 'Urgente' }),
+    `${name}: public priority options should open`,
+  );
+  await page.getByRole('option', { name: 'Alta' }).click();
+  await expectVisible(
+    page.getByRole('combobox', { name: 'Urgência' }).filter({ hasText: 'Alta' }),
+    `${name}: public priority selection`,
+  );
   await page.locator('#public-title').fill('Teste de contato obrigatorio');
   await page.locator('#public-description').fill('Validando contato obrigatorio.');
   await page.getByRole('button', { name: 'Enviar solicitação' }).click();
