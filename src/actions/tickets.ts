@@ -29,6 +29,7 @@ import { sendTicketNotification } from '@/lib/email';
 import { nextResolvedAt } from '@/lib/ticket-status';
 import { dispatchNotification } from '@/actions/notifications';
 import { getDefaultAssigneeForArea, getEligibleAssigneeForArea } from '@/actions/users';
+import { protectPublicRequesterData } from '@/lib/ticket-access';
 
 const areaSchema = z.enum(['TI', 'MKT', 'PF']);
 const prioritySchema = z.enum(['baixa', 'media', 'alta', 'urgente']);
@@ -797,13 +798,13 @@ function getTicketOrder(sort?: string) {
 export type TicketRow = Awaited<ReturnType<typeof getTickets>>[number];
 
 export async function getTickets(filters?: TicketFilters & { page?: number }) {
-  await requireAuth();
+  const user = await requireAuth();
   const { page = 1 } = filters ?? {};
   const limit = 50;
   const offset = (page - 1) * limit;
   const where = buildTicketConditions(filters);
 
-  return db
+  const rows = await db
     .select({
       id: tickets.id,
       code: tickets.code,
@@ -831,6 +832,8 @@ export async function getTickets(filters?: TicketFilters & { page?: number }) {
     .orderBy(...getTicketOrder(filters?.sort))
     .limit(limit)
     .offset(offset);
+
+  return rows.map((ticket) => protectPublicRequesterData(ticket, user));
 }
 
 export async function getTicketCount(filters?: TicketFilters) {
@@ -844,7 +847,7 @@ export async function getTicketCount(filters?: TicketFilters) {
 }
 
 export async function exportTicketRows(filters?: TicketFilters) {
-  await requireAuth();
+  const user = await requireAuth();
 
   const rows = await db
     .select({
@@ -873,7 +876,7 @@ export async function exportTicketRows(filters?: TicketFilters) {
 
   return {
     rows: rows.slice(0, EXPORT_TICKET_LIMIT).map((ticket) => ({
-      ...ticket,
+      ...protectPublicRequesterData(ticket, user),
       createdAt: ticket.createdAt.toISOString(),
       updatedAt: ticket.updatedAt.toISOString(),
       resolvedAt: ticket.resolvedAt?.toISOString() ?? null,
@@ -885,7 +888,7 @@ export async function exportTicketRows(filters?: TicketFilters) {
 }
 
 export async function getTicket(code: string) {
-  await requireAuth();
+  const user = await requireAuth();
   const ticketAuthor = alias(users, 'ticket_author');
 
   const [row] = await db
@@ -911,7 +914,7 @@ export async function getTicket(code: string) {
   if (!row) return null;
 
   return {
-    ...row.ticket,
+    ...protectPublicRequesterData(row.ticket, user),
     author: row.author?.id ? row.author : null,
     assignee: row.assignee?.id ? row.assignee : null,
   };

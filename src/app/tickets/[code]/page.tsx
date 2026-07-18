@@ -122,6 +122,12 @@ export default async function TicketDetailPage({ params }: PageProps) {
             <User className="size-3.5 opacity-60" />
             {authorName}
           </span>
+          {ticket.publicContact && (
+            <span className="flex items-center gap-1.5">
+              <User className="size-3.5 opacity-60 text-primary" />
+              {ticket.publicContact}
+            </span>
+          )}
           <span className="flex items-center gap-1.5">
             <Calendar className="size-3.5 opacity-60" />
             <time dateTime={new Date(ticket.createdAt).toISOString()}>

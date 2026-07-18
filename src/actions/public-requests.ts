@@ -103,7 +103,6 @@ function buildDescription(input: PublicRequestInput) {
   return [
     `[SOLICITAÇÃO PÚBLICA]`,
     `Solicitante: ${input.requesterName}`,
-    `Contato: ${input.requesterContact}`,
     `Local/setor: ${input.location}`,
     input.desiredDate ? `Data desejada/evento: ${input.desiredDate}` : null,
     input.startTime || input.endTime

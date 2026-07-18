@@ -14,6 +14,7 @@ import { formatChromebookPeriod } from '@/lib/chromebooks';
 import { canManageChromebookBookings } from '@/lib/chromebook-permissions';
 import { AREA_LABELS, PRIORITY_LABELS, STATUS_LABELS } from '@/lib/constants';
 import { copy } from '@/lib/copy';
+import { canViewPublicRequesterContact, canWorkOnTicketArea } from '@/lib/ticket-access';
 
 const ACTIVE_TICKET_STATUSES = ['aberto', 'em_andamento', 'aguardando'] as const;
 const ticketCodeSchema = z.string().trim().min(3).max(24);
@@ -118,7 +119,8 @@ export async function getExternalIntakeSummary(limit = 6) {
     status: ticket.status,
     assigneeId: ticket.assigneeId,
     location: ticket.location,
-    contact: ticket.publicContact,
+    contact: canViewPublicRequesterContact(user, ticket.area) ? ticket.publicContact : null,
+    canManage: canWorkOnTicketArea(user, ticket.area),
     href: `/tickets/${ticket.code}`,
     createdAt: ticket.createdAt,
   }));
@@ -172,6 +174,7 @@ export async function assignPublicTicketToDefault(code: string) {
     .limit(1);
 
   if (!ticket || ticket.origin !== 'Pagina publica') return { error: copy.validation.invalidTicket };
+  if (!canWorkOnTicketArea(user, ticket.area)) return { error: copy.auth.errors.permissionDenied };
 
   const assignee = await getDefaultAssigneeForArea(ticket.area);
   if (!assignee) return { error: 'Nenhum responsável padrão encontrado para esta área.' };
@@ -217,6 +220,7 @@ export async function startPublicTicket(code: string) {
     .limit(1);
 
   if (!ticket || ticket.origin !== 'Pagina publica') return { error: copy.validation.invalidTicket };
+  if (!canWorkOnTicketArea(user, ticket.area)) return { error: copy.auth.errors.permissionDenied };
 
   const selfAssignee = ticket.assigneeId ? null : await getEligibleAssigneeForArea(user.id, ticket.area);
   if (!ticket.assigneeId && !selfAssignee) return { error: copy.validation.ineligibleAssignee };

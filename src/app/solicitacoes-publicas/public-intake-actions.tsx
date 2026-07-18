@@ -16,6 +16,7 @@ type TicketItem = {
   code: string;
   status: 'aberto' | 'em_andamento' | 'aguardando' | 'resolvido' | 'arquivado';
   assigneeId: string | null;
+  canManage: boolean;
 };
 
 type ChromebookItem = {
@@ -64,6 +65,7 @@ export function PublicIntakeActions({
   }
 
   if (item.kind === 'chromebook') return null;
+  if (!item.canManage) return null;
 
   return (
     <div className="flex flex-wrap gap-2">
