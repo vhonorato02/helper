@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
+  filterInvalidAssignmentsForUser,
   isUserEnabledForArea,
   normalizeOperationalProfile,
   resolveExplicitPrimaryAssignee,
@@ -101,5 +102,26 @@ describe('area assignment rules', () => {
       ok: false,
       error: 'role_area_mismatch',
     });
+  });
+
+  it('identifica demandas ativas que ficam inválidas após mudança de áreas', () => {
+    const user: AreaAssigneeCandidate = {
+      id: 'mkt-primary',
+      role: 'marketing',
+      area: 'MKT',
+      operationalAreas: ['MKT'] as const,
+      isActive: true,
+    };
+    const assignments = [
+      { id: 'mkt-ticket', area: 'MKT' as const },
+      { id: 'ti-ticket', area: 'TI' as const },
+      { id: 'pf-ticket', area: 'PF' as const },
+    ];
+
+    assert.deepEqual(filterInvalidAssignmentsForUser(user, assignments), [
+      { id: 'ti-ticket', area: 'TI' },
+      { id: 'pf-ticket', area: 'PF' },
+    ]);
+    assert.deepEqual(filterInvalidAssignmentsForUser({ ...user, isActive: false }, assignments), assignments);
   });
 });

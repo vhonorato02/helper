@@ -101,6 +101,13 @@ export function selectEligibleAssigneeForArea<T extends AreaAssigneeCandidate>(
   return candidate && isUserEnabledForArea(candidate, area) ? candidate : null;
 }
 
+export function filterInvalidAssignmentsForUser<T extends { area: Area }>(
+  user: AreaAssigneeCandidate,
+  assignments: T[],
+) {
+  return assignments.filter((assignment) => !isUserEnabledForArea(user, assignment.area));
+}
+
 export function pickPrimaryAssigneeForArea<T extends AreaAssigneeCandidate>(
   users: T[],
   area: Area,

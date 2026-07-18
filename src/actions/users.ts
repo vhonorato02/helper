@@ -28,9 +28,12 @@ import {
 import { logger } from '@/lib/logger';
 import {
   normalizeOperationalProfile,
+  filterInvalidAssignmentsForUser,
   resolveExplicitPrimaryAssignee,
   selectEligibleAssigneeForArea,
 } from '@/lib/assignment';
+
+const ACTIVE_TICKET_STATUSES = ['aberto', 'em_andamento', 'aguardando'] as const;
 
 async function requireSession() {
   const session = await auth();
@@ -146,7 +149,49 @@ function revalidateUserSurfaces() {
   revalidatePath('/');
   revalidatePath('/tickets');
   revalidatePath('/kanban');
+  revalidatePath('/equipe');
   revalidatePath('/configuracoes');
+}
+
+async function clearActiveAssignmentsForUser(userId: string, actorId: string, displayName: string) {
+  const assignedTickets = await db
+    .select({
+      id: tickets.id,
+    })
+    .from(tickets)
+    .where(
+      and(
+        eq(tickets.assigneeId, userId),
+        inArray(tickets.status, [...ACTIVE_TICKET_STATUSES]),
+      ),
+    );
+
+  await db
+    .update(areaPrimaryAssignees)
+    .set({ primaryUserId: null, updatedAt: new Date() })
+    .where(eq(areaPrimaryAssignees.primaryUserId, userId));
+
+  if (assignedTickets.length === 0) return;
+
+  await db
+    .update(tickets)
+    .set({ assigneeId: null, updatedAt: new Date() })
+    .where(
+      and(
+        eq(tickets.assigneeId, userId),
+        inArray(tickets.status, [...ACTIVE_TICKET_STATUSES]),
+      ),
+    );
+
+  await db.insert(ticketHistory).values(
+    assignedTickets.map((ticket) => ({
+      ticketId: ticket.id,
+      authorId: actorId,
+      field: 'responsavel',
+      oldValue: displayName,
+      newValue: null,
+    })),
+  );
 }
 
 export async function getActiveUsersForAssignment() {
@@ -356,6 +401,46 @@ export async function updateUser(formData: FormData) {
     .where(eq(users.id, parsed.data.userId));
   await syncUserAreas(parsed.data.userId, profile.areas);
 
+  const updatedCandidate = {
+    id: parsed.data.userId,
+    role: profile.role,
+    area: profile.area,
+    operationalAreas: profile.areas,
+    isActive: target.isActive,
+  };
+
+  if (target.isActive) {
+    const assignedTickets = await db
+      .select({
+        id: tickets.id,
+        area: tickets.area,
+      })
+      .from(tickets)
+      .where(
+        and(
+          eq(tickets.assigneeId, parsed.data.userId),
+          inArray(tickets.status, [...ACTIVE_TICKET_STATUSES]),
+        ),
+      );
+    const invalidTickets = filterInvalidAssignmentsForUser(updatedCandidate, assignedTickets);
+
+    if (invalidTickets.length > 0) {
+      await db
+        .update(tickets)
+        .set({ assigneeId: null, updatedAt: new Date() })
+        .where(inArray(tickets.id, invalidTickets.map((ticket) => ticket.id)));
+      await db.insert(ticketHistory).values(
+        invalidTickets.map((ticket) => ({
+          ticketId: ticket.id,
+          authorId: currentUser.id,
+          field: 'responsavel',
+          oldValue: target.displayName,
+          newValue: null,
+        })),
+      );
+    }
+  }
+
   revalidateUserSurfaces();
   return { ok: true };
 }
@@ -464,7 +549,7 @@ export async function toggleUserActive(userId: string) {
   if (currentUser.id === parsed.data) return { error: copy.users.errors.cannotDeactivateSelf };
 
   const [user] = await db
-    .select({ isActive: users.isActive, isAdmin: users.isAdmin })
+    .select({ displayName: users.displayName, isActive: users.isActive, isAdmin: users.isAdmin })
     .from(users)
     .where(eq(users.id, parsed.data))
     .limit(1);
@@ -473,6 +558,10 @@ export async function toggleUserActive(userId: string) {
   if (user.isActive && user.isAdmin) {
     const activeAdmins = await getActiveAdminCount();
     if (activeAdmins <= 1) return { error: copy.users.errors.cannotRemoveLastAdmin };
+  }
+
+  if (user.isActive) {
+    await clearActiveAssignmentsForUser(parsed.data, currentUser.id, user.displayName);
   }
 
   await db
@@ -503,6 +592,10 @@ export async function deleteUser(userId: string) {
   // were applied manually without FK clauses.
   await db.update(tickets).set({ assigneeId: null }).where(eq(tickets.assigneeId, parsed.data));
   await db.update(tickets).set({ authorId: null }).where(eq(tickets.authorId, parsed.data));
+  await db
+    .update(areaPrimaryAssignees)
+    .set({ primaryUserId: null, updatedAt: new Date() })
+    .where(eq(areaPrimaryAssignees.primaryUserId, parsed.data));
   await db.update(comments).set({ authorId: null }).where(eq(comments.authorId, parsed.data));
   await db
     .update(ticketHistory)
