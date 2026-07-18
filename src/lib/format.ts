@@ -1,4 +1,4 @@
-import { appCivilDayDistance } from '@/lib/timezone';
+import { APP_TIMEZONE, appCivilDayDistance } from '@/lib/timezone';
 
 export const DATE_FORMATS = {
   dashboardDay: "EEEE, d 'de' MMMM",
@@ -11,12 +11,11 @@ export const DATE_FORMATS = {
   ticketDetail: "dd 'de' MMMM 'às' HH:mm",
 } as const;
 
-const APP_TIME_ZONE = 'America/Sao_Paulo';
 const LOCALE = 'pt-BR';
 
 function dateParts(date: Date | string) {
   const parts = new Intl.DateTimeFormat(LOCALE, {
-    timeZone: APP_TIME_ZONE,
+    timeZone: APP_TIMEZONE,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -30,14 +29,14 @@ function dateParts(date: Date | string) {
 
 function longMonth(date: Date | string) {
   return new Intl.DateTimeFormat(LOCALE, {
-    timeZone: APP_TIME_ZONE,
+    timeZone: APP_TIMEZONE,
     month: 'long',
   }).format(new Date(date));
 }
 
 function shortMonth(date: Date | string) {
   return new Intl.DateTimeFormat(LOCALE, {
-    timeZone: APP_TIME_ZONE,
+    timeZone: APP_TIMEZONE,
     month: 'short',
   })
     .format(new Date(date))
@@ -46,7 +45,7 @@ function shortMonth(date: Date | string) {
 
 function weekday(date: Date | string) {
   return new Intl.DateTimeFormat(LOCALE, {
-    timeZone: APP_TIME_ZONE,
+    timeZone: APP_TIMEZONE,
     weekday: 'long',
   }).format(new Date(date));
 }
@@ -73,7 +72,7 @@ export function formatPtBrDate(date: Date | string, pattern: string) {
       return `${Number(parts.day)} de ${longMonth(date)} às ${parts.hour}:${parts.minute}`;
     default:
       return new Intl.DateTimeFormat(LOCALE, {
-        timeZone: APP_TIME_ZONE,
+        timeZone: APP_TIMEZONE,
         dateStyle: 'short',
         timeStyle: 'short',
       }).format(new Date(date));
