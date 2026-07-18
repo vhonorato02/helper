@@ -576,6 +576,13 @@ export const copy = {
         'Define a atribuição automática por área. Apenas usuários ativos habilitados na área aparecem aqui.',
       areaLabel: (area: string) => `Área ${area}`,
       none: 'Sem responsável automático',
+      noneEffect: (area: string) =>
+        `Novas demandas de ${area} ficam sem responsável automático até a triagem manual.`,
+      selectionEffect: (name: string, area: string) =>
+        `${name} receberá automaticamente as novas demandas de ${area}. Demandas já abertas não mudam.`,
+      saveArea: (area: string) => `Salvar responsável primário de ${area}`,
+      noEligibleUsers:
+        'Nenhum usuário ativo está habilitado nas áreas operacionais. Ajuste cargo e áreas antes de definir responsáveis primários.',
       notConfigured: 'Nenhuma configuração auditada.',
       updatedBy: (name: string) => `Última alteração por ${name}.`,
       saved: (area: string) => `Responsável primário de ${area} atualizado.`,
