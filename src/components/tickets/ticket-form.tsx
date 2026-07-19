@@ -118,21 +118,22 @@ export function TicketForm({ open, onClose, users }: TicketFormProps) {
 
   const area = watch('area');
   const subcategory = watch('subcategory');
+  const priority = watch('priority');
   const dueDate = watch('dueDate');
   const assigneeId = watch('assigneeId');
   const dueHolidayNotice = getHolidaySchedulingNotice(dueDate);
   const [subcategories, setSubcategories] = useState<string[]>(() => [...getSubcategories(defaultValues.area)]);
-  const templates = getTemplatesByArea(area as Area);
-  const eligibleUsers = users.filter((user) => isEligibleAssigneeForArea(user, area as Area));
+  const templates = getTemplatesByArea(area);
+  const eligibleUsers = users.filter((user) => isEligibleAssigneeForArea(user, area));
 
   useEffect(() => {
     let cancelled = false;
-    getSubcategoriesForArea(area as Area)
+    getSubcategoriesForArea(area)
       .then((rows) => {
         if (!cancelled) setSubcategories(rows.map((row) => row.label));
       })
       .catch(() => {
-        if (!cancelled) setSubcategories([...getSubcategories(area as Area)]);
+        if (!cancelled) setSubcategories([...getSubcategories(area)]);
       });
     return () => {
       cancelled = true;
@@ -150,7 +151,7 @@ export function TicketForm({ open, onClose, users }: TicketFormProps) {
   useEffect(() => {
     if (!open) return;
     if (!assigneeId || assigneeId === 'none') return;
-    if (!users.some((user) => user.id === assigneeId && isEligibleAssigneeForArea(user, area as Area))) {
+    if (!users.some((user) => user.id === assigneeId && isEligibleAssigneeForArea(user, area))) {
       setValue('assigneeId', 'none');
     }
   }, [area, assigneeId, open, setValue, users]);
@@ -304,7 +305,7 @@ export function TicketForm({ open, onClose, users }: TicketFormProps) {
             <div className="space-y-1.5">
               <Label htmlFor="ticket-priority">{copy.tickets.form.fields.priority}</Label>
               <Select
-                value={watch('priority')}
+                value={priority}
                 onValueChange={(value) => setValue('priority', value as FormData['priority'])}
                 disabled={isSubmitting}
               >
@@ -324,7 +325,7 @@ export function TicketForm({ open, onClose, users }: TicketFormProps) {
             <div className="space-y-1.5">
               <Label htmlFor="ticket-assignee">{copy.tickets.form.fields.assignee}</Label>
               <Select
-                value={watch('assigneeId') ?? 'none'}
+                value={assigneeId ?? 'none'}
                 onValueChange={(value) => setValue('assigneeId', value)}
                 disabled={isSubmitting}
               >
