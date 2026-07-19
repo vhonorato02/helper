@@ -19,22 +19,16 @@ import {
   sendPushNotificationToUsers,
   upsertPushSubscription,
 } from '@/lib/web-push';
+import {
+  DEFAULT_NOTIFICATION_PREFERENCES,
+  isNotificationTypeEnabledForAlerts,
+} from '@/lib/notification-preferences';
 
 async function requireAuth() {
   const session = await auth();
   if (!session?.user?.id) redirect('/login');
   return session.user;
 }
-
-const DEFAULT_NOTIFICATION_PREFERENCES = {
-  ticketCreated: true,
-  ticketStatus: true,
-  commentMention: true,
-  dailyDigest: true,
-  emailEnabled: true,
-  browserEnabled: true,
-  reminderLeadMinutes: 30,
-};
 
 const preferenceSchema = {
   ticket_created: 'ticketCreated',
@@ -47,18 +41,7 @@ const preferenceSchema = {
 
 type PreferenceKey = (typeof preferenceSchema)[keyof typeof preferenceSchema];
 
-function preferenceForNotificationType(type: string): PreferenceKey | null {
-  if (type.includes('status')) return 'ticketStatus';
-  if (type.includes('mention') || type.includes('comment')) return 'commentMention';
-  if (type.includes('digest')) return 'dailyDigest';
-  if (type.includes('ticket') || type.includes('request')) return 'ticketCreated';
-  return null;
-}
-
-async function filterUserIdsByPreference(userIds: string[], type: string) {
-  const preferenceKey = preferenceForNotificationType(type);
-  if (!preferenceKey) return userIds;
-
+async function filterUserIdsByAlertPreference(userIds: string[], type: string) {
   const rows = await db
     .select({
       userId: notificationPreferences.userId,
@@ -76,7 +59,7 @@ async function filterUserIdsByPreference(userIds: string[], type: string) {
   const preferencesByUser = new Map(rows.map((row) => [row.userId, row]));
   return userIds.filter((userId) => {
     const preferences = preferencesByUser.get(userId) ?? DEFAULT_NOTIFICATION_PREFERENCES;
-    return Boolean(preferences[preferenceKey]);
+    return isNotificationTypeEnabledForAlerts(type, preferences);
   });
 }
 
@@ -92,12 +75,10 @@ export async function dispatchNotification(input: {
     const userIds = Array.from(new Set(input.userIds.filter(Boolean)));
     if (userIds.length === 0) return;
 
-    const enabledUserIds = await filterUserIdsByPreference(userIds, input.type);
-    if (enabledUserIds.length === 0) return;
     const link = normalizeInternalNotificationLink(input.link);
 
     await db.insert(notifications).values(
-      enabledUserIds.map((userId) => ({
+      userIds.map((userId) => ({
         userId,
         type: input.type,
         title: input.title,
@@ -106,6 +87,9 @@ export async function dispatchNotification(input: {
         ticketId: input.ticketId ?? null,
       })),
     );
+
+    const enabledUserIds = await filterUserIdsByAlertPreference(userIds, input.type);
+    if (enabledUserIds.length === 0) return;
 
     await sendPushNotificationToUsers({
       userIds: enabledUserIds,

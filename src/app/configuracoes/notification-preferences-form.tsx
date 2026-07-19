@@ -81,7 +81,7 @@ export function NotificationPreferencesForm({
         <div>
           <h3 className="font-medium">Notificações</h3>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Escolha quais avisos aparecem na inbox interna e nos resumos.
+            A inbox interna continua registrada; escolha quais avisos viram alertas do PWA e resumos.
           </p>
         </div>
       </div>

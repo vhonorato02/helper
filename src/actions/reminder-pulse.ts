@@ -16,6 +16,7 @@ import { getNotificationPreferences } from '@/actions/notifications';
 import { formatChromebookPeriod } from '@/lib/chromebooks';
 import { AREA_LABELS, PRIORITY_LABELS, STATUS_LABELS, type Area } from '@/lib/constants';
 import { notificationLinkOrDefault } from '@/lib/notification-links';
+import { isNotificationTypeEnabledForAlerts } from '@/lib/notification-preferences';
 
 export type ReminderPulseItem = {
   id: string;
@@ -226,6 +227,7 @@ export async function getBrowserNotificationPulse() {
   const unreadRows = await db
     .select({
       id: notifications.id,
+      type: notifications.type,
       title: notifications.title,
       body: notifications.body,
       link: notifications.link,
@@ -236,17 +238,19 @@ export async function getBrowserNotificationPulse() {
     .orderBy(asc(notifications.createdAt))
     .limit(6);
 
-  const unreadItems = unreadRows.map((item) => ({
-    id: `notification:${item.id}`,
-    kind: 'notification' as const,
-    title: item.title,
-    body: item.body ?? 'Nova notificação no Helper.',
-    href: notificationLinkOrDefault(item.link),
-    dueAt: item.createdAt.toISOString(),
-    priority: 'now' as const,
-    repeat: false,
-    repeatMinutes: 0,
-  }));
+  const unreadItems = unreadRows
+    .filter((item) => isNotificationTypeEnabledForAlerts(item.type, preferences))
+    .map((item) => ({
+      id: `notification:${item.id}`,
+      kind: 'notification' as const,
+      title: item.title,
+      body: item.body ?? 'Nova notificação no Helper.',
+      href: notificationLinkOrDefault(item.link),
+      dueAt: item.createdAt.toISOString(),
+      priority: 'now' as const,
+      repeat: false,
+      repeatMinutes: 0,
+    }));
 
   const reminderItems = (await loadOperationalReminders(user, 20)).filter((item) => {
     const dueAt = new Date(item.dueAt).getTime();
