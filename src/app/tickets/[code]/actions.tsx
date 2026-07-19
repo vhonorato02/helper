@@ -45,6 +45,7 @@ interface TicketActionsProps {
   })[];
   currentUserId: string;
   currentUserIsAdmin: boolean;
+  currentUserCanManage: boolean;
 }
 
 interface ActionMeta {
@@ -91,6 +92,7 @@ export function TicketActions({
   users,
   currentUserId,
   currentUserIsAdmin,
+  currentUserCanManage,
 }: TicketActionsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -214,145 +216,147 @@ export function TicketActions({
   return (
     <>
       <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
-        <div className="surface-elevated rounded-lg p-4 space-y-4">
-          <h3 className="section-label flex items-center gap-1.5">
-            <Settings2 className="size-3.5" />
-            {copy.tickets.detail.actionsTitle}
-          </h3>
+        {currentUserCanManage && (
+          <div className="surface-elevated rounded-lg p-4 space-y-4">
+            <h3 className="section-label flex items-center gap-1.5">
+              <Settings2 className="size-3.5" />
+              {copy.tickets.detail.actionsTitle}
+            </h3>
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-9 w-full justify-start text-xs"
-            disabled={isPending}
-            onClick={() => setEditOpen(true)}
-          >
-            <Pencil className="size-3.5" />
-            {copy.tickets.detail.editDetails}
-          </Button>
-
-          <TicketReminderDialog ticketCode={ticket.code} />
-
-          {ticket.status === 'aberto' && ticket.assigneeId !== currentUserId && currentUserCanTake && (
             <Button
-              variant="default"
+              variant="outline"
               size="sm"
               className="h-9 w-full justify-start text-xs"
-              disabled={isPending || !currentUserId}
-              onClick={handleTakeAndStart}
-            >
-              <Rocket className="size-3.5" />
-              {copy.tickets.detail.takeAndStart}
-            </Button>
-          )}
-
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">
-              {copy.tickets.detail.statusTitle}
-            </p>
-            <div className="flex flex-col gap-1.5">
-              {nextStatuses.map((status) => {
-                const meta = STATUS_ACTIONS[status];
-                const Icon = meta.icon;
-                const isLoading = pendingStatus === status;
-                return (
-                  <Button
-                    key={status}
-                    variant={meta.variant}
-                    size="sm"
-                    className={cn(
-                      'h-9 justify-start text-xs',
-                      meta.variant === 'ghost' && 'text-muted-foreground',
-                    )}
-                    disabled={isPending}
-                    onClick={() => handleStatusChange(status)}
-                  >
-                    {isLoading ? <Loader2 className="animate-spin" /> : <Icon />}
-                    {meta.label}
-                  </Button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="h-px bg-border/60" />
-
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">
-              {copy.tickets.detail.assigneeTitle}
-            </p>
-            <Select
-              value={ticket.assigneeId ?? 'none'}
-              onValueChange={handleAssigneeChange}
               disabled={isPending}
+              onClick={() => setEditOpen(true)}
             >
-              <SelectTrigger className="h-9 text-xs" aria-label="Alterar responsável da demanda">
-                <SelectValue placeholder={copy.tickets.detail.noAssignee} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">{copy.tickets.detail.noAssignee}</SelectItem>
-                {eligibleUsers.map((user) => (
-                  <SelectItem key={user.id} value={user.id}>
-                    {user.displayName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <Pencil className="size-3.5" />
+              {copy.tickets.detail.editDetails}
+            </Button>
 
-            {ticket.assigneeId !== currentUserId && currentUserCanTake && (
+            <TicketReminderDialog ticketCode={ticket.code} />
+
+            {ticket.status === 'aberto' && ticket.assigneeId !== currentUserId && currentUserCanTake && (
               <Button
-                variant="ghost"
+                variant="default"
                 size="sm"
-                className="h-8 w-full gap-1.5 text-xs text-muted-foreground"
+                className="h-9 w-full justify-start text-xs"
                 disabled={isPending || !currentUserId}
-                onClick={() => handleAssigneeChange(currentUserId)}
+                onClick={handleTakeAndStart}
               >
-                <UserCheck className="size-3.5" />
-                {copy.tickets.detail.assignToMe}
+                <Rocket className="size-3.5" />
+                {copy.tickets.detail.takeAndStart}
               </Button>
             )}
-          </div>
 
-          <div className="h-px bg-border/60" />
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">
+                {copy.tickets.detail.statusTitle}
+              </p>
+              <div className="flex flex-col gap-1.5">
+                {nextStatuses.map((status) => {
+                  const meta = STATUS_ACTIONS[status];
+                  const Icon = meta.icon;
+                  const isLoading = pendingStatus === status;
+                  return (
+                    <Button
+                      key={status}
+                      variant={meta.variant}
+                      size="sm"
+                      className={cn(
+                        'h-9 justify-start text-xs',
+                        meta.variant === 'ghost' && 'text-muted-foreground',
+                      )}
+                      disabled={isPending}
+                      onClick={() => handleStatusChange(status)}
+                    >
+                      {isLoading ? <Loader2 className="animate-spin" /> : <Icon />}
+                      {meta.label}
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
 
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">
-              {copy.tickets.detail.priorityTitle}
-            </p>
-            <Select
-              value={ticket.priority}
-              onValueChange={handlePriorityChange}
-              disabled={isPending}
-            >
-              <SelectTrigger className="h-9 text-xs" aria-label="Alterar prioridade da demanda">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PRIORITY_ORDER.map((priority) => (
-                  <SelectItem key={priority} value={priority}>
-                    {PRIORITY_LABELS[priority]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+            <div className="h-px bg-border/60" />
 
-          {currentUserIsAdmin && (
-            <>
-              <div className="h-px bg-border/60" />
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-9 w-full justify-start text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">
+                {copy.tickets.detail.assigneeTitle}
+              </p>
+              <Select
+                value={ticket.assigneeId ?? 'none'}
+                onValueChange={handleAssigneeChange}
                 disabled={isPending}
-                onClick={() => setDeleteOpen(true)}
               >
-                <Trash2 className="size-3.5" />
-                {copy.tickets.detail.deleteTicket}
-              </Button>
-            </>
-          )}
-        </div>
+                <SelectTrigger className="h-9 text-xs" aria-label="Alterar responsável da demanda">
+                  <SelectValue placeholder={copy.tickets.detail.noAssignee} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{copy.tickets.detail.noAssignee}</SelectItem>
+                  {eligibleUsers.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.displayName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {ticket.assigneeId !== currentUserId && currentUserCanTake && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-full gap-1.5 text-xs text-muted-foreground"
+                  disabled={isPending || !currentUserId}
+                  onClick={() => handleAssigneeChange(currentUserId)}
+                >
+                  <UserCheck className="size-3.5" />
+                  {copy.tickets.detail.assignToMe}
+                </Button>
+              )}
+            </div>
+
+            <div className="h-px bg-border/60" />
+
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">
+                {copy.tickets.detail.priorityTitle}
+              </p>
+              <Select
+                value={ticket.priority}
+                onValueChange={handlePriorityChange}
+                disabled={isPending}
+              >
+                <SelectTrigger className="h-9 text-xs" aria-label="Alterar prioridade da demanda">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRIORITY_ORDER.map((priority) => (
+                    <SelectItem key={priority} value={priority}>
+                      {PRIORITY_LABELS[priority]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {currentUserIsAdmin && (
+              <>
+                <div className="h-px bg-border/60" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 w-full justify-start text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  disabled={isPending}
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  <Trash2 className="size-3.5" />
+                  {copy.tickets.detail.deleteTicket}
+                </Button>
+              </>
+            )}
+          </div>
+        )}
 
         <div className="surface-elevated rounded-lg p-4 space-y-2.5 text-xs">
           <h3 className="section-label mb-3">
@@ -417,7 +421,9 @@ export function TicketActions({
         onConfirm={handleDeleteTicket}
       />
 
-      <EditTicketDialog open={editOpen} onOpenChange={handleEditOpenChange} ticket={ticket} />
+      {currentUserCanManage && (
+        <EditTicketDialog open={editOpen} onOpenChange={handleEditOpenChange} ticket={ticket} />
+      )}
     </>
   );
 }

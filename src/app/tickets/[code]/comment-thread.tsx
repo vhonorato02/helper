@@ -51,6 +51,7 @@ interface CommentThreadProps {
   quickResponses: QuickResponseOption[];
   currentUserId: string;
   currentUserIsAdmin: boolean;
+  canComment: boolean;
 }
 
 export function CommentThread({
@@ -59,6 +60,7 @@ export function CommentThread({
   quickResponses,
   currentUserId,
   currentUserIsAdmin,
+  canComment,
 }: CommentThreadProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -159,7 +161,7 @@ export function CommentThread({
         <div className="space-y-4">
           {comments.map((comment) => {
             const authorName = comment.authorName ?? copy.tickets.comments.anonymous;
-            const canManage = currentUserIsAdmin || comment.authorId === currentUserId;
+            const canManage = canComment && (currentUserIsAdmin || comment.authorId === currentUserId);
             const isEditing = editingId === comment.id;
 
             return (
@@ -257,87 +259,89 @@ export function CommentThread({
         </div>
       )}
 
-      <form ref={formRef} onSubmit={handleSubmit} className="space-y-2">
-        {quickResponses.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={isPending}
-                  className="gap-1.5"
-                >
-                  <MessageSquareQuote className="size-3.5" />
-                  {copy.quickResponses.insert}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="start"
-                className="w-[min(28rem,calc(100vw-2rem))]"
-              >
-                {quickResponses.map((response) => (
-                  <DropdownMenuItem
-                    key={response.id}
-                    onSelect={() => applyQuickResponse(response)}
-                    className="flex-col items-start gap-1 whitespace-normal"
+      {canComment && (
+        <form ref={formRef} onSubmit={handleSubmit} className="space-y-2">
+          {quickResponses.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={isPending}
+                    className="gap-1.5"
                   >
-                    <span className="flex w-full items-center justify-between gap-3">
-                      <span className="font-medium">{response.title}</span>
-                      <span className="shrink-0 text-[11px] text-muted-foreground">
-                        {response.area ? AREA_LABELS[response.area] : copy.quickResponses.global}
+                    <MessageSquareQuote className="size-3.5" />
+                    {copy.quickResponses.insert}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  className="w-[min(28rem,calc(100vw-2rem))]"
+                >
+                  {quickResponses.map((response) => (
+                    <DropdownMenuItem
+                      key={response.id}
+                      onSelect={() => applyQuickResponse(response)}
+                      className="flex-col items-start gap-1 whitespace-normal"
+                    >
+                      <span className="flex w-full items-center justify-between gap-3">
+                        <span className="font-medium">{response.title}</span>
+                        <span className="shrink-0 text-[11px] text-muted-foreground">
+                          {response.area ? AREA_LABELS[response.area] : copy.quickResponses.global}
+                        </span>
                       </span>
-                    </span>
-                    <span className="line-clamp-2 text-xs text-muted-foreground">
-                      {response.body}
-                    </span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                      <span className="line-clamp-2 text-xs text-muted-foreground">
+                        {response.body}
+                      </span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-            {selectedQuickResponse && (
-              <span className="rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary ring-1 ring-inset ring-primary/20">
-                {copy.quickResponses.selected(selectedQuickResponse.title)}
-              </span>
-            )}
+              {selectedQuickResponse && (
+                <span className="rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary ring-1 ring-inset ring-primary/20">
+                  {copy.quickResponses.selected(selectedQuickResponse.title)}
+                </span>
+              )}
+            </div>
+          )}
+
+          <Textarea
+            name="body"
+            placeholder={copy.tickets.comments.placeholder}
+            aria-label={copy.tickets.comments.title}
+            className="min-h-[88px]"
+            value={commentBody}
+            disabled={isPending}
+            onChange={(event) => setCommentBody(event.currentTarget.value)}
+            onKeyDown={(event) => {
+              if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+                event.currentTarget.form?.requestSubmit();
+              }
+            }}
+          />
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground hidden sm:block">
+              {copy.tickets.comments.shortcut}
+            </p>
+            <Button
+              type="submit"
+              size="sm"
+              disabled={isPending || !commentBody.trim()}
+              className="ml-auto gap-1.5"
+            >
+              {isPending ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                <SendHorizontal className="size-3.5" />
+              )}
+              {copy.tickets.comments.submit}
+            </Button>
           </div>
-        )}
-
-        <Textarea
-          name="body"
-          placeholder={copy.tickets.comments.placeholder}
-          aria-label={copy.tickets.comments.title}
-          className="min-h-[88px]"
-          value={commentBody}
-          disabled={isPending}
-          onChange={(event) => setCommentBody(event.currentTarget.value)}
-          onKeyDown={(event) => {
-            if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
-              event.currentTarget.form?.requestSubmit();
-            }
-          }}
-        />
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-xs text-muted-foreground hidden sm:block">
-            {copy.tickets.comments.shortcut}
-          </p>
-          <Button
-            type="submit"
-            size="sm"
-            disabled={isPending || !commentBody.trim()}
-            className="ml-auto gap-1.5"
-          >
-            {isPending ? (
-              <Loader2 className="animate-spin" />
-            ) : (
-              <SendHorizontal className="size-3.5" />
-            )}
-            {copy.tickets.comments.submit}
-          </Button>
-        </div>
-      </form>
+        </form>
+      )}
 
       <ConfirmDialog
         open={!!deleteTarget}

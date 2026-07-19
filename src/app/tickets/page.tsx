@@ -8,6 +8,7 @@ import { TicketTable } from '@/components/tickets/ticket-table';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { copy } from '@/lib/copy';
+import { canManageTicket } from '@/lib/ticket-access';
 import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
@@ -60,6 +61,9 @@ async function TicketList({ searchParams }: { searchParams: Awaited<PageProps['s
     ...filters,
     page: safePage,
   });
+  const manageableCodes = tickets
+    .filter((ticket) => canManageTicket(session?.user, ticket))
+    .map((ticket) => ticket.code);
 
   return (
     <TicketTable
@@ -69,6 +73,7 @@ async function TicketList({ searchParams }: { searchParams: Awaited<PageProps['s
       page={safePage}
       pageSize={50}
       currentUserId={session?.user?.id ?? ''}
+      manageableCodes={manageableCodes}
     />
   );
 }

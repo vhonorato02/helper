@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState, useTransition } from 'react';
+import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   AlertTriangle,
@@ -64,6 +64,7 @@ interface Props {
   page: number;
   pageSize: number;
   currentUserId?: string;
+  manageableCodes?: string[];
 }
 
 function downloadCSV(tickets: ExportTicketRow[]) {
@@ -114,7 +115,15 @@ function downloadCSV(tickets: ExportTicketRow[]) {
   URL.revokeObjectURL(url);
 }
 
-export function TicketTable({ tickets, users, total, page, pageSize, currentUserId = '' }: Props) {
+export function TicketTable({
+  tickets,
+  users,
+  total,
+  page,
+  pageSize,
+  currentUserId = '',
+  manageableCodes = [],
+}: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -125,19 +134,25 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
   const [bulkPending, startBulkTransition] = useTransition();
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const allSelected = tickets.length > 0 && tickets.every((t) => selected.has(t.code));
+  const manageableCodeSet = useMemo(() => new Set(manageableCodes), [manageableCodes]);
+  const selectableTickets = tickets.filter((ticket) => manageableCodeSet.has(ticket.code));
+  const allSelected =
+    selectableTickets.length > 0 && selectableTickets.every((ticket) => selected.has(ticket.code));
   const someSelected = selected.size > 0;
 
   useEffect(() => {
-    const visibleCodes = new Set(tickets.map((ticket) => ticket.code));
+    const visibleCodes = new Set(
+      tickets.filter((ticket) => manageableCodeSet.has(ticket.code)).map((ticket) => ticket.code),
+    );
     setSelected((prev) => {
       if (prev.size === 0) return prev;
       const next = new Set([...prev].filter((code) => visibleCodes.has(code)));
       return next.size === prev.size ? prev : next;
     });
-  }, [tickets]);
+  }, [manageableCodeSet, tickets]);
 
   const toggleOne = (code: string) => {
+    if (!manageableCodeSet.has(code)) return;
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(code)) next.delete(code);
@@ -148,7 +163,7 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
 
   const toggleAll = () => {
     if (allSelected) setSelected(new Set());
-    else setSelected(new Set(tickets.map((t) => t.code)));
+    else setSelected(new Set(selectableTickets.map((ticket) => ticket.code)));
   };
 
   const clearSelection = () => setSelected(new Set());
@@ -669,6 +684,7 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
                   const isStale =
                     staleDays >= 3 && !['resolvido', 'arquivado'].includes(ticket.status);
                   const risk = getTicketRisk(ticket);
+                  const canManageTicket = manageableCodeSet.has(ticket.code);
 
                   return (
                     <tr
@@ -690,6 +706,7 @@ export function TicketTable({ tickets, users, total, page, pageSize, currentUser
                       <td className="px-3 py-3 w-10" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => toggleOne(ticket.code)}
+                          disabled={!canManageTicket}
                           className="size-4 inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
                           aria-label={`${selected.has(ticket.code) ? 'Desmarcar' : 'Selecionar'} ${ticket.code}`}
                         >

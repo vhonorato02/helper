@@ -9,6 +9,7 @@ import { db } from '@/db';
 import { ticketHistory, ticketTasks, tickets, users } from '@/db/schema';
 import { dispatchNotification } from '@/actions/notifications';
 import { copy } from '@/lib/copy';
+import { canManageTicket } from '@/lib/ticket-access';
 
 const taskTitleSchema = z.string().trim().min(1).max(160);
 const taskIdSchema = z.string().uuid();
@@ -24,6 +25,7 @@ async function getTaskTicket(code: string) {
     .select({
       id: tickets.id,
       code: tickets.code,
+      area: tickets.area,
       title: tickets.title,
       authorId: tickets.authorId,
       assigneeId: tickets.assigneeId,
@@ -80,6 +82,7 @@ export async function createTicketTask(code: string, formData: FormData) {
 
   const ticket = await getTaskTicket(code);
   if (!ticket) return { error: copy.validation.invalidTicket };
+  if (!canManageTicket(user, ticket)) return { error: copy.auth.errors.permissionDenied };
 
   await db.insert(ticketTasks).values({
     ticketId: ticket.id,
@@ -120,6 +123,7 @@ export async function toggleTicketTask(id: string, done: boolean) {
       isDone: ticketTasks.isDone,
       ticketId: ticketTasks.ticketId,
       code: tickets.code,
+      area: tickets.area,
       ticketTitle: tickets.title,
       authorId: tickets.authorId,
       assigneeId: tickets.assigneeId,
@@ -130,6 +134,7 @@ export async function toggleTicketTask(id: string, done: boolean) {
     .limit(1);
 
   if (!row) return { error: copy.validation.invalidData };
+  if (!canManageTicket(user, row)) return { error: copy.auth.errors.permissionDenied };
   if (row.isDone === done) return { ok: true };
 
   const now = new Date();
@@ -169,6 +174,9 @@ export async function deleteTicketTask(id: string) {
       title: ticketTasks.title,
       ticketId: ticketTasks.ticketId,
       code: tickets.code,
+      area: tickets.area,
+      authorId: tickets.authorId,
+      assigneeId: tickets.assigneeId,
     })
     .from(ticketTasks)
     .innerJoin(tickets, eq(ticketTasks.ticketId, tickets.id))
@@ -176,6 +184,7 @@ export async function deleteTicketTask(id: string) {
     .limit(1);
 
   if (!row) return { error: copy.validation.invalidData };
+  if (!canManageTicket(user, row)) return { error: copy.auth.errors.permissionDenied };
 
   await db.delete(ticketTasks).where(eq(ticketTasks.id, parsed.data));
   await db.update(tickets).set({ updatedAt: new Date() }).where(eq(tickets.id, row.ticketId));

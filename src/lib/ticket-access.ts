@@ -16,6 +16,12 @@ export type PublicRequesterTicket = {
   description?: string | null;
 };
 
+export type TicketAccessTarget = {
+  area: Area;
+  authorId?: string | null;
+  assigneeId?: string | null;
+};
+
 export function canWorkOnTicketArea(user: AreaScopedUser | null | undefined, area: Area) {
   if (!user) return false;
   if (user.isAdmin === true) return true;
@@ -30,6 +36,22 @@ export function canWorkOnTicketArea(user: AreaScopedUser | null | undefined, are
     },
     area,
   );
+}
+
+export function canManageTicket(
+  user: AreaScopedUser | null | undefined,
+  ticket: TicketAccessTarget,
+) {
+  return canWorkOnTicketArea(user, ticket.area);
+}
+
+export function canCommentOnTicket(
+  user: AreaScopedUser | null | undefined,
+  ticket: TicketAccessTarget,
+) {
+  if (!user?.id) return false;
+  if (canManageTicket(user, ticket)) return true;
+  return ticket.authorId === user.id;
 }
 
 export function canViewPublicRequesterContact(

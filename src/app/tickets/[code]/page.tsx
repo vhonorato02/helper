@@ -13,6 +13,7 @@ import { copy } from '@/lib/copy';
 import { DATE_FORMATS, daysUntil, formatPtBrDate } from '@/lib/format';
 import { formatHolidaySummary, getHolidayByDate } from '@/lib/holidays';
 import { getTicketRisk, isRiskVisible } from '@/lib/ticket-risk';
+import { canCommentOnTicket, canManageTicket } from '@/lib/ticket-access';
 import { CommentThread } from './comment-thread';
 import { HistoryLog } from './history-log';
 import { TicketActions } from './actions';
@@ -67,6 +68,8 @@ export default async function TicketDetailPage({ params }: PageProps) {
   const dueDays = ticket.dueDate ? daysUntil(ticket.dueDate) : null;
   const dueHoliday = getHolidayByDate(ticket.dueDate);
   const risk = getTicketRisk(ticket);
+  const currentUserCanManage = canManageTicket(session?.user, ticket);
+  const currentUserCanComment = canCommentOnTicket(session?.user, ticket);
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -174,7 +177,7 @@ export default async function TicketDetailPage({ params }: PageProps) {
             </p>
           )}
 
-          <TicketTasks ticketCode={code} tasks={tasks} />
+          <TicketTasks ticketCode={code} tasks={tasks} canManage={currentUserCanManage} />
 
           <CommentThread
             ticketCode={code}
@@ -182,6 +185,7 @@ export default async function TicketDetailPage({ params }: PageProps) {
             quickResponses={quickResponses}
             currentUserId={currentUserId}
             currentUserIsAdmin={currentUserIsAdmin}
+            canComment={currentUserCanComment}
           />
 
           {history.length > 0 && <HistoryLog history={history} />}
@@ -192,6 +196,7 @@ export default async function TicketDetailPage({ params }: PageProps) {
           users={users}
           currentUserId={currentUserId}
           currentUserIsAdmin={currentUserIsAdmin}
+          currentUserCanManage={currentUserCanManage}
         />
       </div>
     </div>

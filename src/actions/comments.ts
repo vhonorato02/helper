@@ -13,6 +13,7 @@ import { extractMentions } from '@/lib/mentions';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { dispatchNotification } from '@/actions/notifications';
 import { isQuickResponseAvailableForTicket } from '@/lib/quick-responses';
+import { canCommentOnTicket } from '@/lib/ticket-access';
 
 const COMMENT_RATE_LIMIT = { limit: 30, windowMs: 60_000, lockoutMs: 60_000 };
 
@@ -89,12 +90,15 @@ export async function addComment(ticketCode: string, formData: FormData) {
       priority: tickets.priority,
       status: tickets.status,
       origin: tickets.origin,
+      authorId: tickets.authorId,
+      assigneeId: tickets.assigneeId,
     })
     .from(tickets)
     .where(eq(tickets.code, ticketCode))
     .limit(1);
 
   if (!ticket) return { error: copy.validation.invalidTicket };
+  if (!canCommentOnTicket(user, ticket)) return { error: copy.auth.errors.permissionDenied };
 
   let selectedQuickResponse: { id: string; title: string; area: typeof ticket.area | null } | null = null;
   if (parsed.data.quickResponseId) {
@@ -200,6 +204,9 @@ async function getCommentWithTicket(commentId: string, ticketCode: string) {
       body: comments.body,
       ticketId: comments.ticketId,
       ticketCode: tickets.code,
+      ticketArea: tickets.area,
+      ticketAuthorId: tickets.authorId,
+      ticketAssigneeId: tickets.assigneeId,
     })
     .from(comments)
     .innerJoin(tickets, eq(comments.ticketId, tickets.id))
@@ -225,6 +232,15 @@ export async function updateComment(ticketCode: string, commentId: string, formD
 
   const comment = await getCommentWithTicket(parsedId.data, ticketCode);
   if (!comment) return { error: copy.validation.invalidComment };
+  if (
+    !canCommentOnTicket(user, {
+      area: comment.ticketArea,
+      authorId: comment.ticketAuthorId,
+      assigneeId: comment.ticketAssigneeId,
+    })
+  ) {
+    return { error: copy.auth.errors.permissionDenied };
+  }
   if (!canManageComment(user, comment)) return { error: copy.auth.errors.permissionDenied };
   if (comment.body === parsedBody.data.body) return { ok: true };
 
@@ -252,6 +268,15 @@ export async function deleteComment(ticketCode: string, commentId: string) {
 
   const comment = await getCommentWithTicket(parsedId.data, ticketCode);
   if (!comment) return { error: copy.validation.invalidComment };
+  if (
+    !canCommentOnTicket(user, {
+      area: comment.ticketArea,
+      authorId: comment.ticketAuthorId,
+      assigneeId: comment.ticketAssigneeId,
+    })
+  ) {
+    return { error: copy.auth.errors.permissionDenied };
+  }
   if (!canManageComment(user, comment)) return { error: copy.auth.errors.permissionDenied };
 
   await db.insert(ticketHistory).values({

@@ -29,7 +29,7 @@ import { sendTicketNotification } from '@/lib/email';
 import { nextResolvedAt } from '@/lib/ticket-status';
 import { dispatchNotification } from '@/actions/notifications';
 import { getDefaultAssigneeForArea, getEligibleAssigneeForArea } from '@/actions/users';
-import { protectPublicRequesterData } from '@/lib/ticket-access';
+import { canManageTicket, protectPublicRequesterData } from '@/lib/ticket-access';
 
 const areaSchema = z.enum(['TI', 'MKT', 'PF']);
 const prioritySchema = z.enum(['baixa', 'media', 'alta', 'urgente']);
@@ -260,6 +260,7 @@ export async function updateTicketStatus(code: string, newStatus: Status) {
     .limit(1);
 
   if (!ticket) return { error: copy.validation.invalidTicket };
+  if (!canManageTicket(user, ticket)) return { error: copy.auth.errors.permissionDenied };
   if (ticket.status === parsedStatus.data) return { ok: true };
 
   const now = new Date();
@@ -382,6 +383,7 @@ export async function updateTicketField(code: string, field: string, value: stri
 
   const [ticket] = await db.select().from(tickets).where(eq(tickets.code, code)).limit(1);
   if (!ticket) return { error: copy.validation.invalidTicket };
+  if (!canManageTicket(user, ticket)) return { error: copy.auth.errors.permissionDenied };
 
   const normalized = await normalizeFieldValue(ticket, parsed.data.field, parsed.data.value);
   if ('error' in normalized) return { error: normalized.error };
@@ -441,6 +443,7 @@ export async function updateTicketDetails(code: string, formData: FormData) {
 
   const [ticket] = await db.select().from(tickets).where(eq(tickets.code, code)).limit(1);
   if (!ticket) return { error: copy.validation.invalidTicket };
+  if (!canManageTicket(user, ticket)) return { error: copy.auth.errors.permissionDenied };
   if (
     parsed.data.area !== ticket.area ||
     !(await isValidSubcategoryAsync(ticket.area, parsed.data.subcategory))
@@ -528,6 +531,9 @@ export async function bulkUpdateTickets(input: {
     .where(inArray(tickets.code, codes));
 
   if (ticketsToUpdate.length === 0) return { error: copy.validation.invalidTicket };
+  if (ticketsToUpdate.some((ticket) => !canManageTicket(user, ticket))) {
+    return { error: copy.auth.errors.permissionDenied };
+  }
 
   let updates: Partial<NewTicket> = { updatedAt: new Date() };
   let historyField = '';

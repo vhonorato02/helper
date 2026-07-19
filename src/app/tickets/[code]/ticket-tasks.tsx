@@ -17,9 +17,10 @@ import { cn } from '@/lib/utils';
 interface TicketTasksProps {
   ticketCode: string;
   tasks: TicketTaskRow[];
+  canManage: boolean;
 }
 
-export function TicketTasks({ ticketCode, tasks }: TicketTasksProps) {
+export function TicketTasks({ ticketCode, tasks, canManage }: TicketTasksProps) {
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -112,7 +113,7 @@ export function TicketTasks({ ticketCode, tasks }: TicketTasksProps) {
                   <button
                     type="button"
                     onClick={() => handleToggle(task)}
-                    disabled={busy}
+                    disabled={busy || !canManage}
                     className="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-primary disabled:opacity-50"
                     aria-label={task.isDone ? 'Reabrir item' : 'Concluir item'}
                   >
@@ -142,7 +143,7 @@ export function TicketTasks({ ticketCode, tasks }: TicketTasksProps) {
                   <button
                     type="button"
                     onClick={() => handleDelete(task)}
-                    disabled={busy}
+                    disabled={busy || !canManage}
                     className="inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
                     aria-label="Remover item"
                   >
@@ -154,21 +155,23 @@ export function TicketTasks({ ticketCode, tasks }: TicketTasksProps) {
           </div>
         )}
 
-        <form onSubmit={handleCreate} className="flex gap-2 border-t border-border/60 p-3">
-          <Input
-            name="title"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            maxLength={160}
-            placeholder="Novo passo do atendimento..."
-            className="h-9"
-            disabled={isPending}
-          />
-          <Button type="submit" size="icon-sm" disabled={isPending || !title.trim()}>
-            {isPending && !pendingId ? <Loader2 className="animate-spin" /> : <Plus />}
-            <span className="sr-only">Adicionar item</span>
-          </Button>
-        </form>
+        {canManage && (
+          <form onSubmit={handleCreate} className="flex gap-2 border-t border-border/60 p-3">
+            <Input
+              name="title"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              maxLength={160}
+              placeholder="Novo passo do atendimento..."
+              className="h-9"
+              disabled={isPending}
+            />
+            <Button type="submit" size="icon-sm" disabled={isPending || !title.trim()}>
+              {isPending && !pendingId ? <Loader2 className="animate-spin" /> : <Plus />}
+              <span className="sr-only">Adicionar item</span>
+            </Button>
+          </form>
+        )}
       </div>
     </section>
   );

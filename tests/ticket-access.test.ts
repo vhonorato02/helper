@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
+  canCommentOnTicket,
+  canManageTicket,
   canViewPublicRequesterContact,
   canWorkOnTicketArea,
   protectPublicRequesterData,
@@ -36,11 +38,36 @@ describe('ticket area access rules', () => {
     area: 'TI' as const,
     areas: ['TI'] as const,
   };
+  const requester = {
+    id: 'requester',
+    isAdmin: false,
+    role: 'outro',
+    area: null,
+    areas: [] as const,
+  };
 
   it('allows admins and same-area operational users to handle a ticket area', () => {
     assert.equal(canWorkOnTicketArea(admin, 'TI'), true);
     assert.equal(canWorkOnTicketArea(tiUser, 'TI'), true);
     assert.equal(canWorkOnTicketArea(marketingUser, 'TI'), false);
+  });
+
+  it('allows ticket management only for admins and eligible users in the ticket area', () => {
+    const ticket = { area: 'TI' as const, authorId: requester.id, assigneeId: null };
+
+    assert.equal(canManageTicket(admin, ticket), true);
+    assert.equal(canManageTicket(tiUser, ticket), true);
+    assert.equal(canManageTicket(marketingUser, ticket), false);
+    assert.equal(canManageTicket(requester, ticket), false);
+    assert.equal(canManageTicket(legacyContradictory, ticket), false);
+  });
+
+  it('allows comments for the ticket author without granting management', () => {
+    const ticket = { area: 'TI' as const, authorId: requester.id, assigneeId: null };
+
+    assert.equal(canCommentOnTicket(requester, ticket), true);
+    assert.equal(canManageTicket(requester, ticket), false);
+    assert.equal(canCommentOnTicket(marketingUser, ticket), false);
   });
 
   it('keeps legacy contradictory users out of public requester contacts', () => {

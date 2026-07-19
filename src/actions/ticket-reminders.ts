@@ -8,6 +8,7 @@ import { auth } from '@/auth';
 import { db } from '@/db';
 import { schedules, tickets } from '@/db/schema';
 import { copy } from '@/lib/copy';
+import { canManageTicket } from '@/lib/ticket-access';
 
 const reminderSchema = z.object({
   scheduledDate: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/),
@@ -54,6 +55,7 @@ export async function createTicketReminder(code: string, formData: FormData) {
     .limit(1);
 
   if (!ticket) return { error: copy.validation.invalidTicket };
+  if (!canManageTicket(user, ticket)) return { error: copy.auth.errors.permissionDenied };
 
   await db.insert(schedules).values({
     title: `Lembrete ${ticket.code}: ${ticket.title}`.slice(0, 120),
