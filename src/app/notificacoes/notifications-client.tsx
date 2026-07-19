@@ -7,6 +7,8 @@ import { Check, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { markNotificationRead } from '@/actions/notifications';
 import { Button } from '@/components/ui/button';
+import { copy } from '@/lib/copy';
+import { shouldHandleNotificationNavigation } from '@/lib/notification-interactions';
 import { cn } from '@/lib/utils';
 
 type NotificationItem = {
@@ -37,13 +39,13 @@ export function NotificationsClient({ items }: { items: NotificationItem[] }) {
       try {
         const result = await markNotificationRead(id);
         if (!result || 'error' in result) {
-          toast.error('Não foi possível marcar a notificação como lida.');
+          toast.error(copy.notifications.markReadFailed);
           return;
         }
-        toast.success('Notificação marcada como lida.');
+        toast.success(copy.notifications.markedRead);
         router.refresh();
       } catch {
-        toast.error('Não foi possível marcar a notificação como lida.');
+        toast.error(copy.notifications.markReadFailed);
       } finally {
         setPendingId(null);
       }
@@ -54,6 +56,7 @@ export function NotificationsClient({ items }: { items: NotificationItem[] }) {
     <div className="divide-y">
       {items.map((item) => {
         const isUnread = !item.readAt;
+        const isItemPending = isPending && pendingId === item.id;
         const content = (
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -80,7 +83,41 @@ export function NotificationsClient({ items }: { items: NotificationItem[] }) {
             {item.link ? (
               <Link
                 href={item.link}
+                aria-disabled={isItemPending}
                 className="min-w-0 flex-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                onClick={(event) => {
+                  const destination = item.link;
+                  if (!isUnread || !destination || isItemPending) return;
+                  if (
+                    !shouldHandleNotificationNavigation({
+                      altKey: event.altKey,
+                      button: event.button,
+                      ctrlKey: event.ctrlKey,
+                      defaultPrevented: event.defaultPrevented,
+                      metaKey: event.metaKey,
+                      shiftKey: event.shiftKey,
+                      target: event.currentTarget.target,
+                    })
+                  ) {
+                    return;
+                  }
+
+                  event.preventDefault();
+                  setPendingId(item.id);
+                  startTransition(async () => {
+                    try {
+                      const result = await markNotificationRead(item.id);
+                      if (!result || 'error' in result) {
+                        toast.error(copy.notifications.markReadFailed);
+                      }
+                    } catch {
+                      toast.error(copy.notifications.markReadFailed);
+                    } finally {
+                      setPendingId(null);
+                      router.push(destination);
+                    }
+                  });
+                }}
               >
                 {content}
               </Link>
@@ -94,14 +131,14 @@ export function NotificationsClient({ items }: { items: NotificationItem[] }) {
                 size="sm"
                 className="shrink-0 self-start gap-1.5"
                 onClick={() => markRead(item.id)}
-                disabled={isPending && pendingId === item.id}
+                disabled={isItemPending}
               >
-                {isPending && pendingId === item.id ? (
+                {isItemPending ? (
                   <Loader2 className="size-3.5 animate-spin" />
                 ) : (
                   <Check className="size-3.5" />
                 )}
-                Marcar lida
+                {copy.notifications.markRead}
               </Button>
             )}
           </div>

@@ -38,6 +38,11 @@ export const copy = {
     account: 'Minha conta',
     settings: 'Configurações',
   },
+  notifications: {
+    markRead: 'Marcar lida',
+    markReadFailed: 'Não foi possível marcar a notificação como lida.',
+    markedRead: 'Notificação marcada como lida.',
+  },
   auth: {
     labels: {
       username: 'Usuário',
