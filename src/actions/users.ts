@@ -32,6 +32,7 @@ import {
   resolveExplicitPrimaryAssignee,
   selectEligibleAssigneeForArea,
 } from '@/lib/assignment';
+import { canViewTicket } from '@/lib/ticket-access';
 
 const ACTIVE_TICKET_STATUSES = ['aberto', 'em_andamento', 'aguardando'] as const;
 
@@ -692,14 +693,20 @@ export async function changePassword(formData: FormData) {
 }
 
 export async function getTicketHistory(ticketCode: string) {
-  await requireSession();
+  const user = await requireSession();
 
   const [ticket] = await db
-    .select({ id: tickets.id })
+    .select({
+      id: tickets.id,
+      area: tickets.area,
+      authorId: tickets.authorId,
+      assigneeId: tickets.assigneeId,
+    })
     .from(tickets)
     .where(eq(tickets.code, ticketCode))
     .limit(1);
   if (!ticket) return [];
+  if (!canViewTicket(user, ticket)) return [];
 
   return db
     .select({

@@ -15,6 +15,7 @@ import { canManageChromebookBookings } from '@/lib/chromebook-permissions';
 import { AREA_LABELS, PRIORITY_LABELS, STATUS_LABELS } from '@/lib/constants';
 import { copy } from '@/lib/copy';
 import { canViewPublicRequesterContact, canWorkOnTicketArea } from '@/lib/ticket-access';
+import { withTicketVisibility } from '@/lib/ticket-visibility';
 
 const ACTIVE_TICKET_STATUSES = ['aberto', 'em_andamento', 'aguardando'] as const;
 const ticketCodeSchema = z.string().trim().min(3).max(24);
@@ -59,15 +60,26 @@ export async function getExternalIntakeSummary(limit = 6) {
     db
       .select({ total: count() })
       .from(tickets)
-      .where(and(eq(tickets.origin, 'Pagina publica'), inArray(tickets.status, [...ACTIVE_TICKET_STATUSES]))),
+      .where(
+        withTicketVisibility(
+          and(
+            eq(tickets.origin, 'Pagina publica'),
+            inArray(tickets.status, [...ACTIVE_TICKET_STATUSES]),
+          ),
+          user,
+        ),
+      ),
     db
       .select({ total: count() })
       .from(tickets)
       .where(
-        and(
-          eq(tickets.origin, 'Pagina publica'),
-          inArray(tickets.status, [...ACTIVE_TICKET_STATUSES]),
-          isNull(tickets.assigneeId),
+        withTicketVisibility(
+          and(
+            eq(tickets.origin, 'Pagina publica'),
+            inArray(tickets.status, [...ACTIVE_TICKET_STATUSES]),
+            isNull(tickets.assigneeId),
+          ),
+          user,
         ),
       ),
     db
@@ -88,7 +100,15 @@ export async function getExternalIntakeSummary(limit = 6) {
         createdAt: tickets.createdAt,
       })
       .from(tickets)
-      .where(and(eq(tickets.origin, 'Pagina publica'), inArray(tickets.status, [...ACTIVE_TICKET_STATUSES])))
+      .where(
+        withTicketVisibility(
+          and(
+            eq(tickets.origin, 'Pagina publica'),
+            inArray(tickets.status, [...ACTIVE_TICKET_STATUSES]),
+          ),
+          user,
+        ),
+      )
       .orderBy(asc(tickets.createdAt))
       .limit(limit),
     db

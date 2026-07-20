@@ -9,7 +9,7 @@ import { db } from '@/db';
 import { ticketHistory, ticketTasks, tickets, users } from '@/db/schema';
 import { dispatchNotification } from '@/actions/notifications';
 import { copy } from '@/lib/copy';
-import { canManageTicket } from '@/lib/ticket-access';
+import { canManageTicket, canViewTicket } from '@/lib/ticket-access';
 
 const taskTitleSchema = z.string().trim().min(1).max(160);
 const taskIdSchema = z.string().uuid();
@@ -52,10 +52,11 @@ async function recordTaskHistory(
 }
 
 export async function getTicketTasks(code: string) {
-  await requireAuth();
+  const user = await requireAuth();
 
   const ticket = await getTaskTicket(code);
   if (!ticket) return [];
+  if (!canViewTicket(user, ticket)) return [];
 
   return db
     .select({

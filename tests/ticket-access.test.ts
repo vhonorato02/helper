@@ -3,10 +3,12 @@ import { describe, it } from 'node:test';
 import {
   canCommentOnTicket,
   canManageTicket,
+  canViewTicket,
   canViewPublicRequesterContact,
   canWorkOnTicketArea,
   protectPublicRequesterData,
   redactPublicRequesterContactLine,
+  visibleTicketAreas,
 } from '@/lib/ticket-access';
 
 describe('ticket area access rules', () => {
@@ -62,10 +64,45 @@ describe('ticket area access rules', () => {
     assert.equal(canManageTicket(legacyContradictory, ticket), false);
   });
 
+  it('limits ticket visibility to admins, same area, author, or assignee', () => {
+    const tiTicket = { area: 'TI' as const, authorId: requester.id, assigneeId: tiUser.id };
+    const authoredMarketingTicket = {
+      area: 'MKT' as const,
+      authorId: requester.id,
+      assigneeId: marketingUser.id,
+    };
+    const assignedMarketingTicket = {
+      area: 'MKT' as const,
+      authorId: marketingUser.id,
+      assigneeId: requester.id,
+    };
+
+    assert.equal(canViewTicket(admin, tiTicket), true);
+    assert.equal(canViewTicket(tiUser, tiTicket), true);
+    assert.equal(canViewTicket(marketingUser, tiTicket), false);
+    assert.equal(canViewTicket(requester, authoredMarketingTicket), true);
+    assert.equal(canViewTicket(requester, assignedMarketingTicket), true);
+    assert.equal(canViewTicket(legacyContradictory, tiTicket), false);
+  });
+
+  it('derives visible areas from the same operational eligibility rule', () => {
+    assert.deepEqual(visibleTicketAreas(admin), ['TI', 'MKT', 'PF']);
+    assert.deepEqual(visibleTicketAreas(tiUser), ['TI']);
+    assert.deepEqual(visibleTicketAreas(marketingUser), ['MKT']);
+    assert.deepEqual(visibleTicketAreas(legacyContradictory), []);
+    assert.deepEqual(visibleTicketAreas(requester), []);
+  });
+
   it('allows comments for the ticket author without granting management', () => {
     const ticket = { area: 'TI' as const, authorId: requester.id, assigneeId: null };
+    const assignedTicket = {
+      area: 'MKT' as const,
+      authorId: marketingUser.id,
+      assigneeId: requester.id,
+    };
 
     assert.equal(canCommentOnTicket(requester, ticket), true);
+    assert.equal(canCommentOnTicket(requester, assignedTicket), true);
     assert.equal(canManageTicket(requester, ticket), false);
     assert.equal(canCommentOnTicket(marketingUser, ticket), false);
   });

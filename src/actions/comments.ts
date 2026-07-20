@@ -13,7 +13,7 @@ import { extractMentions } from '@/lib/mentions';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { dispatchNotification } from '@/actions/notifications';
 import { isQuickResponseAvailableForTicket } from '@/lib/quick-responses';
-import { canCommentOnTicket } from '@/lib/ticket-access';
+import { canCommentOnTicket, canViewTicket } from '@/lib/ticket-access';
 
 const COMMENT_RATE_LIMIT = { limit: 30, windowMs: 60_000, lockoutMs: 60_000 };
 
@@ -294,15 +294,21 @@ export async function deleteComment(ticketCode: string, commentId: string) {
 }
 
 export async function getComments(ticketCode: string) {
-  await requireAuth();
+  const user = await requireAuth();
 
   const [ticket] = await db
-    .select({ id: tickets.id })
+    .select({
+      id: tickets.id,
+      area: tickets.area,
+      authorId: tickets.authorId,
+      assigneeId: tickets.assigneeId,
+    })
     .from(tickets)
     .where(eq(tickets.code, ticketCode))
     .limit(1);
 
   if (!ticket) return [];
+  if (!canViewTicket(user, ticket)) return [];
 
   return db
     .select({

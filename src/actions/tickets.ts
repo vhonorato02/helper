@@ -29,7 +29,11 @@ import { sendTicketNotification } from '@/lib/email';
 import { nextResolvedAt } from '@/lib/ticket-status';
 import { dispatchNotification } from '@/actions/notifications';
 import { getDefaultAssigneeForArea, getEligibleAssigneeForArea } from '@/actions/users';
-import { canManageTicket, protectPublicRequesterData } from '@/lib/ticket-access';
+import { canManageTicket, canViewTicket, protectPublicRequesterData } from '@/lib/ticket-access';
+import {
+  buildTicketVisibilityCondition,
+  withTicketVisibility,
+} from '@/lib/ticket-visibility';
 
 const areaSchema = z.enum(['TI', 'MKT', 'PF']);
 const prioritySchema = z.enum(['baixa', 'media', 'alta', 'urgente']);
@@ -808,7 +812,7 @@ export async function getTickets(filters?: TicketFilters & { page?: number }) {
   const { page = 1 } = filters ?? {};
   const limit = 50;
   const offset = (page - 1) * limit;
-  const where = buildTicketConditions(filters);
+  const where = withTicketVisibility(buildTicketConditions(filters), user);
 
   const rows = await db
     .select({
@@ -843,11 +847,11 @@ export async function getTickets(filters?: TicketFilters & { page?: number }) {
 }
 
 export async function getTicketCount(filters?: TicketFilters) {
-  await requireAuth();
+  const user = await requireAuth();
   const [result] = await db
     .select({ total: count() })
     .from(tickets)
-    .where(buildTicketConditions(filters));
+    .where(withTicketVisibility(buildTicketConditions(filters), user));
 
   return Number(result?.total ?? 0);
 }
@@ -876,7 +880,7 @@ export async function exportTicketRows(filters?: TicketFilters) {
     .from(tickets)
     .leftJoin(users, eq(tickets.authorId, users.id))
     .leftJoin(ticketAssignee, eq(tickets.assigneeId, ticketAssignee.id))
-    .where(buildTicketConditions(filters))
+    .where(withTicketVisibility(buildTicketConditions(filters), user))
     .orderBy(...getTicketOrder(filters?.sort))
     .limit(EXPORT_TICKET_LIMIT + 1);
 
@@ -918,6 +922,7 @@ export async function getTicket(code: string) {
     .limit(1);
 
   if (!row) return null;
+  if (!canViewTicket(user, row.ticket)) return null;
 
   return {
     ...protectPublicRequesterData(row.ticket, user),
@@ -927,7 +932,7 @@ export async function getTicket(code: string) {
 }
 
 export async function getDashboardStats() {
-  await requireAuth();
+  const user = await requireAuth();
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
   // Single round-trip: PostgreSQL evaluates each FILTER independently in one pass.
@@ -941,7 +946,8 @@ export async function getDashboardStats() {
       atrasadas: sql<number>`count(*) filter (where ${tickets.dueDate} is not null and ${tickets.dueDate} <= now() and ${tickets.status} in ('aberto', 'em_andamento', 'aguardando'))`,
       resolvidosSemana: sql<number>`count(*) filter (where ${tickets.status} = 'resolvido' and ${tickets.resolvedAt} >= ${weekAgo})`,
     })
-    .from(tickets);
+    .from(tickets)
+    .where(buildTicketVisibilityCondition(user));
 
   return {
     abertosTI: Number(row?.abertosTI ?? 0),
@@ -955,7 +961,7 @@ export async function getDashboardStats() {
 }
 
 export async function getTicketTrend(days = 14) {
-  await requireAuth();
+  const user = await requireAuth();
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   start.setDate(start.getDate() - (days - 1));
@@ -966,7 +972,7 @@ export async function getTicketTrend(days = 14) {
       total: sql<number>`count(*)`,
     })
     .from(tickets)
-    .where(sql`${tickets.createdAt} >= ${start}`)
+    .where(withTicketVisibility(sql`${tickets.createdAt} >= ${start}`, user))
     .groupBy(sql`to_char(${tickets.createdAt}, 'YYYY-MM-DD')`);
 
   const resolved = await db
@@ -976,9 +982,12 @@ export async function getTicketTrend(days = 14) {
     })
     .from(tickets)
     .where(
-      and(
-        sql`${tickets.resolvedAt} IS NOT NULL`,
-        sql`${tickets.resolvedAt} >= ${start}`,
+      withTicketVisibility(
+        and(
+          sql`${tickets.resolvedAt} IS NOT NULL`,
+          sql`${tickets.resolvedAt} >= ${start}`,
+        ),
+        user,
       ),
     )
     .groupBy(sql`to_char(${tickets.resolvedAt}, 'YYYY-MM-DD')`);
@@ -1000,7 +1009,7 @@ export async function getTicketTrend(days = 14) {
 }
 
 export async function getAvgResolutionTime(days = 30) {
-  await requireAuth();
+  const user = await requireAuth();
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
   const rows = await db
@@ -1011,10 +1020,13 @@ export async function getAvgResolutionTime(days = 30) {
     })
     .from(tickets)
     .where(
-      and(
-        eq(tickets.status, 'resolvido'),
-        sql`${tickets.resolvedAt} IS NOT NULL`,
-        sql`${tickets.resolvedAt} >= ${since}`,
+      withTicketVisibility(
+        and(
+          eq(tickets.status, 'resolvido'),
+          sql`${tickets.resolvedAt} IS NOT NULL`,
+          sql`${tickets.resolvedAt} >= ${since}`,
+        ),
+        user,
       ),
     )
     .groupBy(tickets.area);
@@ -1036,7 +1048,7 @@ export async function getAvgResolutionTime(days = 30) {
 }
 
 export async function getActivityFeed(limit = 30) {
-  await requireAuth();
+  const user = await requireAuth();
   const rows = await db
     .select({
       id: ticketHistory.id,
@@ -1052,6 +1064,7 @@ export async function getActivityFeed(limit = 30) {
     .from(ticketHistory)
     .innerJoin(tickets, eq(ticketHistory.ticketId, tickets.id))
     .leftJoin(users, eq(ticketHistory.authorId, users.id))
+    .where(buildTicketVisibilityCondition(user))
     .orderBy(desc(ticketHistory.createdAt))
     .limit(limit);
 
@@ -1059,14 +1072,19 @@ export async function getActivityFeed(limit = 30) {
 }
 
 export async function getAreaDistribution() {
-  await requireAuth();
+  const user = await requireAuth();
   const rows = await db
     .select({
       area: tickets.area,
       total: sql<number>`count(*)`,
     })
     .from(tickets)
-    .where(inArray(tickets.status, ['aberto', 'em_andamento', 'aguardando']))
+    .where(
+      withTicketVisibility(
+        inArray(tickets.status, ['aberto', 'em_andamento', 'aguardando']),
+        user,
+      ),
+    )
     .groupBy(tickets.area);
 
   return {
@@ -1088,7 +1106,7 @@ function priorityRank(priority: Priority) {
 }
 
 export async function getAttentionTickets() {
-  await requireAuth();
+  const user = await requireAuth();
   const now = new Date();
 
   const rows = await db
@@ -1107,7 +1125,7 @@ export async function getAttentionTickets() {
     })
     .from(tickets)
     .leftJoin(ticketAssignee, eq(tickets.assigneeId, ticketAssignee.id))
-    .where(buildAttentionCondition(now))
+    .where(withTicketVisibility(buildAttentionCondition(now), user))
     .orderBy(desc(tickets.updatedAt))
     .limit(60);
 
@@ -1154,7 +1172,7 @@ export async function getKanbanTickets(filters?: {
   priority?: string;
   search?: string;
 }): Promise<KanbanTicket[]> {
-  await requireAuth();
+  const user = await requireAuth();
   const { area, assigneeId, priority, search } = filters ?? {};
   const conditions = [];
   const normalizedSearch = search?.trim();
@@ -1191,7 +1209,10 @@ export async function getKanbanTickets(filters?: {
     ),
   );
 
-  const where = conditions.length > 0 ? and(...conditions) : undefined;
+  const where = withTicketVisibility(
+    conditions.length > 0 ? and(...conditions) : undefined,
+    user,
+  );
 
   const rows = await db
     .select({

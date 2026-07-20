@@ -9,6 +9,7 @@ import { and, asc, desc, eq, isNull, ne, or } from 'drizzle-orm';
 import { z } from 'zod';
 import { copy } from '@/lib/copy';
 import type { Area } from '@/lib/constants';
+import { canViewTicket } from '@/lib/ticket-access';
 
 const areaSchema = z.enum(['TI', 'MKT', 'PF']);
 const idSchema = z.string().uuid();
@@ -84,16 +85,21 @@ export async function getQuickResponses(includeInactive = false) {
 }
 
 export async function getActiveQuickResponsesForTicket(ticketCode: string) {
-  await requireAuth();
+  const user = await requireAuth();
   const parsed = z.string().trim().min(1).max(24).safeParse(ticketCode);
   if (!parsed.success) return [];
 
   const [ticket] = await db
-    .select({ area: tickets.area })
+    .select({
+      area: tickets.area,
+      authorId: tickets.authorId,
+      assigneeId: tickets.assigneeId,
+    })
     .from(tickets)
     .where(eq(tickets.code, parsed.data))
     .limit(1);
   if (!ticket) return [];
+  if (!canViewTicket(user, ticket)) return [];
 
   return db
     .select({
