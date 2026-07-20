@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { Info } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -29,6 +30,7 @@ interface OperationalProfileFieldsProps {
   initialAreas?: readonly Area[] | null;
   disabled?: boolean;
   resetKey?: number;
+  showAssignmentImpact?: boolean;
 }
 
 function isKnownRole(value: string | null | undefined): value is UserRole {
@@ -52,6 +54,7 @@ export function OperationalProfileFields({
   initialAreas,
   disabled = false,
   resetKey = 0,
+  showAssignmentImpact = false,
 }: OperationalProfileFieldsProps) {
   const normalizedInitialRole = isKnownRole(initialRole) ? initialRole : null;
   const normalizedInitialArea = isKnownArea(initialArea) ? initialArea : null;
@@ -195,6 +198,12 @@ export function OperationalProfileFields({
       <p id={helpId} className="text-xs leading-relaxed text-muted-foreground">
         {helpText}
       </p>
+      {showAssignmentImpact && (
+        <div className="flex items-start gap-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs leading-relaxed text-foreground">
+          <Info className="mt-0.5 size-3.5 shrink-0 text-amber-700 dark:text-amber-400" aria-hidden="true" />
+          <p>{copy.users.form.operationalProfile.editImpact}</p>
+        </div>
+      )}
     </fieldset>
   );
 }

@@ -109,6 +109,7 @@ export function EditUserDialog({ open, onOpenChange, user, isSelf }: EditUserDia
             initialArea={user.area}
             initialAreas={user.operationalAreas}
             disabled={isPending}
+            showAssignmentImpact
           />
 
           <div className="space-y-1.5">

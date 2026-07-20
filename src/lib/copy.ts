@@ -530,6 +530,8 @@ export const copy = {
           `A pessoa fica habilitada para receber demandas de: ${areas}.`,
         noArea:
           'Sem área operacional, a pessoa não entra na atribuição automática nem na lista de responsáveis primários.',
+        editImpact:
+          'Ao salvar, demandas ativas de áreas removidas ficam sem responsável e responsáveis primários incompatíveis são removidos.',
       },
       placeholders: {
         username: 'nome.sobrenome',
@@ -562,7 +564,7 @@ export const copy = {
       updated: (name: string) => `${name} foi atualizado.`,
       deactivateTitle: (name: string) => `Desativar ${name}?`,
       deactivateDescription:
-        'O usuário não poderá entrar no sistema, mas todo o histórico será preservado. Você pode reativar depois.',
+        'O usuário não poderá entrar no sistema. Demandas ativas atribuídas a ele ficam sem responsável e qualquer responsável primário dele será removido. O histórico será preservado.',
       deleteTitle: (name: string) => `Excluir ${name}?`,
       deleteDescription:
         'A conta será removida definitivamente. Demandas, comentários e histórico continuam preservados como registros de usuário removido.',
