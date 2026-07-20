@@ -12,6 +12,7 @@ import { logger } from '@/lib/logger';
 import { toZonedTime } from 'date-fns-tz';
 import { APP_TIMEZONE } from '@/lib/timezone';
 import { pruneReadNotifications } from '@/actions/notifications';
+import { runCronTasks, type CronTask } from '@/lib/cron-runner';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -29,29 +30,32 @@ export async function GET(req: Request) {
   const dayOfMonth = zoned.getDate();
   const month = zoned.getMonth(); // 0 = janeiro
 
-  const results: Record<string, unknown> = {};
-
-  // Tarefas diarias
-  results.digest = await sendDailyDigest();
-  results.autoArchive = await autoArchiveOldResolved();
-  results.autoStale = await autoMoveStaleToWaiting();
+  const tasks: CronTask[] = [
+    { name: 'digest', run: sendDailyDigest },
+    { name: 'autoArchive', run: autoArchiveOldResolved },
+    { name: 'autoStale', run: autoMoveStaleToWaiting },
+  ];
 
   // Tarefas semanais (segunda-feira)
   if (dayOfWeek === 1) {
-    results.weeklySummary = await sendWeeklySummary();
-    results.staleNudge = await sendStaleNudge();
+    tasks.push(
+      { name: 'weeklySummary', run: sendWeeklySummary },
+      { name: 'staleNudge', run: sendStaleNudge },
+    );
   }
 
   // Trimestral (dia 1 de jan/abr/jul/out)
   if (dayOfMonth === 1 && [0, 3, 6, 9].includes(month)) {
-    results.pfPreventive = await sendPfPreventiveReminder();
+    tasks.push({ name: 'pfPreventive', run: sendPfPreventiveReminder });
   }
 
   // Mensal: remove notificações lidas antigas sem criar outro cron no Vercel.
   if (dayOfMonth === 1) {
-    results.notificationsCleanup = await pruneReadNotifications();
+    tasks.push({ name: 'notificationsCleanup', run: pruneReadNotifications });
   }
 
-  logger.info('cron_morning_complete', { results });
-  return NextResponse.json({ ok: true, results });
+  const result = await runCronTasks(tasks);
+
+  logger.info('cron_morning_complete', { result });
+  return NextResponse.json(result, { status: result.ok ? 200 : 500 });
 }

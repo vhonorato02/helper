@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { assertCron } from '@/lib/cron-auth';
 import { sendImminentScheduleReminder, sendOverdueNudge } from '@/lib/reminders';
 import { logger } from '@/lib/logger';
+import { runCronTasks } from '@/lib/cron-runner';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -14,10 +15,11 @@ export async function GET(req: Request) {
   const denied = assertCron(req);
   if (denied) return denied;
 
-  const results: Record<string, unknown> = {};
-  results.overdueNudge = await sendOverdueNudge();
-  results.scheduleImminent = await sendImminentScheduleReminder();
+  const result = await runCronTasks([
+    { name: 'overdueNudge', run: sendOverdueNudge },
+    { name: 'scheduleImminent', run: sendImminentScheduleReminder },
+  ]);
 
-  logger.info('cron_afternoon_complete', { results });
-  return NextResponse.json({ ok: true, results });
+  logger.info('cron_afternoon_complete', { result });
+  return NextResponse.json(result, { status: result.ok ? 200 : 500 });
 }
