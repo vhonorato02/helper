@@ -10,12 +10,16 @@ import {
   unregisterPushSubscription,
 } from '@/actions/notifications';
 import { Button } from '@/components/ui/button';
+import {
+  resolvePushPanelStatus,
+  supportsBrowserPush,
+  type PushPanelStatus,
+} from '@/lib/push-registration-state';
 
 const STORAGE_KEY = 'helper.browser-notification-ledger';
 const POLL_MS = 60_000;
 
 type Ledger = Record<string, number>;
-type PushPanelStatus = 'loading' | 'unsupported' | 'unconfigured' | 'denied' | 'active' | 'expired';
 
 function readLedger(): Ledger {
   try {
@@ -77,6 +81,15 @@ async function readCurrentSubscription() {
 
 function isExpiredSubscription(subscription: PushSubscription | null) {
   return Boolean(subscription?.expirationTime && subscription.expirationTime <= Date.now());
+}
+
+async function forgetCurrentSubscription(subscription: PushSubscription) {
+  await unregisterPushSubscription(subscription.endpoint);
+  try {
+    await subscription.unsubscribe();
+  } catch (error) {
+    console.warn('Nao foi possivel cancelar a assinatura push local.', error);
+  }
 }
 
 async function loadPublicVapidKey() {
@@ -154,9 +167,11 @@ export function BrowserNotificationPermissionPanel() {
   const refresh = useCallback(async () => {
     if (
       typeof window === 'undefined' ||
-      !('Notification' in window) ||
-      !('serviceWorker' in navigator) ||
-      !('PushManager' in window)
+      !supportsBrowserPush({
+        notification: 'Notification' in window,
+        serviceWorker: 'serviceWorker' in navigator,
+        pushManager: 'PushManager' in window,
+      })
     ) {
       setPermission('unsupported');
       setStatus('unsupported');
@@ -164,29 +179,40 @@ export function BrowserNotificationPermissionPanel() {
     }
 
     setPermission(Notification.permission);
+    const subscription = await readCurrentSubscription();
 
     if (Notification.permission === 'denied') {
+      if (subscription) await forgetCurrentSubscription(subscription);
+      const state = await getPushRegistrationState(null);
+      setDeviceCount(state.subscriptionCount);
       setStatus('denied');
       return;
     }
 
-    const subscription = await readCurrentSubscription();
     const state = await getPushRegistrationState(subscription?.endpoint ?? null);
     setDeviceCount(state.subscriptionCount);
-    if (!state.publicKey) {
-      setStatus('unconfigured');
+
+    if (subscription && isExpiredSubscription(subscription)) {
+      await forgetCurrentSubscription(subscription);
+      const refreshedState = await getPushRegistrationState(null);
+      setDeviceCount(refreshedState.subscriptionCount);
+      setStatus(resolvePushPanelStatus({
+        permission: Notification.permission,
+        publicKey: refreshedState.publicKey,
+        hasSubscription: false,
+        currentEndpointRegistered: false,
+        subscriptionExpired: true,
+      }));
       return;
     }
 
-    if (isExpiredSubscription(subscription)) {
-      await unregisterPushSubscription(subscription!.endpoint);
-      await subscription!.unsubscribe();
-      setDeviceCount((current) => Math.max(0, current - 1));
-      setStatus('expired');
-      return;
-    }
-
-    setStatus(subscription && state.currentEndpointRegistered ? 'active' : 'expired');
+    setStatus(resolvePushPanelStatus({
+      permission: Notification.permission,
+      publicKey: state.publicKey,
+      hasSubscription: Boolean(subscription),
+      currentEndpointRegistered: state.currentEndpointRegistered,
+      subscriptionExpired: false,
+    }));
   }, []);
 
   useEffect(() => {
@@ -196,9 +222,11 @@ export function BrowserNotificationPermissionPanel() {
   const enable = () => {
     startTransition(async () => {
       if (
-        !('Notification' in window) ||
-        !('serviceWorker' in navigator) ||
-        !('PushManager' in window)
+        !supportsBrowserPush({
+          notification: 'Notification' in window,
+          serviceWorker: 'serviceWorker' in navigator,
+          pushManager: 'PushManager' in window,
+        })
       ) {
         setPermission('unsupported');
         setStatus('unsupported');
@@ -217,12 +245,16 @@ export function BrowserNotificationPermissionPanel() {
 
         const registration = await navigator.serviceWorker.ready;
         const existingSubscription = await registration.pushManager.getSubscription();
+        if (existingSubscription && isExpiredSubscription(existingSubscription)) {
+          await forgetCurrentSubscription(existingSubscription);
+        }
         const subscription =
-          existingSubscription ??
-          (await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(publicKey),
-          }));
+          existingSubscription && !isExpiredSubscription(existingSubscription)
+            ? existingSubscription
+            : await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(publicKey),
+              });
 
         const result = await registerPushSubscription(subscription.toJSON());
         if (!result.ok) {
@@ -241,8 +273,7 @@ export function BrowserNotificationPermissionPanel() {
     startTransition(async () => {
       const subscription = await readCurrentSubscription();
       if (subscription) {
-        await unregisterPushSubscription(subscription.endpoint);
-        await subscription.unsubscribe();
+        await forgetCurrentSubscription(subscription);
       }
       await refresh();
       toast.success('Notificações PWA desativadas neste dispositivo.');
