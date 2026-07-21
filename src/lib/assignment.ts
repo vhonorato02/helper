@@ -14,6 +14,11 @@ export type AreaAssigneeCandidate = {
   isActive?: boolean | null;
 };
 
+export type PublicDefaultAssignmentTarget = {
+  area: Area;
+  assigneeId?: string | null;
+};
+
 export type OperationalProfileInput = {
   role?: string | null | undefined;
   area?: Area | '' | null | undefined;
@@ -114,4 +119,25 @@ export function pickPrimaryAssigneeForArea<T extends AreaAssigneeCandidate>(
   primaryUserId?: string | null,
 ) {
   return resolveExplicitPrimaryAssignee(area, primaryUserId, users);
+}
+
+export function resolvePublicDefaultAssignment<T extends AreaAssigneeCandidate>(
+  ticket: PublicDefaultAssignmentTarget,
+  defaultAssignee: T | null | undefined,
+):
+  | { ok: true; assignee: T; shouldUpdate: boolean }
+  | { ok: false; reason: 'missing_default' | 'already_assigned' | 'ineligible_default' } {
+  if (!defaultAssignee) return { ok: false, reason: 'missing_default' };
+  if (!isUserEnabledForArea(defaultAssignee, ticket.area)) {
+    return { ok: false, reason: 'ineligible_default' };
+  }
+  if (ticket.assigneeId && ticket.assigneeId !== defaultAssignee.id) {
+    return { ok: false, reason: 'already_assigned' };
+  }
+
+  return {
+    ok: true,
+    assignee: defaultAssignee,
+    shouldUpdate: ticket.assigneeId !== defaultAssignee.id,
+  };
 }

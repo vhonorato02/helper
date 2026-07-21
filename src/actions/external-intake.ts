@@ -14,6 +14,7 @@ import { formatChromebookPeriod } from '@/lib/chromebooks';
 import { canManageChromebookBookings } from '@/lib/chromebook-permissions';
 import { AREA_LABELS, PRIORITY_LABELS, STATUS_LABELS } from '@/lib/constants';
 import { copy } from '@/lib/copy';
+import { resolvePublicDefaultAssignment } from '@/lib/assignment';
 import { canViewPublicRequesterContact, canWorkOnTicketArea } from '@/lib/ticket-access';
 import { withTicketVisibility } from '@/lib/ticket-visibility';
 
@@ -197,17 +198,23 @@ export async function assignPublicTicketToDefault(code: string) {
   if (!canWorkOnTicketArea(user, ticket.area)) return { error: copy.auth.errors.permissionDenied };
 
   const assignee = await getDefaultAssigneeForArea(ticket.area);
-  if (!assignee) return { error: 'Nenhum responsável padrão encontrado para esta área.' };
-  if (ticket.assigneeId === assignee.id) return { ok: true, assigneeName: assignee.displayName };
+  const resolved = resolvePublicDefaultAssignment(ticket, assignee);
+  if (!resolved.ok) {
+    if (resolved.reason === 'already_assigned') {
+      return { error: copy.validation.assigneeAlreadySet };
+    }
+    return { error: copy.validation.primaryAssigneeUnavailable };
+  }
+  if (!resolved.shouldUpdate) return { ok: true, assigneeName: resolved.assignee.displayName };
 
   await db
     .update(tickets)
-    .set({ assigneeId: assignee.id, updatedAt: new Date() })
+    .set({ assigneeId: resolved.assignee.id, updatedAt: new Date() })
     .where(eq(tickets.id, ticket.id));
 
-  await recordHistory(ticket.id, user.id, 'responsavel', null, assignee.displayName);
+  await recordHistory(ticket.id, user.id, 'responsavel', null, resolved.assignee.displayName);
   await dispatchNotification({
-    userIds: [assignee.id].filter((id) => id !== user.id),
+    userIds: [resolved.assignee.id].filter((id) => id !== user.id),
     type: 'ticket_assigned',
     title: `Demanda pública atribuída: ${ticket.code}`,
     body: ticket.title,
@@ -216,7 +223,7 @@ export async function assignPublicTicketToDefault(code: string) {
   });
 
   revalidateIntakeSurfaces(ticket.code);
-  return { ok: true, assigneeName: assignee.displayName };
+  return { ok: true, assigneeName: resolved.assignee.displayName };
 }
 
 export async function startPublicTicket(code: string) {

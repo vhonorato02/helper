@@ -5,6 +5,7 @@ import {
   isUserEnabledForArea,
   normalizeOperationalProfile,
   resolveExplicitPrimaryAssignee,
+  resolvePublicDefaultAssignment,
   selectEligibleAssigneeForArea,
   type AreaAssigneeCandidate,
 } from '@/lib/assignment';
@@ -79,6 +80,29 @@ describe('area assignment rules', () => {
     assert.equal(selectEligibleAssigneeForArea('inactive-ti', 'TI', users), null);
     assert.equal(selectEligibleAssigneeForArea('legacy-contradictory', 'TI', users), null);
     assert.equal(selectEligibleAssigneeForArea('missing', 'TI', users), null);
+  });
+
+  it('atribui demanda pública ao primário sem sobrescrever responsável manual', () => {
+    assert.deepEqual(
+      resolvePublicDefaultAssignment({ area: 'TI', assigneeId: null }, users[0]),
+      { ok: true, assignee: users[0], shouldUpdate: true },
+    );
+    assert.deepEqual(
+      resolvePublicDefaultAssignment({ area: 'TI', assigneeId: 'ti-primary' }, users[0]),
+      { ok: true, assignee: users[0], shouldUpdate: false },
+    );
+    assert.deepEqual(
+      resolvePublicDefaultAssignment({ area: 'TI', assigneeId: 'cross-trained' }, users[0]),
+      { ok: false, reason: 'already_assigned' },
+    );
+    assert.deepEqual(
+      resolvePublicDefaultAssignment({ area: 'TI', assigneeId: null }, null),
+      { ok: false, reason: 'missing_default' },
+    );
+    assert.deepEqual(
+      resolvePublicDefaultAssignment({ area: 'TI', assigneeId: null }, users[1]),
+      { ok: false, reason: 'ineligible_default' },
+    );
   });
 
   it('normaliza cargo e áreas operacionais sem tratar como sinônimos', () => {
