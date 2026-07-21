@@ -9,6 +9,7 @@ import {
   ChevronDown,
   FileInput,
   Kanban,
+  Laptop2,
   KeyRound,
   LayoutDashboard,
   List,
@@ -55,6 +56,7 @@ const NAV_LINKS = [
   { href: '/agendamentos', label: copy.nav.links.schedules, icon: CalendarDays },
   { href: '/marketing', label: copy.nav.links.marketing, icon: Megaphone },
   { href: '/solicitacoes-publicas', label: copy.nav.links.publicRequests, icon: FileInput },
+  { href: '/chromebooks', label: copy.nav.links.chromebooks, icon: Laptop2 },
   { href: '/atividade', label: copy.nav.links.activity, icon: Activity },
 ] as const;
 
