@@ -11,6 +11,7 @@ import { BrowserNotificationAgent } from '@/components/notifications/browser-not
 import { copy } from '@/lib/copy';
 import { APP_VERSION_LABEL } from '@/lib/version';
 import { BRAND } from '@/lib/brand';
+import { getPublicAppUrl } from '@/lib/app-url';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -18,18 +19,7 @@ const inter = Inter({
   display: 'swap',
 });
 
-function buildSiteUrl() {
-  const raw = process.env.NEXT_PUBLIC_SITE_URL;
-  if (raw) {
-    // Vercel env vars are often set without protocol (e.g. "helperpinda.vercel.app").
-    // new URL() throws on bare hostnames — always ensure a scheme is present.
-    if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
-    return `https://${raw}`;
-  }
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return 'http://localhost:3000';
-}
-const SITE_URL = buildSiteUrl();
+const SITE_URL = getPublicAppUrl({ fallback: 'http://localhost:3000' }) ?? 'http://localhost:3000';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

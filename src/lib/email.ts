@@ -10,6 +10,7 @@ import {
 } from '@/lib/constants';
 import { BRAND } from '@/lib/brand';
 import { logger } from '@/lib/logger';
+import { getPublicAppUrl } from '@/lib/app-url';
 
 const DEFAULT_EMAIL_TIMEOUT_MS = 6000;
 
@@ -46,22 +47,8 @@ type SmtpMessage = BuiltEmail & {
   to: string[];
 };
 
-function normalizeUrl(raw?: string | null) {
-  if (!raw) return null;
-  const trimmed = raw.trim();
-  if (!trimmed) return null;
-  const withProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-  return withProtocol.replace(/\/+$/, '');
-}
-
 export function getAppUrl() {
-  return (
-    normalizeUrl(process.env.APP_URL) ??
-    normalizeUrl(process.env.NEXT_PUBLIC_SITE_URL) ??
-    normalizeUrl(process.env.VERCEL_PROJECT_PRODUCTION_URL) ??
-    normalizeUrl(process.env.VERCEL_URL) ??
-    null
-  );
+  return getPublicAppUrl({ includeAppUrl: true });
 }
 
 function getEmailTimeoutMs() {
