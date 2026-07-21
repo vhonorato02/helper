@@ -19,6 +19,7 @@ import {
   findRoomConflict,
   formatChromebookPeriod,
   isActiveChromebookBookingStatus,
+  requestedChromebookBookingStatus,
   validateChromebookHolidayPolicy,
   type ChromebookBookingStatus,
 } from '@/lib/chromebooks';
@@ -68,7 +69,11 @@ function normalizeOptionalText(value: string | undefined) {
   return value && value.length > 0 ? value : null;
 }
 
-function parseBookingForm(formData: FormData, fallbackRequesterName?: string) {
+function parseBookingForm(
+  formData: FormData,
+  fallbackRequesterName?: string,
+  options: { allowExplicitStatus: boolean } = { allowExplicitStatus: false },
+) {
   return bookingSchema.safeParse({
     date: formData.get('date'),
     startTime: formData.get('startTime'),
@@ -78,7 +83,7 @@ function parseBookingForm(formData: FormData, fallbackRequesterName?: string) {
     requesterName: formData.get('requesterName') || fallbackRequesterName,
     requesterContact: formData.get('requesterContact') || undefined,
     notes: formData.get('notes') || undefined,
-    status: formData.get('status') || undefined,
+    status: requestedChromebookBookingStatus(String(formData.get('status') ?? ''), options),
   });
 }
 
@@ -368,7 +373,7 @@ export async function createPublicChromebookBooking(formData: FormData) {
 export async function createChromebookBooking(formData: FormData) {
   const user = await requireAdmin();
   if (!user) return { error: copy.auth.errors.permissionDenied };
-  const parsed = parseBookingForm(formData, user.name ?? user.username);
+  const parsed = parseBookingForm(formData, user.name ?? user.username, { allowExplicitStatus: true });
   if (!parsed.success) return { error: copy.validation.invalidData };
   return saveBooking(parsed.data, { responsibleId: user.id });
 }
@@ -376,7 +381,7 @@ export async function createChromebookBooking(formData: FormData) {
 export async function updateChromebookBooking(id: string, formData: FormData) {
   const user = await requireAdmin();
   if (!user) return { error: copy.auth.errors.permissionDenied };
-  const parsed = parseBookingForm(formData, user.name ?? user.username);
+  const parsed = parseBookingForm(formData, user.name ?? user.username, { allowExplicitStatus: true });
   if (!parsed.success) return { error: copy.validation.invalidData };
   return saveBooking(parsed.data, { id, responsibleId: user.id });
 }

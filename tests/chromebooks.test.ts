@@ -9,6 +9,7 @@ import {
   combineDateTimeInSaoPaulo,
   findRoomConflict,
   isActiveChromebookBookingStatus,
+  requestedChromebookBookingStatus,
   validateChromebookHolidayPolicy,
 } from '@/lib/chromebooks';
 
@@ -74,6 +75,26 @@ describe('Chromebook scheduling rules', () => {
     assert.equal(isActiveChromebookBookingStatus('pendente'), true);
     assert.equal(isActiveChromebookBookingStatus('confirmado'), true);
     assert.equal(isActiveChromebookBookingStatus('cancelado'), false);
+  });
+
+  it('forces public Chromebook booking requests to remain pending', () => {
+    assert.equal(
+      requestedChromebookBookingStatus('confirmado', { allowExplicitStatus: false }),
+      'pendente',
+    );
+    assert.equal(
+      requestedChromebookBookingStatus('cancelado', { allowExplicitStatus: false }),
+      'pendente',
+    );
+    assert.equal(requestedChromebookBookingStatus(null, { allowExplicitStatus: false }), 'pendente');
+  });
+
+  it('allows only administrative Chromebook flows to keep an explicit status', () => {
+    assert.equal(
+      requestedChromebookBookingStatus('confirmado', { allowExplicitStatus: true }),
+      'confirmado',
+    );
+    assert.equal(requestedChromebookBookingStatus('', { allowExplicitStatus: true }), undefined);
   });
 
   it('keeps the booking lock table declared in the Drizzle schema', () => {

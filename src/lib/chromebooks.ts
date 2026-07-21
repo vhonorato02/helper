@@ -18,6 +18,14 @@ export const CHROMEBOOK_STATUS_LABELS: Record<ChromebookBookingStatus, string> =
   cancelado: 'Cancelado',
 };
 
+export function requestedChromebookBookingStatus(
+  status: string | null | undefined,
+  options: { allowExplicitStatus: boolean },
+) {
+  if (!options.allowExplicitStatus) return 'pendente';
+  return status || undefined;
+}
+
 export type BookingInterval = {
   id?: string;
   startAt: Date;
