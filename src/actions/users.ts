@@ -27,6 +27,7 @@ import {
 } from '@/lib/validation';
 import { logger } from '@/lib/logger';
 import {
+  buildAssigneeRemovalHistoryRows,
   normalizeOperationalProfile,
   filterInvalidAssignmentsForUser,
   resolveExplicitPrimaryAssignee,
@@ -185,13 +186,7 @@ async function clearActiveAssignmentsForUser(userId: string, actorId: string, di
     );
 
   await db.insert(ticketHistory).values(
-    assignedTickets.map((ticket) => ({
-      ticketId: ticket.id,
-      authorId: actorId,
-      field: 'responsavel',
-      oldValue: displayName,
-      newValue: null,
-    })),
+    buildAssigneeRemovalHistoryRows(assignedTickets, actorId, displayName),
   );
 }
 
@@ -591,7 +586,21 @@ export async function deleteUser(userId: string) {
   // FK constraints (onDelete: 'set null' / 'cascade') would handle cleanup
   // automatically, but we do it explicitly for environments where migrations
   // were applied manually without FK clauses.
-  await db.update(tickets).set({ assigneeId: null }).where(eq(tickets.assigneeId, parsed.data));
+  const assignedTickets = await db
+    .select({ id: tickets.id })
+    .from(tickets)
+    .where(eq(tickets.assigneeId, parsed.data));
+
+  if (assignedTickets.length > 0) {
+    await db
+      .update(tickets)
+      .set({ assigneeId: null, updatedAt: new Date() })
+      .where(eq(tickets.assigneeId, parsed.data));
+    await db.insert(ticketHistory).values(
+      buildAssigneeRemovalHistoryRows(assignedTickets, currentUser.id, target.displayName),
+    );
+  }
+
   await db.update(tickets).set({ authorId: null }).where(eq(tickets.authorId, parsed.data));
   await db
     .update(areaPrimaryAssignees)

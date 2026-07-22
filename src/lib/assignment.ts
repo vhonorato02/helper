@@ -141,3 +141,21 @@ export function resolvePublicDefaultAssignment<T extends AreaAssigneeCandidate>(
     shouldUpdate: ticket.assigneeId !== defaultAssignee.id,
   };
 }
+
+export type AssignmentHistoryTarget = {
+  id: string;
+};
+
+export function buildAssigneeRemovalHistoryRows(
+  tickets: readonly AssignmentHistoryTarget[],
+  actorId: string | null,
+  removedAssigneeName: string,
+) {
+  return tickets.map((ticket) => ({
+    ticketId: ticket.id,
+    authorId: actorId,
+    field: 'responsavel' as const,
+    oldValue: removedAssigneeName,
+    newValue: null,
+  }));
+}

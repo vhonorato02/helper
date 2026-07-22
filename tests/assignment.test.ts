@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
+  buildAssigneeRemovalHistoryRows,
   filterInvalidAssignmentsForUser,
   isUserEnabledForArea,
   normalizeOperationalProfile,
@@ -147,5 +148,35 @@ describe('area assignment rules', () => {
       { id: 'pf-ticket', area: 'PF' },
     ]);
     assert.deepEqual(filterInvalidAssignmentsForUser({ ...user, isActive: false }, assignments), assignments);
+  });
+
+  it('gera auditoria consistente ao remover responsável de tickets', () => {
+    assert.deepEqual(
+      buildAssigneeRemovalHistoryRows(
+        [{ id: 'ticket-1' }, { id: 'ticket-2' }],
+        'admin-1',
+        'Pessoa removida',
+      ),
+      [
+        {
+          ticketId: 'ticket-1',
+          authorId: 'admin-1',
+          field: 'responsavel',
+          oldValue: 'Pessoa removida',
+          newValue: null,
+        },
+        {
+          ticketId: 'ticket-2',
+          authorId: 'admin-1',
+          field: 'responsavel',
+          oldValue: 'Pessoa removida',
+          newValue: null,
+        },
+      ],
+    );
+  });
+
+  it('não inventa auditoria quando nenhum ticket perdeu responsável', () => {
+    assert.deepEqual(buildAssigneeRemovalHistoryRows([], 'admin-1', 'Pessoa removida'), []);
   });
 });
