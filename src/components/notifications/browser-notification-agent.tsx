@@ -80,7 +80,9 @@ async function readCurrentSubscription() {
 }
 
 function isExpiredSubscription(subscription: PushSubscription | null) {
-  return Boolean(subscription?.expirationTime && subscription.expirationTime <= Date.now());
+  return subscription?.expirationTime !== null &&
+    subscription?.expirationTime !== undefined &&
+    subscription.expirationTime <= Date.now();
 }
 
 async function forgetCurrentSubscription(subscription: PushSubscription) {

@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import webPush from 'web-push';
-import { and, eq, inArray, isNotNull, lt, sql } from 'drizzle-orm';
+import { and, eq, gt, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { notificationPreferences, pushSubscriptions } from '@/db/schema';
 import { logger } from '@/lib/logger';
@@ -50,6 +50,12 @@ function configureVapid() {
 
 function endpointFingerprint(endpoint: string) {
   return crypto.createHash('sha256').update(endpoint).digest('hex').slice(0, 16);
+}
+
+export function isPushSubscriptionCurrent(expirationTime: Date | number | null | undefined, now = new Date()) {
+  if (expirationTime === null || expirationTime === undefined) return true;
+  const expiresAt = expirationTime instanceof Date ? expirationTime.getTime() : expirationTime;
+  return Number.isFinite(expiresAt) && expiresAt > now.getTime();
 }
 
 export function isValidPushEndpoint(endpoint: string) {
@@ -109,7 +115,7 @@ export async function upsertPushSubscription(input: {
       endpoint: input.subscription.endpoint,
       p256dh: input.subscription.keys.p256dh,
       auth: input.subscription.keys.auth,
-      expirationTime: input.subscription.expirationTime
+      expirationTime: input.subscription.expirationTime !== null
         ? new Date(input.subscription.expirationTime)
         : null,
       userAgent: input.userAgent?.slice(0, MAX_USER_AGENT_LENGTH) ?? null,
@@ -121,7 +127,7 @@ export async function upsertPushSubscription(input: {
         userId: input.userId,
         p256dh: input.subscription.keys.p256dh,
         auth: input.subscription.keys.auth,
-        expirationTime: input.subscription.expirationTime
+        expirationTime: input.subscription.expirationTime !== null
           ? new Date(input.subscription.expirationTime)
           : null,
         userAgent: input.userAgent?.slice(0, MAX_USER_AGENT_LENGTH) ?? null,
@@ -226,7 +232,12 @@ export async function countMyPushSubscriptions(userId: string) {
   const [row] = await db
     .select({ value: sql<number>`count(*)::int` })
     .from(pushSubscriptions)
-    .where(eq(pushSubscriptions.userId, userId));
+    .where(
+      and(
+        eq(pushSubscriptions.userId, userId),
+        or(isNull(pushSubscriptions.expirationTime), gt(pushSubscriptions.expirationTime, new Date())),
+      ),
+    );
   return row?.value ?? 0;
 }
 
@@ -240,6 +251,7 @@ export async function hasPushSubscriptionForUser(input: { userId: string; endpoi
       and(
         eq(pushSubscriptions.userId, input.userId),
         eq(pushSubscriptions.endpoint, input.endpoint),
+        or(isNull(pushSubscriptions.expirationTime), gt(pushSubscriptions.expirationTime, new Date())),
       ),
     )
     .limit(1);

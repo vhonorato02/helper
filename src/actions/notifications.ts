@@ -15,6 +15,7 @@ import {
   hasPushSubscriptionForUser,
   isValidPushEndpoint,
   normalizePushSubscriptionPayload,
+  pruneExpiredPushSubscriptions,
   removePushSubscription,
   sendPushNotificationToUsers,
   upsertPushSubscription,
@@ -211,6 +212,8 @@ export async function getPushRegistrationState(endpoint?: string | null) {
   const normalizedEndpoint = typeof endpoint === 'string' && isValidPushEndpoint(endpoint)
     ? endpoint
     : null;
+
+  await pruneExpiredPushSubscriptions();
 
   return {
     publicKey: getPublicVapidKey(),

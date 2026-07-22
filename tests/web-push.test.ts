@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   getPublicVapidKey,
+  isPushSubscriptionCurrent,
   isValidPushEndpoint,
   normalizePushSubscriptionPayload,
   sendPushNotificationToUsers,
@@ -13,6 +14,17 @@ function restoreEnv(name: string, value: string | undefined) {
 }
 
 describe('web push helpers', () => {
+  it('trata expirationTime nulo como atual e datas vencidas como expiradas', () => {
+    const now = new Date('2026-07-21T12:00:00.000Z');
+
+    assert.equal(isPushSubscriptionCurrent(null, now), true);
+    assert.equal(isPushSubscriptionCurrent(undefined, now), true);
+    assert.equal(isPushSubscriptionCurrent(new Date('2026-07-21T12:00:01.000Z'), now), true);
+    assert.equal(isPushSubscriptionCurrent(new Date('2026-07-21T12:00:00.000Z'), now), false);
+    assert.equal(isPushSubscriptionCurrent(new Date('2026-07-21T11:59:59.000Z'), now), false);
+    assert.equal(isPushSubscriptionCurrent(0, now), false);
+  });
+
   it('aceita somente endpoints push seguros e limitados', () => {
     assert.equal(isValidPushEndpoint('https://push.example.test/send/abc'), true);
     assert.equal(isValidPushEndpoint('http://push.example.test/send/abc'), false);
