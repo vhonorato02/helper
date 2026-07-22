@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Loader2, Pencil } from 'lucide-react';
+import { AlertCircle, Loader2, Pencil } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -37,6 +37,7 @@ export function EditUserDialog({ open, onOpenChange, user, isSelf }: EditUserDia
   const [error, setError] = useState('');
   const formRef = useRef<HTMLFormElement>(null);
   const adminDescriptionId = `edit-user-${user.id}-admin-description`;
+  const errorId = error ? `edit-user-${user.id}-error` : undefined;
 
   useEffect(() => {
     if (!open) setError('');
@@ -78,7 +79,13 @@ export function EditUserDialog({ open, onOpenChange, user, isSelf }: EditUserDia
           </div>
         </DialogHeader>
 
-        <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+        <form
+          ref={formRef}
+          onSubmit={handleSubmit}
+          aria-busy={isPending}
+          aria-describedby={errorId}
+          className="space-y-4"
+        >
           <div className="space-y-1.5">
             <Label htmlFor="edit-username">{copy.users.form.username}</Label>
             <Input
@@ -145,9 +152,14 @@ export function EditUserDialog({ open, onOpenChange, user, isSelf }: EditUserDia
           </label>
 
           {error && (
-            <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg ring-1 ring-inset ring-destructive/20">
-              {error}
-            </p>
+            <div
+              id={errorId}
+              role="alert"
+              className="flex items-start gap-2.5 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive ring-1 ring-inset ring-destructive/20"
+            >
+              <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+              <span>{error}</span>
+            </div>
           )}
 
           <DialogFooter className="gap-2 sm:gap-2 pt-2">

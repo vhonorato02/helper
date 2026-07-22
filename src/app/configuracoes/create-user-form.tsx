@@ -3,7 +3,7 @@
 import { useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Copy, Eye, EyeOff, Loader2, Plus, Wand2 } from 'lucide-react';
+import { AlertCircle, Copy, Eye, EyeOff, Loader2, Plus, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -81,7 +81,13 @@ export function CreateUserForm() {
   };
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} className="surface-panel rounded-lg p-5 space-y-4">
+    <form
+      ref={formRef}
+      onSubmit={handleSubmit}
+      aria-busy={isPending}
+      aria-describedby={errorId}
+      className="surface-panel rounded-lg p-5 space-y-4"
+    >
       <div className="grid gap-4">
         <div className="space-y-1.5">
           <Label htmlFor="username">{copy.users.form.username}</Label>
@@ -196,13 +202,14 @@ export function CreateUserForm() {
       </label>
 
       {error && (
-        <p
+        <div
           id="create-user-error"
           role="alert"
-          className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive ring-1 ring-inset ring-destructive/20"
+          className="flex items-start gap-2.5 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive ring-1 ring-inset ring-destructive/20"
         >
-          {error}
-        </p>
+          <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <span>{error}</span>
+        </div>
       )}
 
       <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center sm:justify-between">
