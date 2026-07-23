@@ -7,6 +7,7 @@ import {
   normalizeOperationalProfile,
   resolveExplicitPrimaryAssignee,
   resolvePublicDefaultAssignment,
+  resolvePublicStartAssignment,
   selectEligibleAssigneeForArea,
   type AreaAssigneeCandidate,
 } from '@/lib/assignment';
@@ -104,6 +105,70 @@ describe('area assignment rules', () => {
       resolvePublicDefaultAssignment({ area: 'TI', assigneeId: null }, users[1]),
       { ok: false, reason: 'ineligible_default' },
     );
+  });
+
+  it('inicia triagem pública mantendo responsável existente elegível', () => {
+    assert.deepEqual(
+      resolvePublicStartAssignment(
+        { area: 'MKT', assigneeId: 'mkt-primary' },
+        users[2],
+        users[1],
+      ),
+      {
+        ok: true,
+        assignee: users[1],
+        shouldUpdateAssignee: false,
+        replacedAssignee: null,
+      },
+    );
+  });
+
+  it('inicia triagem pública assumindo quando não há responsável', () => {
+    assert.deepEqual(
+      resolvePublicStartAssignment({ area: 'TI', assigneeId: null }, users[2], null),
+      {
+        ok: true,
+        assignee: users[2],
+        shouldUpdateAssignee: true,
+        replacedAssignee: null,
+      },
+    );
+  });
+
+  it('substitui responsável público legado que não é elegível para a área', () => {
+    assert.deepEqual(
+      resolvePublicStartAssignment(
+        { area: 'TI', assigneeId: 'mkt-primary' },
+        users[2],
+        users[1],
+      ),
+      {
+        ok: true,
+        assignee: users[2],
+        shouldUpdateAssignee: true,
+        replacedAssignee: users[1],
+      },
+    );
+  });
+
+  it('bloqueia triagem pública quando não há responsável elegível possível', () => {
+    assert.deepEqual(
+      resolvePublicStartAssignment(
+        { area: 'TI', assigneeId: 'mkt-primary' },
+        users[1],
+        users[1],
+      ),
+      {
+        ok: false,
+        reason: 'ineligible_existing_assignee',
+        replacedAssignee: users[1],
+      },
+    );
+    assert.deepEqual(resolvePublicStartAssignment({ area: 'TI', assigneeId: null }, users[1], null), {
+      ok: false,
+      reason: 'ineligible_current_user',
+      replacedAssignee: null,
+    });
   });
 
   it('normaliza cargo e áreas operacionais sem tratar como sinônimos', () => {

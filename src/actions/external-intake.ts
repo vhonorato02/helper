@@ -6,15 +6,19 @@ import { and, asc, count, eq, inArray, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import { auth } from '@/auth';
 import { db } from '@/db';
-import { chromebookBookings, ticketHistory, tickets } from '@/db/schema';
+import { chromebookBookings, ticketHistory, tickets, userAreas, users } from '@/db/schema';
 import { confirmChromebookBooking } from '@/actions/chromebooks';
 import { dispatchNotification } from '@/actions/notifications';
-import { getDefaultAssigneeForArea, getEligibleAssigneeForArea } from '@/actions/users';
+import { getDefaultAssigneeForArea } from '@/actions/users';
 import { formatChromebookPeriod } from '@/lib/chromebooks';
 import { canManageChromebookBookings } from '@/lib/chromebook-permissions';
 import { AREA_LABELS, PRIORITY_LABELS, STATUS_LABELS } from '@/lib/constants';
 import { copy } from '@/lib/copy';
-import { resolvePublicDefaultAssignment } from '@/lib/assignment';
+import {
+  resolvePublicDefaultAssignment,
+  resolvePublicStartAssignment,
+  type AreaAssigneeCandidate,
+} from '@/lib/assignment';
 import { canViewPublicRequesterContact, canWorkOnTicketArea } from '@/lib/ticket-access';
 import { withTicketVisibility } from '@/lib/ticket-visibility';
 
@@ -36,6 +40,50 @@ async function recordHistory(
   newValue: string | null,
 ) {
   await db.insert(ticketHistory).values({ ticketId, authorId, field, oldValue, newValue });
+}
+
+async function getAreaRowsForUser(userId: string) {
+  return db
+    .select({ area: userAreas.area })
+    .from(userAreas)
+    .where(eq(userAreas.userId, userId));
+}
+
+async function getAssigneeCandidate(userId: string | null) {
+  if (!userId) return null;
+
+  const [row] = await db
+    .select({
+      id: users.id,
+      displayName: users.displayName,
+      role: users.role,
+      area: users.area,
+      isActive: users.isActive,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (!row) return null;
+
+  const areaRows = await getAreaRowsForUser(row.id);
+  return {
+    ...row,
+    operationalAreas: [
+      ...new Set([...(row.area ? [row.area] : []), ...areaRows.map((item) => item.area)]),
+    ],
+  };
+}
+
+function sessionUserAssigneeCandidate(user: Awaited<ReturnType<typeof requireAuth>>) {
+  return {
+    id: user.id,
+    displayName: user.name ?? user.username ?? 'Equipe',
+    role: user.role ?? null,
+    area: user.area ?? null,
+    operationalAreas: user.areas ?? (user.area ? [user.area] : []),
+    isActive: true,
+  } satisfies AreaAssigneeCandidate & { displayName: string };
 }
 
 function revalidateIntakeSurfaces(code?: string) {
@@ -249,10 +297,15 @@ export async function startPublicTicket(code: string) {
   if (!ticket || ticket.origin !== 'Pagina publica') return { error: copy.validation.invalidTicket };
   if (!canWorkOnTicketArea(user, ticket.area)) return { error: copy.auth.errors.permissionDenied };
 
-  const selfAssignee = ticket.assigneeId ? null : await getEligibleAssigneeForArea(user.id, ticket.area);
-  if (!ticket.assigneeId && !selfAssignee) return { error: copy.validation.ineligibleAssignee };
+  const currentAssignee = await getAssigneeCandidate(ticket.assigneeId);
+  const resolved = resolvePublicStartAssignment(
+    ticket,
+    sessionUserAssigneeCandidate(user),
+    currentAssignee,
+  );
+  if (!resolved.ok) return { error: copy.validation.ineligibleAssignee };
 
-  const nextAssigneeId = ticket.assigneeId ?? selfAssignee!.id;
+  const nextAssigneeId = resolved.assignee.id;
   const nextStatus = ticket.status === 'em_andamento' ? ticket.status : 'em_andamento';
   const now = new Date();
 
@@ -261,8 +314,16 @@ export async function startPublicTicket(code: string) {
     .set({ assigneeId: nextAssigneeId, status: nextStatus, updatedAt: now })
     .where(eq(tickets.id, ticket.id));
 
-  if (!ticket.assigneeId) {
-    await recordHistory(ticket.id, user.id, 'responsavel', null, user.name ?? user.username ?? 'Equipe');
+  if (resolved.shouldUpdateAssignee) {
+    await recordHistory(
+      ticket.id,
+      user.id,
+      'responsavel',
+      resolved.replacedAssignee && 'displayName' in resolved.replacedAssignee
+        ? String(resolved.replacedAssignee.displayName)
+        : null,
+      resolved.assignee.displayName,
+    );
   }
   if (ticket.status !== nextStatus) {
     await recordHistory(ticket.id, user.id, 'status', ticket.status, nextStatus);

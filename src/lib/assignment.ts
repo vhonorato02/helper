@@ -19,6 +19,8 @@ export type PublicDefaultAssignmentTarget = {
   assigneeId?: string | null;
 };
 
+export type PublicStartAssignmentTarget = PublicDefaultAssignmentTarget;
+
 export type OperationalProfileInput = {
   role?: string | null | undefined;
   area?: Area | '' | null | undefined;
@@ -139,6 +141,43 @@ export function resolvePublicDefaultAssignment<T extends AreaAssigneeCandidate>(
     ok: true,
     assignee: defaultAssignee,
     shouldUpdate: ticket.assigneeId !== defaultAssignee.id,
+  };
+}
+
+export function resolvePublicStartAssignment<T extends AreaAssigneeCandidate>(
+  ticket: PublicStartAssignmentTarget,
+  currentUser: T | null | undefined,
+  currentAssignee: T | null | undefined,
+):
+  | { ok: true; assignee: T; shouldUpdateAssignee: boolean; replacedAssignee: T | null }
+  | {
+      ok: false;
+      reason: 'ineligible_current_user' | 'ineligible_existing_assignee';
+      replacedAssignee: T | null;
+    } {
+  if (ticket.assigneeId && currentAssignee && isUserEnabledForArea(currentAssignee, ticket.area)) {
+    return {
+      ok: true,
+      assignee: currentAssignee,
+      shouldUpdateAssignee: false,
+      replacedAssignee: null,
+    };
+  }
+
+  const replacedAssignee = ticket.assigneeId ? (currentAssignee ?? null) : null;
+  if (!currentUser || !isUserEnabledForArea(currentUser, ticket.area)) {
+    return {
+      ok: false,
+      reason: replacedAssignee ? 'ineligible_existing_assignee' : 'ineligible_current_user',
+      replacedAssignee,
+    };
+  }
+
+  return {
+    ok: true,
+    assignee: currentUser,
+    shouldUpdateAssignee: true,
+    replacedAssignee,
   };
 }
 
