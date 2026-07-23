@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
-import { FileInput, Plus } from 'lucide-react';
+import { FileInput } from 'lucide-react';
 import { auth } from '@/auth';
 import { getTicketCount, getTickets } from '@/actions/tickets';
 import { getActiveUsersForAssignment } from '@/actions/users';
@@ -98,12 +98,6 @@ export default async function TicketsPage({ searchParams }: PageProps) {
             <Link href="/tickets?origin=public&status=ativas">
               <FileInput className="size-4" />
               Entrada externa
-            </Link>
-          </Button>
-          <Button asChild className="w-fit">
-            <Link href="/tickets?novo=1">
-              <Plus className="size-4" />
-              {copy.nav.newTicket}
             </Link>
           </Button>
         </div>

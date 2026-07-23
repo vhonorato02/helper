@@ -77,8 +77,9 @@ export function normalizeOperationalProfile({
   };
 }
 
-export function isUserEnabledForArea(user: AreaAssigneeCandidate, _area: Area) {
+export function isUserEnabledForArea(user: AreaAssigneeCandidate, area: Area) {
   if (user.isActive === false) return false;
+  void area;
   return Boolean(user.id);
 }
 

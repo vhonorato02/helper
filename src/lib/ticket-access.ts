@@ -23,7 +23,8 @@ export type TicketAccessTarget = {
 
 const TICKET_AREAS = ['TI', 'MKT', 'PF'] as const satisfies readonly Area[];
 
-export function canWorkOnTicketArea(user: AreaScopedUser | null | undefined, _area: Area) {
+export function canWorkOnTicketArea(user: AreaScopedUser | null | undefined, area: Area) {
+  void area;
   return Boolean(user?.id);
 }
 
