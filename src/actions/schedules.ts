@@ -1,16 +1,17 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { auth } from '@/auth';
 import { db } from '@/db';
 import { schedules, users } from '@/db/schema';
 import { and, asc, eq, gte, lte, ne } from 'drizzle-orm';
 import { copy } from '@/lib/copy';
+import { requireAuth } from '@/lib/auth-helpers';
+import { parseAppLocalDateTime } from '@/lib/timezone';
 
 const areaSchema = z.enum(['TI', 'MKT', 'PF']).optional();
 const statusSchema = z.enum(['pendente', 'concluido', 'cancelado']);
+const idSchema = z.string().uuid();
 
 const scheduleSchema = z.object({
   title: z.string().trim().min(1).max(120),
@@ -20,12 +21,6 @@ const scheduleSchema = z.object({
   reminderMinutesBefore: z.coerce.number().int().min(0).max(1440).default(30),
   repeatReminder: z.boolean().default(true),
 });
-
-async function requireAuth() {
-  const session = await auth();
-  if (!session?.user?.id) redirect('/login');
-  return session.user;
-}
 
 async function requireScheduleOwner(
   id: string,
@@ -44,7 +39,7 @@ async function requireScheduleOwner(
 }
 
 function parseScheduledDate(raw: string): Date {
-  return new Date(raw);
+  return parseAppLocalDateTime(raw) ?? new Date(Number.NaN);
 }
 
 async function getScheduleOverlapWarning(area: 'TI' | 'MKT' | 'PF' | null, date: Date, excludeId?: string) {
@@ -87,6 +82,7 @@ export async function createSchedule(formData: FormData) {
   const { title, description, scheduledDate, area, reminderMinutesBefore, repeatReminder } =
     parsed.data;
   const parsedDate = parseScheduledDate(scheduledDate);
+  if (Number.isNaN(parsedDate.getTime())) return { error: copy.validation.invalidDate };
   const normalizedArea = (area as 'TI' | 'MKT' | 'PF' | undefined) || null;
   const warning = await getScheduleOverlapWarning(normalizedArea, parsedDate);
 
@@ -106,7 +102,9 @@ export async function createSchedule(formData: FormData) {
 
 export async function updateSchedule(id: string, formData: FormData) {
   const user = await requireAuth();
-  const denied = await requireScheduleOwner(id, user);
+  const parsedId = idSchema.safeParse(id);
+  if (!parsedId.success) return { error: copy.validation.invalidData };
+  const denied = await requireScheduleOwner(parsedId.data, user);
   if (denied) return denied;
 
   const parsed = scheduleSchema.safeParse({
@@ -123,6 +121,7 @@ export async function updateSchedule(id: string, formData: FormData) {
   const { title, description, scheduledDate, area, reminderMinutesBefore, repeatReminder } =
     parsed.data;
   const parsedDate = parseScheduledDate(scheduledDate);
+  if (Number.isNaN(parsedDate.getTime())) return { error: copy.validation.invalidDate };
   const normalizedArea = (area as 'TI' | 'MKT' | 'PF' | undefined) || null;
 
   await db
@@ -136,19 +135,21 @@ export async function updateSchedule(id: string, formData: FormData) {
       repeatReminder,
       updatedAt: new Date(),
     })
-    .where(eq(schedules.id, id));
+    .where(eq(schedules.id, parsedId.data));
 
-  const warning = await getScheduleOverlapWarning(normalizedArea, parsedDate, id);
+  const warning = await getScheduleOverlapWarning(normalizedArea, parsedDate, parsedId.data);
   revalidatePath('/agendamentos');
   return { ok: true, warning };
 }
 
 export async function deleteSchedule(id: string) {
   const user = await requireAuth();
-  const denied = await requireScheduleOwner(id, user);
+  const parsedId = idSchema.safeParse(id);
+  if (!parsedId.success) return { error: copy.validation.invalidData };
+  const denied = await requireScheduleOwner(parsedId.data, user);
   if (denied) return denied;
 
-  await db.delete(schedules).where(eq(schedules.id, id));
+  await db.delete(schedules).where(eq(schedules.id, parsedId.data));
 
   revalidatePath('/agendamentos');
   return { ok: true };
@@ -156,23 +157,28 @@ export async function deleteSchedule(id: string) {
 
 export async function toggleScheduleStatus(id: string) {
   const user = await requireAuth();
-  const denied = await requireScheduleOwner(id, user);
+  const parsedId = idSchema.safeParse(id);
+  if (!parsedId.success) return { error: copy.validation.invalidData };
+  const denied = await requireScheduleOwner(parsedId.data, user);
   if (denied) return denied;
 
   const [schedule] = await db
     .select({ id: schedules.id, status: schedules.status })
     .from(schedules)
-    .where(eq(schedules.id, id))
+    .where(eq(schedules.id, parsedId.data))
     .limit(1);
 
   if (!schedule) return { error: copy.validation.invalidData };
+  if (schedule.status === 'cancelado') {
+    return { error: 'Agendamentos cancelados não podem ser concluídos.' };
+  }
 
   const newStatus = schedule.status === 'concluido' ? 'pendente' : 'concluido';
 
   await db
     .update(schedules)
     .set({ status: newStatus, updatedAt: new Date() })
-    .where(eq(schedules.id, id));
+    .where(eq(schedules.id, parsedId.data));
 
   revalidatePath('/agendamentos');
   return { ok: true, status: newStatus };

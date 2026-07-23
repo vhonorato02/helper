@@ -1,8 +1,6 @@
 'use server';
 
-import { redirect } from 'next/navigation';
 import { and, asc, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm';
-import { auth } from '@/auth';
 import { db } from '@/db';
 import {
   chromebookBookings,
@@ -17,6 +15,7 @@ import { formatChromebookPeriod } from '@/lib/chromebooks';
 import { AREA_LABELS, PRIORITY_LABELS, STATUS_LABELS, type Area } from '@/lib/constants';
 import { notificationLinkOrDefault } from '@/lib/notification-links';
 import { isNotificationTypeEnabledForAlerts } from '@/lib/notification-preferences';
+import { requireAuth } from '@/lib/auth-helpers';
 
 export type ReminderPulseItem = {
   id: string;
@@ -29,12 +28,6 @@ export type ReminderPulseItem = {
   repeat: boolean;
   repeatMinutes: number;
 };
-
-async function requireAuth() {
-  const session = await auth();
-  if (!session?.user?.id) redirect('/login');
-  return session.user;
-}
 
 function priorityFor(dueAt: Date, now: Date): ReminderPulseItem['priority'] {
   const minutes = Math.round((dueAt.getTime() - now.getTime()) / 60_000);

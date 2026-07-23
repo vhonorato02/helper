@@ -1,16 +1,16 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { asc, eq } from 'drizzle-orm';
-import { auth } from '@/auth';
 import { db } from '@/db';
 import { marketingEvents, schedules } from '@/db/schema';
 import { copy } from '@/lib/copy';
-import { isValidMonthDay } from '@/lib/validation';
+import { boundedInteger, isValidMonthDay } from '@/lib/validation';
+import { requireAuth, requireAdminAction } from '@/lib/auth-helpers';
 
 const categorySchema = z.enum(['comemorativa', 'civica', 'religiosa', 'escolar', 'campanha']);
+const idSchema = z.string().uuid();
 
 const eventSchema = z
   .object({
@@ -27,16 +27,8 @@ const eventSchema = z
     message: copy.validation.invalidData,
   });
 
-async function requireAuth() {
-  const session = await auth();
-  if (!session?.user?.id) redirect('/login');
-  return session.user;
-}
-
 async function requireAdmin() {
-  const user = await requireAuth();
-  if (!user.isAdmin) return null;
-  return user;
+  return requireAdminAction();
 }
 
 function parseFormData(formData: FormData) {
@@ -81,6 +73,8 @@ export async function createMarketingEvent(formData: FormData) {
 export async function updateMarketingEvent(id: string, formData: FormData) {
   const admin = await requireAdmin();
   if (!admin) return { error: copy.auth.errors.permissionDenied };
+  const parsedId = idSchema.safeParse(id);
+  if (!parsedId.success) return { error: copy.validation.invalidData };
 
   const parsed = parseFormData(formData);
   if (!parsed.success) return { error: copy.validation.invalidData };
@@ -98,7 +92,7 @@ export async function updateMarketingEvent(id: string, formData: FormData) {
       sortOrder: data.sortOrder,
       updatedAt: new Date(),
     })
-    .where(eq(marketingEvents.id, id));
+    .where(eq(marketingEvents.id, parsedId.data));
 
   revalidatePath('/marketing');
   revalidatePath('/marketing/calendario');
@@ -108,11 +102,13 @@ export async function updateMarketingEvent(id: string, formData: FormData) {
 export async function toggleMarketingEvent(id: string) {
   const admin = await requireAdmin();
   if (!admin) return { error: copy.auth.errors.permissionDenied };
+  const parsedId = idSchema.safeParse(id);
+  if (!parsedId.success) return { error: copy.validation.invalidData };
 
   const [existing] = await db
     .select({ id: marketingEvents.id, isActive: marketingEvents.isActive })
     .from(marketingEvents)
-    .where(eq(marketingEvents.id, id))
+    .where(eq(marketingEvents.id, parsedId.data))
     .limit(1);
 
   if (!existing) return { error: copy.validation.invalidData };
@@ -120,7 +116,7 @@ export async function toggleMarketingEvent(id: string) {
   await db
     .update(marketingEvents)
     .set({ isActive: !existing.isActive, updatedAt: new Date() })
-    .where(eq(marketingEvents.id, id));
+    .where(eq(marketingEvents.id, parsedId.data));
 
   revalidatePath('/marketing');
   revalidatePath('/marketing/calendario');
@@ -130,8 +126,10 @@ export async function toggleMarketingEvent(id: string) {
 export async function deleteMarketingEvent(id: string) {
   const admin = await requireAdmin();
   if (!admin) return { error: copy.auth.errors.permissionDenied };
+  const parsedId = idSchema.safeParse(id);
+  if (!parsedId.success) return { error: copy.validation.invalidData };
 
-  await db.delete(marketingEvents).where(eq(marketingEvents.id, id));
+  await db.delete(marketingEvents).where(eq(marketingEvents.id, parsedId.data));
   revalidatePath('/marketing');
   revalidatePath('/marketing/calendario');
   return { ok: true };
@@ -169,6 +167,7 @@ export async function getUpcomingMarketingEvents(
   windowDays = 90,
 ): Promise<UpcomingMarketingEvent[]> {
   await requireAuth();
+  windowDays = boundedInteger(windowDays, { min: 1, max: 730, fallback: 90 });
 
   const rows = await db
     .select()
@@ -200,11 +199,13 @@ export async function getUpcomingMarketingEvents(
 
 export async function promoteEventToSchedule(eventId: string) {
   const user = await requireAuth();
+  const parsedId = idSchema.safeParse(eventId);
+  if (!parsedId.success) return { error: copy.validation.invalidData };
 
   const [event] = await db
     .select()
     .from(marketingEvents)
-    .where(eq(marketingEvents.id, eventId))
+    .where(eq(marketingEvents.id, parsedId.data))
     .limit(1);
 
   if (!event) return { error: copy.validation.invalidData };

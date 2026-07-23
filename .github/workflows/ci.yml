@@ -44,5 +44,11 @@ jobs:
       - name: Tests
         run: pnpm test
 
+      - name: Database schema contract
+        run: pnpm db:schema:check
+
       - name: Build
         run: pnpm build
+
+      - name: Production-mode smoke
+        run: pnpm test:smoke:built

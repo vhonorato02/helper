@@ -1,8 +1,6 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
-import { auth } from '@/auth';
 import { db } from '@/db';
 import { quickResponses, tickets, users } from '@/db/schema';
 import { and, asc, desc, eq, isNull, ne, or } from 'drizzle-orm';
@@ -10,6 +8,7 @@ import { z } from 'zod';
 import { copy } from '@/lib/copy';
 import type { Area } from '@/lib/constants';
 import { canViewTicket } from '@/lib/ticket-access';
+import { requireAuth } from '@/lib/auth-helpers';
 
 const areaSchema = z.enum(['TI', 'MKT', 'PF']);
 const idSchema = z.string().uuid();
@@ -21,12 +20,6 @@ const quickResponseFormSchema = z.object({
   title: z.string().trim().min(3).max(80),
   body: z.string().trim().min(10).max(4000),
 });
-
-async function requireAuth() {
-  const session = await auth();
-  if (!session?.user?.id) redirect('/login');
-  return session.user;
-}
 
 function scopeCondition(area: Area | null) {
   return area ? eq(quickResponses.area, area) : isNull(quickResponses.area);

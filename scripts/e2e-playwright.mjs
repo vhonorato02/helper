@@ -12,6 +12,22 @@ const responsivePublicRoutes = [
   ['/solicitar/ti', 'Solicitar suporte de TI'],
   ['/solicitar/chromebooks', 'Solicitar Chromebooks'],
 ];
+const authenticatedRoutes = [
+  '/',
+  '/kanban',
+  '/tickets',
+  '/agendamentos',
+  '/marketing',
+  '/marketing/calendario',
+  '/marketing/gravacoes',
+  '/equipe',
+  '/atividade',
+  '/notificacoes',
+  '/respostas-rapidas',
+  '/solicitacoes-publicas',
+  '/chromebooks',
+  '/minha-conta',
+];
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -50,13 +66,15 @@ function startServerIfNeeded() {
   delete env.FORCE_COLOR;
   delete env.NO_COLOR;
 
-  const build = spawnSync(process.execPath, ['scripts/next-build.mjs'], {
-    cwd: process.cwd(),
-    env,
-    stdio: 'inherit',
-  });
-  if (build.status !== 0) {
-    throw new Error(`next build failed before Playwright E2E with code ${build.status ?? 1}`);
+  if (process.env.PLAYWRIGHT_SKIP_BUILD !== '1') {
+    const build = spawnSync(process.execPath, ['scripts/next-build.mjs'], {
+      cwd: process.cwd(),
+      env,
+      stdio: 'inherit',
+    });
+    if (build.status !== 0) {
+      throw new Error(`next build failed before Playwright E2E with code ${build.status ?? 1}`);
+    }
   }
 
   return spawn(
@@ -270,6 +288,62 @@ async function expectResponsivePublicRoutes(browser) {
   }
 }
 
+async function expectAuthenticatedRoutes(browser) {
+  const username = process.env.PLAYWRIGHT_USERNAME;
+  const password = process.env.PLAYWRIGHT_PASSWORD;
+  if (!username && !password) {
+    console.log('Authenticated E2E skipped (PLAYWRIGHT_USERNAME/PLAYWRIGHT_PASSWORD not set).');
+    return;
+  }
+  assert(
+    username && password,
+    'PLAYWRIGHT_USERNAME and PLAYWRIGHT_PASSWORD must be configured together',
+  );
+
+  const context = await browser.newContext(devices['Desktop Chrome']);
+  const page = await context.newPage();
+  const failures = [];
+
+  page.on('pageerror', (error) => failures.push(`pageerror: ${error.message}`));
+  page.on('response', (response) => {
+    const url = new URL(response.url());
+    if (url.origin === baseURL && response.status() >= 500) {
+      failures.push(`${response.status()} ${url.pathname}`);
+    }
+  });
+
+  await page.goto(`${baseURL}/login`, { waitUntil: 'networkidle' });
+  await page.getByLabel('Usuário').fill(username);
+  await page.getByLabel('Senha').fill(password);
+  await page.getByRole('button', { name: 'Entrar' }).click();
+  await page.waitForURL((url) => url.pathname !== '/login', { timeout: 15_000 });
+  assert(
+    new URL(page.url()).pathname !== '/alterar-senha',
+    'E2E user must finish the mandatory password change before route validation',
+  );
+
+  const routes = process.env.PLAYWRIGHT_ADMIN === '1'
+    ? [...authenticatedRoutes, '/configuracoes']
+    : authenticatedRoutes;
+  for (const path of routes) {
+    const response = await page.goto(`${baseURL}${path}`, {
+      waitUntil: 'networkidle',
+      timeout: 20_000,
+    });
+    assert(response && response.status() < 400, `${path} returned ${response?.status() ?? 'no response'}`);
+    const body = await page.locator('body').innerText();
+    assert(
+      !body.includes('Não foi possível carregar esta tela') &&
+        !body.includes("This page couldn't load"),
+      `${path} rendered the application error boundary`,
+    );
+    await expectNoHorizontalOverflow(page, `${path} should not overflow horizontally`);
+  }
+
+  assert(failures.length === 0, `authenticated route failures\n${failures.join('\n')}`);
+  await context.close();
+}
+
 let child = null;
 let output = '';
 
@@ -290,6 +364,7 @@ try {
     await runScenario(browser, 'desktop', devices['Desktop Chrome']);
     await runScenario(browser, 'mobile', devices['Pixel 7']);
     await expectResponsivePublicRoutes(browser);
+    await expectAuthenticatedRoutes(browser);
   } finally {
     await browser.close();
   }

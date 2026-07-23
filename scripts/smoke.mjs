@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import { setTimeout as sleep } from 'node:timers/promises';
 
 const port = Number.parseInt(process.env.SMOKE_PORT ?? '3100', 10);
-const baseUrl = `http://localhost:${port}`;
+const baseUrl = process.env.SMOKE_BASE_URL ?? `http://127.0.0.1:${port}`;
 const timeoutMs = 45_000;
 
 function assert(condition, message) {
@@ -71,37 +71,46 @@ async function runChecks() {
   assert(bootstrapResponse.status === 401, 'bootstrap should reject missing bearer token');
 }
 
-const child = spawn(
-  process.execPath,
-  ['node_modules/next/dist/bin/next', 'dev', '-p', String(port)],
-  {
-    cwd: process.cwd(),
-    env: {
-      ...process.env,
-      DATABASE_URL:
-        process.env.DATABASE_URL ??
-        'postgresql://user:password@example.neon.tech/dbname?sslmode=require',
-      DATABASE_TIMEOUT_MS: process.env.DATABASE_TIMEOUT_MS ?? '1000',
-      AUTH_SECRET: process.env.AUTH_SECRET ?? 'smoke-test-secret-with-32-characters',
-      BOOTSTRAP_SECRET: process.env.BOOTSTRAP_SECRET ?? 'smoke-bootstrap-secret',
-      CRON_SECRET: process.env.CRON_SECRET ?? 'smoke-cron-secret',
-      APP_URL: baseUrl,
-      NEXT_PUBLIC_SITE_URL: baseUrl,
-    },
-    stdio: ['ignore', 'pipe', 'pipe'],
-  },
-);
+const child = process.env.SMOKE_BASE_URL
+  ? null
+  : spawn(
+      process.execPath,
+      [
+        'node_modules/next/dist/bin/next',
+        'start',
+        '--hostname',
+        '127.0.0.1',
+        '--port',
+        String(port),
+      ],
+      {
+        cwd: process.cwd(),
+        env: {
+          ...process.env,
+          DATABASE_URL:
+            process.env.DATABASE_URL ??
+            'postgresql://user:password@example.neon.tech/dbname?sslmode=require',
+          DATABASE_TIMEOUT_MS: process.env.DATABASE_TIMEOUT_MS ?? '1000',
+          AUTH_SECRET: process.env.AUTH_SECRET ?? 'smoke-test-secret-with-32-characters',
+          BOOTSTRAP_SECRET: process.env.BOOTSTRAP_SECRET ?? 'smoke-bootstrap-secret',
+          CRON_SECRET: process.env.CRON_SECRET ?? 'smoke-cron-secret',
+          APP_URL: baseUrl,
+          NEXT_PUBLIC_SITE_URL: baseUrl,
+        },
+        stdio: ['ignore', 'pipe', 'pipe'],
+      },
+    );
 
 let output = '';
-child.stdout.on('data', (chunk) => {
+child?.stdout.on('data', (chunk) => {
   output += chunk.toString();
 });
-child.stderr.on('data', (chunk) => {
+child?.stderr.on('data', (chunk) => {
   output += chunk.toString();
 });
 
 try {
-  await waitForServer(child);
+  if (child) await waitForServer(child);
   await runChecks();
   console.log('Smoke tests passed.');
 } catch (error) {
@@ -109,5 +118,5 @@ try {
   console.error(error);
   process.exitCode = 1;
 } finally {
-  child.kill();
+  child?.kill();
 }

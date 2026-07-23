@@ -3,6 +3,39 @@ import { fromZonedTime, toZonedTime } from 'date-fns-tz';
 export const APP_TIMEZONE = 'America/Sao_Paulo';
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const LOCAL_DATE_TIME_PATTERN = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/;
+
+export function isValidDateInput(value: string): boolean {
+  if (!DATE_ONLY_PATTERN.test(value)) return false;
+  const [year, month, day] = value.split('-').map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  return (
+    parsed.getUTCFullYear() === year &&
+    parsed.getUTCMonth() === month - 1 &&
+    parsed.getUTCDate() === day
+  );
+}
+
+export function isValidTimeInput(value: string): boolean {
+  const match = /^(\d{2}):(\d{2})$/.exec(value);
+  if (!match) return false;
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  return hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59;
+}
+
+/** Interpreta um datetime-local do navegador no fuso institucional. */
+export function parseAppLocalDateTime(value: string): Date | null {
+  const match = LOCAL_DATE_TIME_PATTERN.exec(value);
+  if (!match) return null;
+
+  const date = `${match[1]}-${match[2]}-${match[3]}`;
+  const time = `${match[4]}:${match[5]}`;
+  if (!isValidDateInput(date) || !isValidTimeInput(time)) return null;
+
+  const parsed = fromZonedTime(`${value}:00`, APP_TIMEZONE);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
 
 /** Início do dia civil no fuso da aplicação (retorno em UTC). */
 export function appDayStart(offsetDays = 0, ref = new Date()): Date {

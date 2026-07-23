@@ -14,8 +14,8 @@ import {
   sendTicketNotification,
 } from '@/lib/email';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { dispatchNotification, dispatchNotificationToAdmins } from '@/actions/notifications';
-import { getDefaultAssigneeForArea } from '@/actions/users';
+import { dispatchNotification, dispatchNotificationToAdmins } from '@/lib/notifications';
+import { findDefaultAssigneeForArea } from '@/lib/assignees';
 import { validatePublicContact, validatePublicRequestSchedule } from '@/lib/public-requests';
 
 const publicKindSchema = z.enum(['ti', 'midia', 'arte', 'cobertura', 'outra']);
@@ -159,7 +159,7 @@ export async function createPublicRequest(formData: FormData) {
   const description = buildDescription(input);
   const origin = 'Pagina publica';
   const publicContact = normalizeOptionalText(input.requesterContact);
-  const defaultAssignee = await getDefaultAssigneeForArea(meta.area);
+  const defaultAssignee = await findDefaultAssigneeForArea(meta.area);
 
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const code = await generateCode(meta.area);

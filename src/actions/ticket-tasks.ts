@@ -1,24 +1,17 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 import { and, asc, eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { auth } from '@/auth';
 import { db } from '@/db';
 import { ticketHistory, ticketTasks, tickets, users } from '@/db/schema';
-import { dispatchNotification } from '@/actions/notifications';
+import { dispatchNotification } from '@/lib/notifications';
 import { copy } from '@/lib/copy';
 import { canManageTicket, canViewTicket } from '@/lib/ticket-access';
+import { requireAuth } from '@/lib/auth-helpers';
 
 const taskTitleSchema = z.string().trim().min(1).max(160);
 const taskIdSchema = z.string().uuid();
-
-async function requireAuth() {
-  const session = await auth();
-  if (!session?.user?.id) redirect('/login');
-  return session.user;
-}
 
 async function getTaskTicket(code: string) {
   const [ticket] = await db

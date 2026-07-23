@@ -40,3 +40,12 @@ export function isValidMonthDay(month: number, day: number) {
   const date = new Date(Date.UTC(2024, month - 1, day));
   return date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
 }
+
+export function boundedInteger(
+  value: unknown,
+  options: { min: number; max: number; fallback: number },
+) {
+  const numeric = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(numeric)) return options.fallback;
+  return Math.min(options.max, Math.max(options.min, Math.trunc(numeric)));
+}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { logger } from '@/lib/logger';
 
@@ -17,17 +17,35 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <div className="mx-auto flex min-h-[60vh] max-w-lg flex-col items-center justify-center px-4 text-center">
+    <section
+      className="mx-auto flex min-h-[60vh] max-w-lg flex-col items-center justify-center px-4 text-center"
+      role="alert"
+      aria-labelledby="app-error-title"
+    >
       <div className="mb-4 flex size-12 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
-        <AlertTriangle className="size-6" />
+        <AlertTriangle className="size-6" aria-hidden="true" />
       </div>
-      <h1 className="text-xl font-bold">Não foi possível carregar esta tela</h1>
+      <h1 id="app-error-title" className="text-xl font-bold">
+        Não foi possível carregar esta tela
+      </h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        Tente novamente em alguns segundos. Se continuar acontecendo, avise a equipe interna.
+        Tente novamente. Se o problema continuar, recarregue o aplicativo para buscar a versão
+        mais recente.
       </p>
-      <Button className="mt-5" onClick={reset}>
-        Tentar novamente
-      </Button>
-    </div>
+      {error.digest && (
+        <p className="mt-3 font-mono text-xs text-muted-foreground">
+          Código do erro: {error.digest}
+        </p>
+      )}
+      <div className="mt-5 flex w-full flex-col justify-center gap-2 sm:flex-row">
+        <Button onClick={reset}>
+          <RefreshCw className="size-4" aria-hidden="true" />
+          Tentar novamente
+        </Button>
+        <Button variant="outline" onClick={() => window.location.reload()}>
+          Recarregar aplicativo
+        </Button>
+      </div>
+    </section>
   );
 }

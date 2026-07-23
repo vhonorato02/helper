@@ -1,16 +1,18 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { and, asc, eq, gte, lt, sql } from 'drizzle-orm';
-import { auth } from '@/auth';
 import { db } from '@/db';
 import { recordings, users } from '@/db/schema';
 import { alias } from 'drizzle-orm/pg-core';
 import { copy } from '@/lib/copy';
+import { requireAuth } from '@/lib/auth-helpers';
+import { parseAppLocalDateTime } from '@/lib/timezone';
+import { boundedInteger } from '@/lib/validation';
 
 const statusSchema = z.enum(['planejada', 'confirmada', 'gravada', 'publicada', 'cancelada']);
+const idSchema = z.string().uuid();
 type RecordingStatus = z.infer<typeof statusSchema>;
 
 const RECORDING_STATUS_TRANSITIONS: Record<RecordingStatus, RecordingStatus[]> = {
@@ -34,12 +36,6 @@ const recordingSchema = z.object({
   notes: z.string().trim().max(2000).optional(),
 });
 
-async function requireAuth() {
-  const session = await auth();
-  if (!session?.user?.id) redirect('/login');
-  return session.user;
-}
-
 async function requireRecordingOwner(
   id: string,
   user: { id: string; isAdmin?: boolean },
@@ -57,7 +53,7 @@ async function requireRecordingOwner(
 }
 
 function parseScheduledDate(raw: string): Date {
-  return new Date(raw);
+  return parseAppLocalDateTime(raw) ?? new Date(Number.NaN);
 }
 
 function parseFormData(formData: FormData) {
@@ -75,16 +71,31 @@ function parseFormData(formData: FormData) {
   });
 }
 
+async function isActiveResponsible(userId: string | undefined) {
+  if (!userId) return true;
+  const [user] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(and(eq(users.id, userId), eq(users.isActive, true)))
+    .limit(1);
+  return Boolean(user);
+}
+
 export async function createRecording(formData: FormData) {
   const user = await requireAuth();
   const parsed = parseFormData(formData);
   if (!parsed.success) return { error: copy.validation.invalidData };
 
   const data = parsed.data;
+  if (!(await isActiveResponsible(data.responsibleId || undefined))) {
+    return { error: copy.validation.ineligibleAssignee };
+  }
+  const scheduledDate = parseScheduledDate(data.scheduledDate);
+  if (Number.isNaN(scheduledDate.getTime())) return { error: copy.validation.invalidDate };
   await db.insert(recordings).values({
     title: data.title,
     pauta: data.pauta || null,
-    scheduledDate: parseScheduledDate(data.scheduledDate),
+    scheduledDate,
     durationMinutes: data.durationMinutes ?? null,
     location: data.location || null,
     participants: data.participants || null,
@@ -102,19 +113,26 @@ export async function createRecording(formData: FormData) {
 
 export async function updateRecording(id: string, formData: FormData) {
   const user = await requireAuth();
-  const denied = await requireRecordingOwner(id, user);
+  const parsedId = idSchema.safeParse(id);
+  if (!parsedId.success) return { error: copy.validation.invalidData };
+  const denied = await requireRecordingOwner(parsedId.data, user);
   if (denied) return denied;
 
   const parsed = parseFormData(formData);
   if (!parsed.success) return { error: copy.validation.invalidData };
 
   const data = parsed.data;
+  if (!(await isActiveResponsible(data.responsibleId || undefined))) {
+    return { error: copy.validation.ineligibleAssignee };
+  }
+  const scheduledDate = parseScheduledDate(data.scheduledDate);
+  if (Number.isNaN(scheduledDate.getTime())) return { error: copy.validation.invalidDate };
   await db
     .update(recordings)
     .set({
       title: data.title,
       pauta: data.pauta || null,
-      scheduledDate: parseScheduledDate(data.scheduledDate),
+      scheduledDate,
       durationMinutes: data.durationMinutes ?? null,
       location: data.location || null,
       participants: data.participants || null,
@@ -124,7 +142,7 @@ export async function updateRecording(id: string, formData: FormData) {
       notes: data.notes || null,
       updatedAt: new Date(),
     })
-    .where(eq(recordings.id, id));
+    .where(eq(recordings.id, parsedId.data));
 
   revalidatePath('/marketing');
   revalidatePath('/marketing/gravacoes');
@@ -133,10 +151,12 @@ export async function updateRecording(id: string, formData: FormData) {
 
 export async function deleteRecording(id: string) {
   const user = await requireAuth();
-  const denied = await requireRecordingOwner(id, user);
+  const parsedId = idSchema.safeParse(id);
+  if (!parsedId.success) return { error: copy.validation.invalidData };
+  const denied = await requireRecordingOwner(parsedId.data, user);
   if (denied) return denied;
 
-  await db.delete(recordings).where(eq(recordings.id, id));
+  await db.delete(recordings).where(eq(recordings.id, parsedId.data));
   revalidatePath('/marketing');
   revalidatePath('/marketing/gravacoes');
   return { ok: true };
@@ -144,7 +164,9 @@ export async function deleteRecording(id: string) {
 
 export async function setRecordingStatus(id: string, status: string) {
   const user = await requireAuth();
-  const denied = await requireRecordingOwner(id, user);
+  const parsedId = idSchema.safeParse(id);
+  if (!parsedId.success) return { error: copy.validation.invalidData };
+  const denied = await requireRecordingOwner(parsedId.data, user);
   if (denied) return denied;
 
   const parsed = statusSchema.safeParse(status);
@@ -153,7 +175,7 @@ export async function setRecordingStatus(id: string, status: string) {
   const [existing] = await db
     .select({ status: recordings.status })
     .from(recordings)
-    .where(eq(recordings.id, id))
+    .where(eq(recordings.id, parsedId.data))
     .limit(1);
   if (!existing) return { error: copy.validation.invalidData };
 
@@ -167,7 +189,7 @@ export async function setRecordingStatus(id: string, status: string) {
   await db
     .update(recordings)
     .set({ status: parsed.data, updatedAt: new Date() })
-    .where(eq(recordings.id, id));
+    .where(eq(recordings.id, parsedId.data));
 
   revalidatePath('/marketing');
   revalidatePath('/marketing/gravacoes');
@@ -185,11 +207,15 @@ export async function getRecordings(filters?: { status?: string; from?: Date; to
     const parsed = statusSchema.safeParse(filters.status);
     if (parsed.success) conditions.push(eq(recordings.status, parsed.data));
   }
-  if (filters?.from) conditions.push(gte(recordings.scheduledDate, filters.from));
-  if (filters?.to) conditions.push(lt(recordings.scheduledDate, filters.to));
+  if (filters?.from instanceof Date && !Number.isNaN(filters.from.getTime())) {
+    conditions.push(gte(recordings.scheduledDate, filters.from));
+  }
+  if (filters?.to instanceof Date && !Number.isNaN(filters.to.getTime())) {
+    conditions.push(lt(recordings.scheduledDate, filters.to));
+  }
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;
-  const limit = Math.min(Math.max(filters?.limit ?? 100, 1), 300);
+  const limit = boundedInteger(filters?.limit, { min: 1, max: 300, fallback: 100 });
 
   return db
     .select({

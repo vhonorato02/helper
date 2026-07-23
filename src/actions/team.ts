@@ -1,20 +1,13 @@
 'use server';
 
-import { redirect } from 'next/navigation';
 import { asc, eq, inArray } from 'drizzle-orm';
-import { auth } from '@/auth';
 import { db } from '@/db';
 import { tickets, userAreas, users } from '@/db/schema';
 import { AREA_LABELS, type Area } from '@/lib/constants';
 import { getTicketRisk } from '@/lib/ticket-risk';
+import { requireAuth } from '@/lib/auth-helpers';
 
 const ACTIVE_STATUSES = ['aberto', 'em_andamento', 'aguardando'] as const;
-
-async function requireAuth() {
-  const session = await auth();
-  if (!session?.user?.id) redirect('/login');
-  return session.user;
-}
 
 function scoreLoad(stats: {
   active: number;

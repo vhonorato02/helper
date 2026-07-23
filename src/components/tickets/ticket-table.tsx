@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
+import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   AlertTriangle,
@@ -576,11 +577,10 @@ export function TicketTable({
               const risk = getTicketRisk(ticket);
 
               return (
-                <button
+                <Link
                   key={ticket.id}
-                  type="button"
+                  href={`/tickets/${ticket.code}`}
                   className="surface-elevated rounded-lg p-4 text-left transition-all hover:border-foreground/15 hover:shadow-md"
-                  onClick={() => router.push(`/tickets/${ticket.code}`)}
                 >
                   <div className="mb-3 flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -629,7 +629,7 @@ export function TicketTable({
                       {dueLabel(ticket.dueDate)}
                     </div>
                   )}
-                </button>
+                </Link>
               );
             })}
           </div>
@@ -642,7 +642,7 @@ export function TicketTable({
                   <th className="px-3 py-2.5 w-10 text-left">
                     <button
                       onClick={toggleAll}
-                      className="size-4 inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                      className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                       aria-label={allSelected ? 'Desmarcar todas' : 'Selecionar todas'}
                     >
                       {allSelected ? (
@@ -689,25 +689,17 @@ export function TicketTable({
                   return (
                     <tr
                       key={ticket.id}
-                      role="link"
-                      tabIndex={0}
                       className={cn(
-                        'cursor-pointer border-b outline-none transition-colors last:border-0 hover:bg-muted/40 focus:bg-muted/40 focus-within:bg-muted/40',
+                        'cursor-pointer border-b transition-colors last:border-0 hover:bg-muted/40 focus-within:bg-muted/40',
                         selected.has(ticket.code) && 'bg-primary/5',
                       )}
                       onClick={() => router.push(`/tickets/${ticket.code}`)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault();
-                          router.push(`/tickets/${ticket.code}`);
-                        }
-                      }}
                     >
                       <td className="px-3 py-3 w-10" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => toggleOne(ticket.code)}
                           disabled={!canManageTicket}
-                          className="size-4 inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                          className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
                           aria-label={`${selected.has(ticket.code) ? 'Desmarcar' : 'Selecionar'} ${ticket.code}`}
                         >
                           {selected.has(ticket.code) ? (
@@ -724,7 +716,14 @@ export function TicketTable({
                       </td>
                       <td className="px-4 py-3 max-w-[280px]">
                         <div className="flex min-w-0 items-center gap-2">
-                          <p className="min-w-0 flex-1 line-clamp-1 font-medium">{ticket.title}</p>
+                          <Link
+                            href={`/tickets/${ticket.code}`}
+                            onClick={(event) => event.stopPropagation()}
+                            className="min-w-0 flex-1 line-clamp-1 rounded-sm font-medium hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+                          >
+                            {ticket.title}
+                            <span className="sr-only"> ({ticket.code})</span>
+                          </Link>
                           {isRiskVisible(risk) && (
                             <Badge
                               variant={risk.level === 'critical' ? 'destructive' : 'warning'}

@@ -47,6 +47,11 @@ describe('Chromebook scheduling rules', () => {
     assert.equal(calculateMaxChromebooksUsed(requestedStart, requestedEnd, bookings), 25);
   });
 
+  it('rejects impossible dates and times before querying availability', () => {
+    assert.equal(Number.isNaN(combineDateTimeInSaoPaulo('2026-02-30', '09:00').getTime()), true);
+    assert.equal(Number.isNaN(combineDateTimeInSaoPaulo('2026-08-10', '24:00').getTime()), true);
+  });
+
   it('detects same-room overlap independently from quantity', () => {
     const conflict = findRoomConflict(
       'Sala 1',

@@ -103,19 +103,6 @@ export function TicketForm({ open, onClose, users }: TicketFormProps) {
     }
   }, [open, reset]);
 
-  useEffect(() => {
-    if (!open) return;
-
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape' || isSubmitting) return;
-      event.preventDefault();
-      onClose();
-    };
-
-    document.addEventListener('keydown', closeOnEscape, true);
-    return () => document.removeEventListener('keydown', closeOnEscape, true);
-  }, [isSubmitting, onClose, open]);
-
   const area = watch('area');
   const subcategory = watch('subcategory');
   const priority = watch('priority');
@@ -130,7 +117,11 @@ export function TicketForm({ open, onClose, users }: TicketFormProps) {
     let cancelled = false;
     getSubcategoriesForArea(area)
       .then((rows) => {
-        if (!cancelled) setSubcategories(rows.map((row) => row.label));
+        if (!cancelled) {
+          setSubcategories(
+            rows.length > 0 ? rows.map((row) => row.label) : [...getSubcategories(area)],
+          );
+        }
       })
       .catch(() => {
         if (!cancelled) setSubcategories([...getSubcategories(area)]);
@@ -209,7 +200,7 @@ export function TicketForm({ open, onClose, users }: TicketFormProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && handleClose()}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <div className="flex items-start gap-3">
@@ -223,7 +214,12 @@ export function TicketForm({ open, onClose, users }: TicketFormProps) {
           </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="space-y-4"
+          aria-busy={isSubmitting}
+          noValidate
+        >
           {templates.length > 0 && (
             <div className="rounded-lg border border-dashed border-border bg-muted/30 p-3">
               <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
@@ -271,7 +267,11 @@ export function TicketForm({ open, onClose, users }: TicketFormProps) {
                 onValueChange={(value) => setValue('subcategory', value)}
                 disabled={isSubmitting}
               >
-                <SelectTrigger id="ticket-subcategory" aria-invalid={!!errors.subcategory}>
+                <SelectTrigger
+                  id="ticket-subcategory"
+                  aria-invalid={!!errors.subcategory}
+                  aria-describedby={errors.subcategory ? 'ticket-subcategory-error' : undefined}
+                >
                   <SelectValue placeholder={copy.tickets.form.placeholders.subcategory} />
                 </SelectTrigger>
                 <SelectContent>
@@ -283,7 +283,9 @@ export function TicketForm({ open, onClose, users }: TicketFormProps) {
                 </SelectContent>
               </Select>
               {errors.subcategory && (
-                <p className="text-xs text-destructive">{errors.subcategory.message}</p>
+                <p id="ticket-subcategory-error" role="alert" className="text-xs text-destructive">
+                  {errors.subcategory.message}
+                </p>
               )}
             </div>
           </div>
@@ -295,10 +297,15 @@ export function TicketForm({ open, onClose, users }: TicketFormProps) {
               placeholder={copy.tickets.form.placeholders.title}
               maxLength={80}
               aria-invalid={!!errors.title}
+              aria-describedby={errors.title ? 'ticket-title-error' : undefined}
               disabled={isSubmitting}
               {...register('title')}
             />
-            {errors.title && <p className="text-xs text-destructive">{errors.title.message}</p>}
+            {errors.title && (
+              <p id="ticket-title-error" role="alert" className="text-xs text-destructive">
+                {errors.title.message}
+              </p>
+            )}
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">

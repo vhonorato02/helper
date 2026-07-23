@@ -1,7 +1,6 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { db } from '@/db';
 import {
@@ -30,17 +29,19 @@ import {
   buildAssigneeRemovalHistoryRows,
   normalizeOperationalProfile,
   filterInvalidAssignmentsForUser,
-  resolveExplicitPrimaryAssignee,
   selectEligibleAssigneeForArea,
 } from '@/lib/assignment';
 import { canViewTicket } from '@/lib/ticket-access';
+import { requireAuth } from '@/lib/auth-helpers';
+import {
+  findDefaultAssigneeForArea,
+  findEligibleAssigneeForArea,
+} from '@/lib/assignees';
 
 const ACTIVE_TICKET_STATUSES = ['aberto', 'em_andamento', 'aguardando'] as const;
 
 async function requireSession() {
-  const session = await auth();
-  if (!session?.user?.id) redirect('/login');
-  return session.user;
+  return requireAuth();
 }
 
 async function requireAdmin() {
@@ -191,8 +192,7 @@ async function clearActiveAssignmentsForUser(userId: string, actorId: string, di
 }
 
 export async function getActiveUsersForAssignment() {
-  const session = await auth();
-  if (!session?.user?.id) redirect('/login');
+  await requireAuth();
 
   const rows = await db
     .select({
@@ -442,38 +442,13 @@ export async function updateUser(formData: FormData) {
 }
 
 export async function getDefaultAssigneeForArea(area: Area) {
-  const [primary, rows] = await Promise.all([
-    db
-      .select({ primaryUserId: areaPrimaryAssignees.primaryUserId })
-      .from(areaPrimaryAssignees)
-      .where(eq(areaPrimaryAssignees.area, area))
-      .limit(1),
-    getActiveAssigneeCandidates(),
-  ]);
-
-  return resolveExplicitPrimaryAssignee(area, primary[0]?.primaryUserId, rows);
+  await requireAuth();
+  return findDefaultAssigneeForArea(area);
 }
 
 export async function getEligibleAssigneeForArea(userId: string, area: Area) {
-  const rows = await db
-    .select({
-      id: users.id,
-      displayName: users.displayName,
-      role: users.role,
-      area: users.area,
-      isActive: users.isActive,
-    })
-    .from(users)
-    .where(
-      and(
-        eq(users.id, userId),
-        eq(users.isActive, true),
-      ),
-    )
-    .limit(1);
-
-  const [assignee] = attachOperationalAreas(rows, await getAreaRowsForUsers(rows.map((user) => user.id)));
-  return assignee ? selectEligibleAssigneeForArea(assignee.id, area, [assignee]) : null;
+  await requireAuth();
+  return findEligibleAssigneeForArea(userId, area);
 }
 
 const primaryAssigneeSchema = z.object({
@@ -492,7 +467,7 @@ export async function setPrimaryAssigneeForArea(formData: FormData) {
 
   const primaryUserId = parsed.data.primaryUserId || null;
   if (primaryUserId) {
-    const assignee = await getEligibleAssigneeForArea(primaryUserId, parsed.data.area);
+    const assignee = await findEligibleAssigneeForArea(primaryUserId, parsed.data.area);
     if (!assignee) return { error: copy.validation.ineligibleAssignee };
   }
 
@@ -629,7 +604,7 @@ const adminPasswordSchema = z.object({
 });
 
 export async function changePassword(formData: FormData) {
-  const currentUser = await requireSession();
+  const currentUser = await requireAuth({ allowPasswordChange: true });
   const targetId = String(formData.get('userId') ?? '');
   const isSelf = targetId === currentUser.id;
 

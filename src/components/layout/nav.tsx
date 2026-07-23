@@ -23,7 +23,6 @@ import {
   Settings,
   UserRound,
   UsersRound,
-  X,
 } from 'lucide-react';
 import { logoutAction } from '@/actions/auth';
 import { Button } from '@/components/ui/button';
@@ -46,6 +45,12 @@ import { initials } from '@/lib/format';
 import { BrandMark } from '@/components/brand/brand-mark';
 import { KeyboardCheatSheet } from '@/components/keyboard-cheatsheet';
 import { NotificationBell } from '@/components/notifications/notification-bell';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import type { User } from '@/db/schema';
 
 const PRIMARY_NAV_LINKS = [
@@ -84,6 +89,7 @@ export function Nav({ user, users }: NavProps) {
   const [formOpen, setFormOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [cheatSheetOpen, setCheatSheetOpen] = useState(false);
   const [isSigningOut, startSignOut] = useTransition();
@@ -138,6 +144,13 @@ export function Nav({ user, users }: NavProps) {
   useEffect(() => {
     if (shouldOpenTicketForm) setFormOpen(true);
   }, [shouldOpenTicketForm]);
+
+  useEffect(() => {
+    setMobileOpen(false);
+    if (TOOL_NAV_LINKS.some(({ href }) => pathname === href || pathname.startsWith(`${href}/`))) {
+      setMobileToolsOpen(true);
+    }
+  }, [pathname]);
 
   const userName = user.name ?? copy.dashboard.greeting.fallbackName;
   const isActiveLink = (href: string) =>
@@ -309,27 +322,30 @@ export function Nav({ user, users }: NavProps) {
               variant="ghost"
               size="icon"
               className="xl:hidden"
-              onClick={() => setMobileOpen((open) => !open)}
+              onClick={() => setMobileOpen(true)}
               aria-label={copy.nav.mobileMenu}
               aria-expanded={mobileOpen}
               aria-controls="mobile-navigation"
             >
-              {mobileOpen ? (
-                <X className="size-4" aria-hidden="true" />
-              ) : (
-                <Menu className="size-4" aria-hidden="true" />
-              )}
+              <Menu className="size-4" aria-hidden="true" />
             </Button>
           </div>
         </div>
+      </header>
 
-        {mobileOpen && (
-          <div
-            id="mobile-navigation"
-            className="safe-auth-x max-h-[calc(100svh-3.5rem)] overflow-y-auto border-t border-border/70 bg-background/95 py-3 shadow-lg xl:hidden"
-          >
-            <div className="mb-3 flex items-center gap-3 rounded-lg border bg-card p-3">
-              <Avatar className="size-9">
+      <Dialog open={mobileOpen} onOpenChange={setMobileOpen}>
+        <DialogContent
+          id="mobile-navigation"
+          className="inset-y-0 left-auto right-0 top-0 h-dvh max-h-dvh w-[min(22rem,calc(100%-2rem))] max-w-none translate-x-0 translate-y-0 content-start gap-0 rounded-none border-y-0 border-r-0 p-0 xl:hidden"
+        >
+          <DialogTitle className="sr-only">{copy.nav.mobileMenu}</DialogTitle>
+          <DialogDescription className="sr-only">
+            Navegação principal, ferramentas e opções da conta.
+          </DialogDescription>
+
+          <div className="border-b border-border/70 p-4 pr-14">
+            <div className="flex min-w-0 items-center gap-3">
+              <Avatar className="size-10">
                 {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt="" />}
                 <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
                   {initials(userName)}
@@ -337,95 +353,142 @@ export function Nav({ user, users }: NavProps) {
               </Avatar>
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold">{userName}</p>
-                {user.isAdmin && (
-                  <p className="text-xs text-muted-foreground">{copy.auth.menu.admin}</p>
-                )}
-                <p className="text-[11px] text-muted-foreground">{copy.brand.versionLabel}</p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {user.isAdmin ? copy.auth.menu.admin : copy.brand.institution}
+                </p>
               </div>
             </div>
-            <div className="space-y-1">
+          </div>
+
+          <nav aria-label={copy.nav.mobileMenu} className="overflow-y-auto p-3">
             <button
               type="button"
               onClick={() => {
                 setMobileOpen(false);
                 setPaletteOpen(true);
               }}
-              className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              className="mb-3 flex min-h-11 w-full items-center gap-2 rounded-md border border-border/70 bg-card px-3 text-sm font-medium text-muted-foreground shadow-xs transition-colors hover:bg-accent hover:text-foreground"
             >
-              <Search className="size-4" />
+              <Search className="size-4" aria-hidden="true" />
               {copy.nav.search}
+              <span className="kbd ml-auto">{copy.nav.commandShortcut}</span>
             </button>
-            {[...PRIMARY_NAV_LINKS, ...TOOL_NAV_LINKS].map(({ href, label, icon: Icon }) => (
+
+            <p className="section-label mb-1 px-3">Principal</p>
+            <div className="space-y-1">
+              {PRIMARY_NAV_LINKS.map(({ href, label, icon: Icon }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  aria-current={isActiveLink(href) ? 'page' : undefined}
+                  onClick={() => setMobileOpen(false)}
+                  className={cn(
+                    'flex min-h-11 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors',
+                    isActiveLink(href)
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                  )}
+                >
+                  <Icon className="size-4" aria-hidden="true" />
+                  {label}
+                </Link>
+              ))}
+            </div>
+
+            <div className="my-3 border-t border-border/70 pt-3">
+              <button
+                type="button"
+                onClick={() => setMobileToolsOpen((open) => !open)}
+                className="flex min-h-11 w-full items-center gap-2 rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                aria-expanded={mobileToolsOpen}
+                aria-controls="mobile-tools"
+              >
+                <MoreHorizontal className="size-4" aria-hidden="true" />
+                Ferramentas
+                <ChevronDown
+                  className={cn('ml-auto size-4 transition-transform', mobileToolsOpen && 'rotate-180')}
+                  aria-hidden="true"
+                />
+              </button>
+              {mobileToolsOpen && (
+                <div id="mobile-tools" className="mt-1 space-y-1 border-l border-border/70 pl-2">
+                  {TOOL_NAV_LINKS.map(({ href, label, icon: Icon }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      aria-current={isActiveLink(href) ? 'page' : undefined}
+                      onClick={() => setMobileOpen(false)}
+                      className={cn(
+                        'flex min-h-10 items-center gap-2 rounded-md px-3 text-sm transition-colors',
+                        isActiveLink(href)
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                      )}
+                    >
+                      <Icon className="size-4" aria-hidden="true" />
+                      {label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-border/70 pt-3">
+              <p className="section-label mb-1 px-3">Conta</p>
               <Link
-                key={href}
-                href={href}
-                aria-current={isActiveLink(href) ? 'page' : undefined}
+                href="/minha-conta"
+                aria-current={isActiveLink('/minha-conta') ? 'page' : undefined}
                 onClick={() => setMobileOpen(false)}
                 className={cn(
-                  'flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition-colors',
-                  isActiveLink(href)
+                  'flex min-h-11 items-center gap-2 rounded-md px-3 text-sm transition-colors',
+                  isActiveLink('/minha-conta')
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground',
                 )}
               >
-                <Icon className="size-4" />
-                {label}
+                <UserRound className="size-4" aria-hidden="true" />
+                {copy.nav.links.account}
               </Link>
-            ))}
-            <Link
-              href="/minha-conta"
-              aria-current={isActiveLink('/minha-conta') ? 'page' : undefined}
-              onClick={() => setMobileOpen(false)}
-              className={cn(
-                'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
-                isActiveLink('/minha-conta')
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
-              )}
-            >
-              <UserRound className="size-4" />
-              {copy.nav.links.account}
-            </Link>
-            <button
-              type="button"
-              onClick={() => {
-                setMobileOpen(false);
-                setPasswordDialogOpen(true);
-              }}
-              className="flex w-full items-center gap-2 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-accent/60"
-            >
-              <KeyRound className="size-4" />
-              {copy.auth.menu.changeOwnPassword}
-            </button>
-            {user.isAdmin && (
-              <Link
-                href="/configuracoes"
-                aria-current={isActiveLink('/configuracoes') ? 'page' : undefined}
-                onClick={() => setMobileOpen(false)}
-                className={cn(
-                  'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
-                  isActiveLink('/configuracoes')
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
-                )}
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileOpen(false);
+                  setPasswordDialogOpen(true);
+                }}
+                className="flex min-h-11 w-full items-center gap-2 rounded-md px-3 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
-                <Settings className="size-4" />
-                {copy.nav.links.settings}
-              </Link>
-            )}
-            <button
-              type="button"
-              onClick={handleSignOut}
-              disabled={isSigningOut}
-              className="flex w-full items-center gap-2 px-3 py-2 rounded-md text-sm text-destructive hover:bg-destructive/10"
-            >
-              <LogOut className="size-4" />
-              {copy.nav.signOutWithName(userName)}
-            </button>
+                <KeyRound className="size-4" aria-hidden="true" />
+                {copy.auth.menu.changeOwnPassword}
+              </button>
+              {user.isAdmin && (
+                <Link
+                  href="/configuracoes"
+                  aria-current={isActiveLink('/configuracoes') ? 'page' : undefined}
+                  onClick={() => setMobileOpen(false)}
+                  className={cn(
+                    'flex min-h-11 items-center gap-2 rounded-md px-3 text-sm transition-colors',
+                    isActiveLink('/configuracoes')
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                  )}
+                >
+                  <Settings className="size-4" aria-hidden="true" />
+                  {copy.nav.links.settings}
+                </Link>
+              )}
+              <button
+                type="button"
+                onClick={handleSignOut}
+                disabled={isSigningOut}
+                className="flex min-h-11 w-full items-center gap-2 rounded-md px-3 text-sm text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-60"
+              >
+                <LogOut className="size-4" aria-hidden="true" />
+                {isSigningOut ? 'Saindo...' : copy.auth.buttons.signOut}
+              </button>
             </div>
-          </div>
-        )}
-      </header>
+          </nav>
+        </DialogContent>
+      </Dialog>
 
       <KeyboardCheatSheet open={cheatSheetOpen} onOpenChange={setCheatSheetOpen} />
       <TicketForm open={formOpen} onClose={closeTicketForm} users={users} />

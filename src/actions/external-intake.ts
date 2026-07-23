@@ -1,15 +1,13 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 import { and, asc, count, eq, inArray, isNull } from 'drizzle-orm';
 import { z } from 'zod';
-import { auth } from '@/auth';
 import { db } from '@/db';
 import { chromebookBookings, ticketHistory, tickets, userAreas, users } from '@/db/schema';
 import { confirmChromebookBooking } from '@/actions/chromebooks';
-import { dispatchNotification } from '@/actions/notifications';
-import { getDefaultAssigneeForArea } from '@/actions/users';
+import { dispatchNotification } from '@/lib/notifications';
+import { findDefaultAssigneeForArea } from '@/lib/assignees';
 import { formatChromebookPeriod } from '@/lib/chromebooks';
 import { canManageChromebookBookings } from '@/lib/chromebook-permissions';
 import { AREA_LABELS, PRIORITY_LABELS, STATUS_LABELS } from '@/lib/constants';
@@ -21,16 +19,12 @@ import {
 } from '@/lib/assignment';
 import { canViewPublicRequesterContact, canWorkOnTicketArea } from '@/lib/ticket-access';
 import { withTicketVisibility } from '@/lib/ticket-visibility';
+import { requireAuth } from '@/lib/auth-helpers';
+import { boundedInteger } from '@/lib/validation';
 
 const ACTIVE_TICKET_STATUSES = ['aberto', 'em_andamento', 'aguardando'] as const;
 const ticketCodeSchema = z.string().trim().min(3).max(24);
 const uuidSchema = z.string().uuid();
-
-async function requireAuth() {
-  const session = await auth();
-  if (!session?.user) redirect('/login');
-  return session.user;
-}
 
 async function recordHistory(
   ticketId: string,
@@ -97,6 +91,7 @@ function revalidateIntakeSurfaces(code?: string) {
 
 export async function getExternalIntakeSummary(limit = 6) {
   const user = await requireAuth();
+  limit = boundedInteger(limit, { min: 1, max: 50, fallback: 6 });
   const canManageChromebooks = canManageChromebookBookings(user);
 
   const [
@@ -245,7 +240,7 @@ export async function assignPublicTicketToDefault(code: string) {
   if (!ticket || ticket.origin !== 'Pagina publica') return { error: copy.validation.invalidTicket };
   if (!canWorkOnTicketArea(user, ticket.area)) return { error: copy.auth.errors.permissionDenied };
 
-  const assignee = await getDefaultAssigneeForArea(ticket.area);
+  const assignee = await findDefaultAssigneeForArea(ticket.area);
   const resolved = resolvePublicDefaultAssignment(ticket, assignee);
   if (!resolved.ok) {
     if (resolved.reason === 'already_assigned') {

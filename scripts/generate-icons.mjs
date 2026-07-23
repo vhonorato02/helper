@@ -22,7 +22,7 @@ function chunk(type, data) {
   return Buffer.concat([len, t, data, crcVal]);
 }
 
-function writePng(path, width, height, pixels) {
+function encodePng(width, height, pixels) {
   const sig = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
   const ihdr = Buffer.allocUnsafe(13);
   ihdr.writeUInt32BE(width, 0);
@@ -40,10 +40,36 @@ function writePng(path, width, height, pixels) {
     pixels.copy(raw, y * (stride + 1) + 1, y * stride, (y + 1) * stride);
   }
 
-  writeFileSync(
-    path,
-    Buffer.concat([sig, chunk('IHDR', ihdr), chunk('IDAT', deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]),
-  );
+  return Buffer.concat([
+    sig,
+    chunk('IHDR', ihdr),
+    chunk('IDAT', deflateSync(raw)),
+    chunk('IEND', Buffer.alloc(0)),
+  ]);
+}
+
+function writePng(path, width, height, pixels) {
+  writeFileSync(path, encodePng(width, height, pixels));
+}
+
+function writeIco(path, size, pixels) {
+  const png = encodePng(size, size, pixels);
+  const header = Buffer.alloc(6);
+  header.writeUInt16LE(0, 0);
+  header.writeUInt16LE(1, 2);
+  header.writeUInt16LE(1, 4);
+
+  const entry = Buffer.alloc(16);
+  entry[0] = size === 256 ? 0 : size;
+  entry[1] = size === 256 ? 0 : size;
+  entry[2] = 0;
+  entry[3] = 0;
+  entry.writeUInt16LE(1, 4);
+  entry.writeUInt16LE(32, 6);
+  entry.writeUInt32LE(png.length, 8);
+  entry.writeUInt32LE(header.length + entry.length, 12);
+
+  writeFileSync(path, Buffer.concat([header, entry, png]));
 }
 
 // SDF-style point sampling for the Helper brand mark.
@@ -277,6 +303,9 @@ console.log('✓ public/apple-touch-icon.png');
 
 writePng('public/favicon-32.png', 32, 32, renderMark(32));
 console.log('✓ public/favicon-32.png');
+
+writeIco('public/favicon.ico', 32, renderMark(32));
+console.log('✓ public/favicon.ico');
 
 writePng('public/og.png', 1200, 630, renderOgImage(1200, 630));
 console.log('✓ public/og.png');

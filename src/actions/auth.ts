@@ -8,7 +8,7 @@ import { db } from '@/db';
 import { authEvents, users } from '@/db/schema';
 import { copy } from '@/lib/copy';
 import { logger } from '@/lib/logger';
-import { checkRateLimit } from '@/lib/rate-limit';
+import { checkRateLimit, resetRateLimit } from '@/lib/rate-limit';
 import {
   AUTH_COOKIE_NAME,
   sessionCookieOptions,
@@ -141,6 +141,7 @@ export async function loginAction(input: { username: string; password: string })
   }
 
   await recordAuthEvent({ type: 'login_success', userId: user.id, username, ip, userAgent });
+  resetRateLimit(`login:user:${username}`);
 
   const token = await signSessionToken({
     id: user.id,

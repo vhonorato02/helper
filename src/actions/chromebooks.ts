@@ -2,10 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
 import { and, asc, eq, gte, inArray, lt, ne, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { auth } from '@/auth';
 import { db } from '@/db';
 import { chromebookBookingLocks, chromebookBookings, chromebookSettings, users } from '@/db/schema';
 import { copy } from '@/lib/copy';
@@ -26,12 +24,15 @@ import {
 import { canManageChromebookBookings } from '@/lib/chromebook-permissions';
 import { buildSimpleEmail, sendGenericEmail } from '@/lib/email';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { dispatchNotificationToAdmins } from '@/actions/notifications';
+import { dispatchNotificationToAdmins } from '@/lib/notifications';
 import { validatePublicContact } from '@/lib/public-requests';
+import { requireAuth } from '@/lib/auth-helpers';
+import { isValidDateInput, isValidTimeInput } from '@/lib/timezone';
 
-const timeSchema = z.string().regex(/^\d{2}:\d{2}$/);
-const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const timeSchema = z.string().refine(isValidTimeInput);
+const dateSchema = z.string().refine(isValidDateInput);
 const statusSchema = z.enum(['pendente', 'confirmado', 'cancelado']);
+const idSchema = z.string().uuid();
 const MIN_BOOKING_DURATION_MS = 15 * 60 * 1000;
 const MAX_BOOKING_DURATION_MS = 8 * 60 * 60 * 1000;
 const MIN_BOOKING_LEAD_MS = 60 * 60 * 1000;
@@ -52,12 +53,6 @@ const bookingSchema = z.object({
 });
 
 type BookingInput = z.infer<typeof bookingSchema>;
-
-async function requireAuth() {
-  const session = await auth();
-  if (!session?.user) redirect('/login');
-  return session.user;
-}
 
 async function requireAdmin() {
   const user = await requireAuth();
@@ -381,25 +376,29 @@ export async function createChromebookBooking(formData: FormData) {
 export async function updateChromebookBooking(id: string, formData: FormData) {
   const user = await requireAdmin();
   if (!user) return { error: copy.auth.errors.permissionDenied };
+  const parsedId = idSchema.safeParse(id);
+  if (!parsedId.success) return { error: copy.validation.invalidData };
   const parsed = parseBookingForm(formData, user.name ?? user.username, { allowExplicitStatus: true });
   if (!parsed.success) return { error: copy.validation.invalidData };
-  return saveBooking(parsed.data, { id, responsibleId: user.id });
+  return saveBooking(parsed.data, { id: parsedId.data, responsibleId: user.id });
 }
 
 export async function cancelChromebookBooking(id: string) {
   const user = await requireAdmin();
   if (!user) return { error: copy.auth.errors.permissionDenied };
+  const parsedId = idSchema.safeParse(id);
+  if (!parsedId.success) return { error: copy.validation.invalidData };
   const [existing] = await db
     .select({ id: chromebookBookings.id })
     .from(chromebookBookings)
-    .where(eq(chromebookBookings.id, id))
+    .where(eq(chromebookBookings.id, parsedId.data))
     .limit(1);
   if (!existing) return { error: 'Agendamento não encontrado.' };
 
   await db
     .update(chromebookBookings)
     .set({ status: 'cancelado', updatedAt: new Date() })
-    .where(eq(chromebookBookings.id, id));
+    .where(eq(chromebookBookings.id, parsedId.data));
 
   revalidatePath('/chromebooks');
   revalidatePath('/chromebooks/solicitar');
@@ -410,6 +409,8 @@ export async function cancelChromebookBooking(id: string) {
 export async function confirmChromebookBooking(id: string) {
   const user = await requireAdmin();
   if (!user) return { error: copy.auth.errors.permissionDenied };
+  const parsedId = idSchema.safeParse(id);
+  if (!parsedId.success) return { error: copy.validation.invalidData };
   return withChromebookBookingLock(async () => {
     const [existing] = await db
       .select({
@@ -424,7 +425,7 @@ export async function confirmChromebookBooking(id: string) {
         status: chromebookBookings.status,
       })
       .from(chromebookBookings)
-      .where(eq(chromebookBookings.id, id))
+      .where(eq(chromebookBookings.id, parsedId.data))
       .limit(1);
     if (!existing) return { error: 'Agendamento não encontrado.' };
     if (existing.status === 'confirmado') return { ok: true };
@@ -454,7 +455,7 @@ export async function confirmChromebookBooking(id: string) {
     await db
       .update(chromebookBookings)
       .set({ status: 'confirmado', responsibleId: user.id, updatedAt: new Date() })
-      .where(eq(chromebookBookings.id, id));
+      .where(eq(chromebookBookings.id, parsedId.data));
 
     revalidatePath('/chromebooks');
     revalidatePath('/chromebooks/solicitar');
@@ -466,8 +467,10 @@ export async function confirmChromebookBooking(id: string) {
 export async function deleteChromebookBooking(id: string) {
   const user = await requireAdmin();
   if (!user) return { error: copy.auth.errors.permissionDenied };
+  const parsedId = idSchema.safeParse(id);
+  if (!parsedId.success) return { error: copy.validation.invalidData };
 
-  await db.delete(chromebookBookings).where(eq(chromebookBookings.id, id));
+  await db.delete(chromebookBookings).where(eq(chromebookBookings.id, parsedId.data));
   revalidatePath('/chromebooks');
   revalidatePath('/chromebooks/solicitar');
   revalidatePath('/solicitar/chromebooks');
@@ -639,7 +642,8 @@ export async function getChromebookBookings(filters?: {
 
 export async function getChromebookDaySummary(date?: string) {
   const settings = await getChromebookSettings();
-  const targetDate = date ?? dateInputInSaoPaulo(new Date());
+  const parsedDate = dateSchema.safeParse(date);
+  const targetDate = parsedDate.success ? parsedDate.data : dateInputInSaoPaulo(new Date());
   const dayStart = combineDateTimeInSaoPaulo(targetDate, '00:00');
   const dayEnd = combineDateTimeInSaoPaulo(targetDate, '23:59');
   const active = await getOverlappingActiveBookings(dayStart, dayEnd);

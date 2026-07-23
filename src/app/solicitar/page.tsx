@@ -59,7 +59,7 @@ const options = [
 export default function PublicRequestHubPage() {
   return (
     <div className="safe-public-screen bg-background">
-      <main className="mx-auto w-full max-w-5xl space-y-6">
+      <div className="mx-auto w-full max-w-5xl space-y-6">
         <header className="flex items-center justify-between gap-3">
           <Link href="/" className="flex items-center gap-2.5 rounded-lg">
             <BrandMark className="size-9 rounded-lg shadow-md shadow-primary/20" />
@@ -132,7 +132,7 @@ export default function PublicRequestHubPage() {
             );
           })}
         </section>
-      </main>
+      </div>
     </div>
   );
 }

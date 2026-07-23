@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
+  Activity,
   AlertTriangle,
   ArrowDown,
   ArrowUp,
+  CalendarDays,
   CornerDownLeft,
   FileInput,
   Kanban,
@@ -36,6 +38,7 @@ const NAV_ITEMS = [
   { label: copy.commandPalette.actions.dashboard, href: '/', icon: LayoutDashboard, admin: false },
   { label: copy.commandPalette.actions.kanban, href: '/kanban', icon: Kanban, admin: false },
   { label: copy.commandPalette.actions.tickets, href: '/tickets', icon: List, admin: false },
+  { label: copy.nav.links.schedules, href: '/agendamentos', icon: CalendarDays, admin: false },
   {
     label: copy.commandPalette.actions.quickResponses,
     href: '/respostas-rapidas',
@@ -65,6 +68,7 @@ const NAV_ITEMS = [
     admin: false,
     keywords: copy.commandPalette.keywords.chromebooks,
   },
+  { label: copy.nav.links.activity, href: '/atividade', icon: Activity, admin: false },
   {
     label: copy.commandPalette.actions.account,
     href: '/minha-conta',
@@ -183,7 +187,7 @@ export function CommandPalette({
   }, {});
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
       <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-xl">
         <DialogTitle className="sr-only">{copy.commandPalette.title}</DialogTitle>
         <div className="flex items-center gap-3 border-b px-4">
@@ -195,11 +199,22 @@ export function CommandPalette({
             onKeyDown={handleKeyDown}
             placeholder={copy.commandPalette.placeholder}
             className="flex-1 bg-transparent py-4 text-sm outline-none placeholder:text-muted-foreground"
+            aria-label={copy.commandPalette.title}
+            aria-controls="command-palette-results"
+            aria-expanded={filtered.length > 0}
+            aria-activedescendant={
+              filtered[selected] ? `command-palette-option-${selected}` : undefined
+            }
           />
           <kbd className="kbd">{copy.commandPalette.hints.escape}</kbd>
         </div>
 
-        <div className="max-h-[420px] overflow-y-auto py-2">
+        <div
+          id="command-palette-results"
+          className="max-h-[420px] overflow-y-auto py-2"
+          role="listbox"
+          aria-label="Resultados"
+        >
           {filtered.length === 0 ? (
             <p className="text-center text-sm text-muted-foreground py-8">
               {copy.commandPalette.noResults(query)}
@@ -218,6 +233,10 @@ export function CommandPalette({
                     return (
                       <button
                         key={item.label}
+                        id={`command-palette-option-${index}`}
+                        type="button"
+                        role="option"
+                        aria-selected={index === selected}
                         onClick={() => {
                           item.action();
                           setQuery('');

@@ -86,8 +86,19 @@ export default async function TeamPage() {
           <Badge variant="secondary">{workload.members.length} membro(s)</Badge>
         </div>
 
-        <div className="divide-y divide-border/60">
-          {workload.members.map((member) => (
+        {workload.members.length === 0 ? (
+          <div className="px-5 py-14 text-center">
+            <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+              <UserRoundX className="size-5" aria-hidden="true" />
+            </div>
+            <p className="font-semibold">Nenhum membro disponível</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Ative um usuário com área operacional para acompanhar a distribuição da equipe.
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-border/60">
+            {workload.members.map((member) => (
             <div
               key={member.id}
               className="grid gap-3 px-4 py-3 lg:grid-cols-[minmax(15rem,1fr)_minmax(20rem,1.4fr)_auto] lg:items-center"
@@ -154,8 +165,9 @@ export default async function TeamPage() {
                 </Button>
               </div>
             </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

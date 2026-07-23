@@ -243,6 +243,9 @@ Nunca use segredo com prefixo `NEXT_PUBLIC_`. Tudo com esse prefixo pode aparece
 
 O Helper usa Neon PostgreSQL. Production, Preview e Development devem apontar para bancos ou branches separados.
 
+O procedimento obrigatório de validação, setup atômico, checagem de drift e
+smoke pós-deploy está em [`database/README.md`](database/README.md).
+
 Separação recomendada:
 
 - Production: branch Neon de produção, com dados reais.
@@ -252,12 +255,15 @@ Separação recomendada:
 Validação de conexão:
 
 ```bash
+pnpm db:schema:check
 pnpm db:setup
+pnpm db:check
 ```
 
 Resultado esperado:
 
 - `Database schema applied (...) statements.`
+- `Database schema compatible (...)`.
 - Nenhuma tabela crítica ausente.
 - Nenhuma migration destrutiva.
 

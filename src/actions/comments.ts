@@ -1,8 +1,6 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
-import { auth } from '@/auth';
 import { db } from '@/db';
 import { comments, quickResponses, ticketHistory, ticketMentions, tickets, users } from '@/db/schema';
 import { and, eq, asc, inArray, sql } from 'drizzle-orm';
@@ -11,17 +9,12 @@ import { copy } from '@/lib/copy';
 import { sendTicketNotification } from '@/lib/email';
 import { extractMentions } from '@/lib/mentions';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { dispatchNotification } from '@/actions/notifications';
+import { dispatchNotification } from '@/lib/notifications';
 import { isQuickResponseAvailableForTicket } from '@/lib/quick-responses';
 import { canCommentOnTicket, canViewTicket } from '@/lib/ticket-access';
+import { requireAuth } from '@/lib/auth-helpers';
 
 const COMMENT_RATE_LIMIT = { limit: 30, windowMs: 60_000, lockoutMs: 60_000 };
-
-async function requireAuth() {
-  const session = await auth();
-  if (!session?.user) redirect('/login');
-  return session.user;
-}
 
 const commentSchema = z.object({
   body: z.string().trim().min(1).max(4000),

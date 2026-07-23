@@ -1,23 +1,19 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
-import { auth } from '@/auth';
 import { db } from '@/db';
 import { subcategories } from '@/db/schema';
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { copy } from '@/lib/copy';
 import { SUBCATEGORIES, type Area } from '@/lib/constants';
+import { requireAdminAction, requireAuth } from '@/lib/auth-helpers';
 
 const areaSchema = z.enum(['TI', 'MKT', 'PF']);
 const labelSchema = z.string().trim().min(1).max(60);
 
 async function requireAdmin() {
-  const session = await auth();
-  if (!session?.user?.id) redirect('/login');
-  if (!session.user.isAdmin) return null;
-  return session.user;
+  return requireAdminAction();
 }
 
 let seedPromise: Promise<void> | null = null;
@@ -43,10 +39,11 @@ async function ensureSeeded() {
 }
 
 export async function getSubcategoriesForArea(area: Area, includeInactive = false) {
-  const session = await auth();
-  if (!session?.user?.id) redirect('/login');
+  await requireAuth();
+  const parsedArea = areaSchema.safeParse(area);
+  if (!parsedArea.success) return [];
   await ensureSeeded();
-  const conditions = [eq(subcategories.area, area)];
+  const conditions = [eq(subcategories.area, parsedArea.data)];
   if (!includeInactive) conditions.push(eq(subcategories.isActive, true));
   return db
     .select({
@@ -62,8 +59,7 @@ export async function getSubcategoriesForArea(area: Area, includeInactive = fals
 }
 
 export async function getAllSubcategoriesGrouped() {
-  const session = await auth();
-  if (!session?.user?.id) redirect('/login');
+  await requireAuth();
   await ensureSeeded();
   const rows = await db
     .select({
@@ -84,14 +80,17 @@ export async function getAllSubcategoriesGrouped() {
 }
 
 export async function isValidSubcategoryAsync(area: Area, label: string): Promise<boolean> {
+  await requireAuth();
+  const parsed = z.object({ area: areaSchema, label: labelSchema }).safeParse({ area, label });
+  if (!parsed.success) return false;
   await ensureSeeded();
   const [match] = await db
     .select({ id: subcategories.id })
     .from(subcategories)
     .where(
       and(
-        eq(subcategories.area, area),
-        eq(subcategories.label, label),
+        eq(subcategories.area, parsed.data.area),
+        eq(subcategories.label, parsed.data.label),
         eq(subcategories.isActive, true),
       ),
     )

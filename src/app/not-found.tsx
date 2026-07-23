@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/button';
 
 export default function NotFound() {
   return (
-    <main className="mx-auto flex min-h-[70vh] max-w-xl flex-col items-center justify-center px-6 text-center">
+    <section className="mx-auto flex min-h-[70vh] max-w-xl flex-col items-center justify-center px-6 text-center">
       <div className="mb-5 flex size-12 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-        <SearchX className="size-5" />
+        <SearchX className="size-5" aria-hidden="true" />
       </div>
       <p className="section-label">Página não encontrada</p>
       <h1 className="mt-2 text-2xl font-bold tracking-tight">Não encontramos esse caminho.</h1>
@@ -15,10 +15,10 @@ export default function NotFound() {
       </p>
       <Button asChild className="mt-6">
         <Link href="/">
-          <ArrowLeft className="size-4" />
+          <ArrowLeft className="size-4" aria-hidden="true" />
           Voltar ao início
         </Link>
       </Button>
-    </main>
+    </section>
   );
 }

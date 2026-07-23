@@ -15,7 +15,7 @@ export function PublicPageShell({
 }) {
   return (
     <div className="safe-public-screen bg-background">
-      <main className="mx-auto w-full max-w-3xl space-y-6">
+      <div className="mx-auto w-full max-w-3xl space-y-6">
         <header className="flex items-center justify-between gap-3">
           <Link href="/solicitar" className="flex items-center gap-2.5 rounded-lg">
             <BrandMark className="size-9 rounded-lg shadow-md shadow-primary/20" />
@@ -42,7 +42,7 @@ export function PublicPageShell({
         </section>
 
         {children}
-      </main>
+      </div>
     </div>
   );
 }

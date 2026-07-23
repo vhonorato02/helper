@@ -1,4 +1,5 @@
 import { getHolidayByDate, isFullNonWorkingHoliday, isPartialHoliday } from '@/lib/holidays';
+import { isValidDateInput, isValidTimeInput, parseAppLocalDateTime } from '@/lib/timezone';
 
 export const DEFAULT_CHROMEBOOK_TOTAL = 30;
 export const CHROMEBOOK_SETTINGS_ID = 'default';
@@ -39,7 +40,8 @@ export function minutesFromTime(time: string) {
 }
 
 export function combineDateTimeInSaoPaulo(date: string, time: string) {
-  return new Date(`${date}T${time}:00-03:00`);
+  if (!isValidDateInput(date) || !isValidTimeInput(time)) return new Date(Number.NaN);
+  return parseAppLocalDateTime(`${date}T${time}`) ?? new Date(Number.NaN);
 }
 
 export function dateInputInSaoPaulo(value: Date | string) {

@@ -1,3 +1,10 @@
+-- This migration predates the user profile migration but depends on its
+-- columns. Keep the prerequisites here so replaying the ordered migration set
+-- on an older Helper database cannot fail halfway through.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS role text;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS area area;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url text;
+
 CREATE TABLE IF NOT EXISTS area_primary_assignees (
   area area PRIMARY KEY,
   primary_user_id uuid REFERENCES users(id) ON DELETE SET NULL,

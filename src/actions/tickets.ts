@@ -1,8 +1,6 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
-import { auth } from '@/auth';
 import { db } from '@/db';
 import { ticketHistory, tickets, users, type NewTicket } from '@/db/schema';
 import {
@@ -27,13 +25,18 @@ import type { KanbanTicket } from '@/lib/kanban';
 import { isValidSubcategoryAsync } from '@/actions/subcategories';
 import { sendTicketNotification } from '@/lib/email';
 import { nextResolvedAt } from '@/lib/ticket-status';
-import { dispatchNotification } from '@/actions/notifications';
-import { getDefaultAssigneeForArea, getEligibleAssigneeForArea } from '@/actions/users';
+import { dispatchNotification } from '@/lib/notifications';
+import {
+  findDefaultAssigneeForArea,
+  findEligibleAssigneeForArea,
+} from '@/lib/assignees';
 import { canManageTicket, canViewTicket, protectPublicRequesterData } from '@/lib/ticket-access';
 import {
   buildTicketVisibilityCondition,
   withTicketVisibility,
 } from '@/lib/ticket-visibility';
+import { requireAuth, requireAdminAction } from '@/lib/auth-helpers';
+import { boundedInteger } from '@/lib/validation';
 
 const areaSchema = z.enum(['TI', 'MKT', 'PF']);
 const prioritySchema = z.enum(['baixa', 'media', 'alta', 'urgente']);
@@ -55,16 +58,8 @@ type TicketFilters = {
   sort?: string;
 };
 
-async function requireAuth() {
-  const session = await auth();
-  if (!session?.user) redirect('/login');
-  return session.user;
-}
-
 async function requireAdmin() {
-  const user = await requireAuth();
-  if (!user.isAdmin) return null;
-  return user;
+  return requireAdminAction();
 }
 
 async function generateCode(area: Area): Promise<string> {
@@ -174,11 +169,11 @@ export async function createTicket(formData: FormData) {
 
   let activeAssigneeId: string | null = null;
   if (assigneeId) {
-    const assignee = await getEligibleAssigneeForArea(assigneeId, area);
+    const assignee = await findEligibleAssigneeForArea(assigneeId, area);
     if (!assignee) return { error: copy.validation.ineligibleAssignee };
     activeAssigneeId = assignee.id;
   } else {
-    const defaultAssignee = await getDefaultAssigneeForArea(area);
+    const defaultAssignee = await findDefaultAssigneeForArea(area);
     activeAssigneeId = defaultAssignee?.id ?? null;
   }
 
@@ -373,7 +368,7 @@ async function normalizeFieldValue(
     const parsed = z.string().uuid().safeParse(value);
     if (!parsed.success) return { error: copy.validation.invalidData };
 
-    const assignee = await getEligibleAssigneeForArea(parsed.data, ticket.area);
+    const assignee = await findEligibleAssigneeForArea(parsed.data, ticket.area);
     return assignee ? { value: assignee.id } : { error: copy.validation.ineligibleAssignee };
   }
 
@@ -613,7 +608,7 @@ export async function bulkUpdateTickets(input: {
       const areas = new Set(ticketsToUpdate.map((ticket) => ticket.area));
       if (areas.size !== 1) return { error: copy.validation.ineligibleAssignee };
       const [area] = [...areas];
-      const assignee = await getEligibleAssigneeForArea(parsedId.data, area);
+      const assignee = await findEligibleAssigneeForArea(parsedId.data, area);
       if (!assignee) return { error: copy.validation.ineligibleAssignee };
       updates = { ...updates, assigneeId: assignee.id };
       historyField = 'responsavel';
@@ -717,7 +712,7 @@ function buildAttentionCondition(now = new Date()) {
 function buildTicketConditions(filters?: TicketFilters) {
   const { area, status, priority, assigneeId, origin, search, attention, due } = filters ?? {};
   const conditions = [];
-  const normalizedSearch = search?.trim();
+  const normalizedSearch = search?.trim().slice(0, 160);
 
   const parsedArea = area && area !== 'all' ? areaSchema.safeParse(area) : null;
   if (parsedArea?.success) conditions.push(eq(tickets.area, parsedArea.data));
@@ -809,7 +804,7 @@ export type TicketRow = Awaited<ReturnType<typeof getTickets>>[number];
 
 export async function getTickets(filters?: TicketFilters & { page?: number }) {
   const user = await requireAuth();
-  const { page = 1 } = filters ?? {};
+  const page = boundedInteger(filters?.page, { min: 1, max: 10_000, fallback: 1 });
   const limit = 50;
   const offset = (page - 1) * limit;
   const where = withTicketVisibility(buildTicketConditions(filters), user);
@@ -962,6 +957,7 @@ export async function getDashboardStats() {
 
 export async function getTicketTrend(days = 14) {
   const user = await requireAuth();
+  days = boundedInteger(days, { min: 1, max: 365, fallback: 14 });
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   start.setDate(start.getDate() - (days - 1));
@@ -1010,6 +1006,7 @@ export async function getTicketTrend(days = 14) {
 
 export async function getAvgResolutionTime(days = 30) {
   const user = await requireAuth();
+  days = boundedInteger(days, { min: 1, max: 3650, fallback: 30 });
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
   const rows = await db
@@ -1049,6 +1046,7 @@ export async function getAvgResolutionTime(days = 30) {
 
 export async function getActivityFeed(limit = 30) {
   const user = await requireAuth();
+  limit = boundedInteger(limit, { min: 1, max: 100, fallback: 30 });
   const rows = await db
     .select({
       id: ticketHistory.id,
@@ -1175,7 +1173,7 @@ export async function getKanbanTickets(filters?: {
   const user = await requireAuth();
   const { area, assigneeId, priority, search } = filters ?? {};
   const conditions = [];
-  const normalizedSearch = search?.trim();
+  const normalizedSearch = search?.trim().slice(0, 160);
   const parsedArea = area && area !== 'all' ? areaSchema.safeParse(area) : null;
   if (parsedArea?.success) conditions.push(eq(tickets.area, parsedArea.data));
   const parsedPriority = priority && priority !== 'all' ? prioritySchema.safeParse(priority) : null;

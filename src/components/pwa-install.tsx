@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Download, RefreshCw, Share, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -10,7 +10,27 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 const DISMISSED_KEY = 'pwa-install-dismissed-at';
-const COOLDOWN_DAYS = 7;
+const COOLDOWN_DAYS = 30;
+const PROMPT_DELAY_MS = 45_000;
+
+function wasRecentlyDismissed() {
+  try {
+    const dismissedAt = Number(localStorage.getItem(DISMISSED_KEY));
+    if (!Number.isFinite(dismissedAt) || dismissedAt <= 0) return false;
+    const ageDays = (Date.now() - dismissedAt) / (24 * 60 * 60 * 1000);
+    return ageDays < COOLDOWN_DAYS;
+  } catch {
+    return false;
+  }
+}
+
+function rememberDismissal() {
+  try {
+    localStorage.setItem(DISMISSED_KEY, String(Date.now()));
+  } catch {
+    // O navegador pode bloquear armazenamento local.
+  }
+}
 
 export function PwaInstallPrompt() {
   const [event, setEvent] = useState<BeforeInstallPromptEvent | null>(null);
@@ -18,31 +38,33 @@ export function PwaInstallPrompt() {
   const [iosVisible, setIosVisible] = useState(false);
   const [updateVisible, setUpdateVisible] = useState(false);
   const [waitingRegistration, setWaitingRegistration] = useState<ServiceWorkerRegistration | null>(null);
+  const hasReloadedRef = useRef(false);
 
   useEffect(() => {
+    let promptTimer: number | undefined;
+
+    const showPromptAfterDelay = (callback: () => void) => {
+      window.clearTimeout(promptTimer);
+      promptTimer = window.setTimeout(callback, PROMPT_DELAY_MS);
+    };
+
     const handler = (e: Event) => {
       e.preventDefault();
       const prompt = e as BeforeInstallPromptEvent;
-
-      try {
-        const dismissedAt = localStorage.getItem(DISMISSED_KEY);
-        if (dismissedAt) {
-          const ageDays = (Date.now() - Number(dismissedAt)) / (24 * 60 * 60 * 1000);
-          if (ageDays < COOLDOWN_DAYS) return;
-        }
-      } catch {
-        // ignore localStorage errors
-      }
-
       setEvent(prompt);
-      setVisible(true);
+      if (!wasRecentlyDismissed()) {
+        showPromptAfterDelay(() => setVisible(true));
+      }
+    };
+
+    const handleInstalled = () => {
+      window.clearTimeout(promptTimer);
+      setVisible(false);
+      setEvent(null);
     };
 
     window.addEventListener('beforeinstallprompt', handler);
-    window.addEventListener('appinstalled', () => {
-      setVisible(false);
-      setEvent(null);
-    });
+    window.addEventListener('appinstalled', handleInstalled);
 
     try {
       const ua = window.navigator.userAgent;
@@ -51,13 +73,17 @@ export function PwaInstallPrompt() {
         window.matchMedia('(display-mode: standalone)').matches ||
         Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
       const isSafari = /^((?!CriOS|FxiOS|EdgiOS|OPiOS).)*Safari/i.test(ua);
-      if (isIos && isSafari && !isStandalone) setIosVisible(true);
+      if (isIos && isSafari && !isStandalone && !wasRecentlyDismissed()) {
+        showPromptAfterDelay(() => setIosVisible(true));
+      }
     } catch {
       // ignore UA detection errors
     }
 
     return () => {
+      window.clearTimeout(promptTimer);
       window.removeEventListener('beforeinstallprompt', handler);
+      window.removeEventListener('appinstalled', handleInstalled);
     };
   }, []);
 
@@ -65,6 +91,8 @@ export function PwaInstallPrompt() {
     if (!('serviceWorker' in navigator)) return;
 
     const onControllerChange = () => {
+      if (hasReloadedRef.current) return;
+      hasReloadedRef.current = true;
       window.location.reload();
     };
 
@@ -104,18 +132,23 @@ export function PwaInstallPrompt() {
 
   const handleDismiss = () => {
     setVisible(false);
-    try {
-      localStorage.setItem(DISMISSED_KEY, String(Date.now()));
-    } catch {
-      // ignore
-    }
+    rememberDismissal();
+  };
+
+  const handleIosDismiss = () => {
+    setIosVisible(false);
+    rememberDismissal();
   };
 
   const handleUpdate = () => {
     const worker = waitingRegistration?.waiting;
     if (!worker) return;
     worker.postMessage('SKIP_WAITING');
-    window.setTimeout(() => window.location.reload(), 800);
+    window.setTimeout(() => {
+      if (hasReloadedRef.current) return;
+      hasReloadedRef.current = true;
+      window.location.reload();
+    }, 1_500);
   };
 
   if (updateVisible) {
@@ -131,7 +164,7 @@ export function PwaInstallPrompt() {
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold">Nova versão disponível</p>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Recarregue para usar a versao mais recente.
+              Recarregue para usar a versão mais recente.
             </p>
             <div className="mt-3 flex gap-2">
               <Button size="sm" onClick={handleUpdate}>
@@ -151,8 +184,9 @@ export function PwaInstallPrompt() {
     return (
       <div
         className="safe-floating-toast fixed z-50 sm:max-w-sm animate-in slide-in-from-bottom-2"
-        role="dialog"
+        role="region"
         aria-label="Instalar aplicativo no iOS"
+        aria-live="polite"
       >
         <div className="surface-elevated flex items-start gap-3 rounded-lg border bg-card p-4 shadow-lg">
           <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10">
@@ -164,17 +198,18 @@ export function PwaInstallPrompt() {
               No Safari, toque em Compartilhar e depois em Adicionar à Tela de Início.
             </p>
             <div className="mt-3">
-              <Button size="sm" variant="ghost" onClick={() => setIosVisible(false)}>
+              <Button size="sm" variant="ghost" onClick={handleIosDismiss}>
                 Entendi
               </Button>
             </div>
           </div>
           <button
-            onClick={() => setIosVisible(false)}
-            className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
+            type="button"
+            onClick={handleIosDismiss}
+            className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Fechar"
           >
-            <X className="size-4" />
+            <X className="size-4" aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -186,8 +221,9 @@ export function PwaInstallPrompt() {
   return (
     <div
       className="safe-floating-toast fixed z-50 sm:max-w-sm animate-in slide-in-from-bottom-2"
-      role="dialog"
+      role="region"
       aria-label="Instalar aplicativo"
+      aria-live="polite"
     >
       <div className="surface-elevated rounded-lg border bg-card p-4 shadow-lg flex items-start gap-3">
         <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10">
@@ -208,11 +244,12 @@ export function PwaInstallPrompt() {
           </div>
         </div>
         <button
+          type="button"
           onClick={handleDismiss}
-          className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+          className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
           aria-label="Fechar"
         >
-          <X className="size-4" />
+          <X className="size-4" aria-hidden="true" />
         </button>
       </div>
     </div>
