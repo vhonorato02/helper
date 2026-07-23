@@ -48,23 +48,26 @@ describe('ticket area access rules', () => {
     areas: [] as const,
   };
 
-  it('allows admins and same-area operational users to handle a ticket area', () => {
+  it('allows every authenticated internal user to handle every ticket area', () => {
     assert.equal(canWorkOnTicketArea(admin, 'TI'), true);
     assert.equal(canWorkOnTicketArea(tiUser, 'TI'), true);
-    assert.equal(canWorkOnTicketArea(marketingUser, 'TI'), false);
+    assert.equal(canWorkOnTicketArea(marketingUser, 'TI'), true);
+    assert.equal(canWorkOnTicketArea(requester, 'PF'), true);
+    assert.equal(canWorkOnTicketArea(undefined, 'TI'), false);
   });
 
-  it('allows ticket management only for admins and eligible users in the ticket area', () => {
+  it('allows ticket management across areas for internal users', () => {
     const ticket = { area: 'TI' as const, authorId: requester.id, assigneeId: null };
 
     assert.equal(canManageTicket(admin, ticket), true);
     assert.equal(canManageTicket(tiUser, ticket), true);
-    assert.equal(canManageTicket(marketingUser, ticket), false);
-    assert.equal(canManageTicket(requester, ticket), false);
-    assert.equal(canManageTicket(legacyContradictory, ticket), false);
+    assert.equal(canManageTicket(marketingUser, ticket), true);
+    assert.equal(canManageTicket(requester, ticket), true);
+    assert.equal(canManageTicket(legacyContradictory, ticket), true);
+    assert.equal(canManageTicket(undefined, ticket), false);
   });
 
-  it('limits ticket visibility to admins, same area, author, or assignee', () => {
+  it('makes tickets visible to every authenticated internal user', () => {
     const tiTicket = { area: 'TI' as const, authorId: requester.id, assigneeId: tiUser.id };
     const authoredMarketingTicket = {
       area: 'MKT' as const,
@@ -79,21 +82,23 @@ describe('ticket area access rules', () => {
 
     assert.equal(canViewTicket(admin, tiTicket), true);
     assert.equal(canViewTicket(tiUser, tiTicket), true);
-    assert.equal(canViewTicket(marketingUser, tiTicket), false);
+    assert.equal(canViewTicket(marketingUser, tiTicket), true);
     assert.equal(canViewTicket(requester, authoredMarketingTicket), true);
     assert.equal(canViewTicket(requester, assignedMarketingTicket), true);
-    assert.equal(canViewTicket(legacyContradictory, tiTicket), false);
+    assert.equal(canViewTicket(legacyContradictory, tiTicket), true);
+    assert.equal(canViewTicket(undefined, tiTicket), false);
   });
 
-  it('derives visible areas from the same operational eligibility rule', () => {
+  it('shows every area to internal users', () => {
     assert.deepEqual(visibleTicketAreas(admin), ['TI', 'MKT', 'PF']);
-    assert.deepEqual(visibleTicketAreas(tiUser), ['TI']);
-    assert.deepEqual(visibleTicketAreas(marketingUser), ['MKT']);
-    assert.deepEqual(visibleTicketAreas(legacyContradictory), []);
-    assert.deepEqual(visibleTicketAreas(requester), []);
+    assert.deepEqual(visibleTicketAreas(tiUser), ['TI', 'MKT', 'PF']);
+    assert.deepEqual(visibleTicketAreas(marketingUser), ['TI', 'MKT', 'PF']);
+    assert.deepEqual(visibleTicketAreas(legacyContradictory), ['TI', 'MKT', 'PF']);
+    assert.deepEqual(visibleTicketAreas(requester), ['TI', 'MKT', 'PF']);
+    assert.deepEqual(visibleTicketAreas(undefined), []);
   });
 
-  it('allows comments for the ticket author without granting management', () => {
+  it('allows comments and management across areas for internal users', () => {
     const ticket = { area: 'TI' as const, authorId: requester.id, assigneeId: null };
     const assignedTicket = {
       area: 'MKT' as const,
@@ -103,12 +108,14 @@ describe('ticket area access rules', () => {
 
     assert.equal(canCommentOnTicket(requester, ticket), true);
     assert.equal(canCommentOnTicket(requester, assignedTicket), true);
-    assert.equal(canManageTicket(requester, ticket), false);
-    assert.equal(canCommentOnTicket(marketingUser, ticket), false);
+    assert.equal(canManageTicket(requester, ticket), true);
+    assert.equal(canCommentOnTicket(marketingUser, ticket), true);
   });
 
-  it('keeps legacy contradictory users out of public requester contacts', () => {
-    assert.equal(canViewPublicRequesterContact(legacyContradictory, 'TI'), false);
+  it('allows internal users to see public requester contacts across areas', () => {
+    assert.equal(canViewPublicRequesterContact(legacyContradictory, 'TI'), true);
+    assert.equal(canViewPublicRequesterContact(marketingUser, 'TI'), true);
+    assert.equal(canViewPublicRequesterContact(undefined, 'TI'), false);
   });
 
   it('redacts only legacy public contact lines from descriptions', () => {
@@ -120,7 +127,7 @@ describe('ticket area access rules', () => {
     );
   });
 
-  it('hides public requester contact from users outside the ticket area', () => {
+  it('shows public requester contact to internal users and hides it from anonymous access', () => {
     const ticket = {
       code: 'TI-0001',
       area: 'TI' as const,
@@ -129,12 +136,12 @@ describe('ticket area access rules', () => {
       description: 'Solicitante: Escola\nContato: escola@example.com\nLocal/setor: Sala 1',
     };
 
-    assert.deepEqual(protectPublicRequesterData(ticket, marketingUser), {
+    assert.deepEqual(protectPublicRequesterData(ticket, marketingUser), ticket);
+    assert.deepEqual(protectPublicRequesterData(ticket, undefined), {
       ...ticket,
       publicContact: null,
       description: 'Solicitante: Escola\nLocal/setor: Sala 1',
     });
-    assert.deepEqual(protectPublicRequesterData(ticket, tiUser), ticket);
   });
 
   it('does not redact internal tickets', () => {

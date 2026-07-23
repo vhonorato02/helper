@@ -1,4 +1,3 @@
-import { isUserEnabledForArea } from '@/lib/assignment';
 import type { Area } from '@/lib/constants';
 
 export type AreaScopedUser = {
@@ -24,20 +23,8 @@ export type TicketAccessTarget = {
 
 const TICKET_AREAS = ['TI', 'MKT', 'PF'] as const satisfies readonly Area[];
 
-export function canWorkOnTicketArea(user: AreaScopedUser | null | undefined, area: Area) {
-  if (!user) return false;
-  if (user.isAdmin === true) return true;
-
-  return isUserEnabledForArea(
-    {
-      id: user.id ?? '',
-      role: user.role ?? null,
-      area: user.area ?? null,
-      operationalAreas: user.areas ?? undefined,
-      isActive: true,
-    },
-    area,
-  );
+export function canWorkOnTicketArea(user: AreaScopedUser | null | undefined, _area: Area) {
+  return Boolean(user?.id);
 }
 
 export function canManageTicket(
@@ -48,9 +35,7 @@ export function canManageTicket(
 }
 
 export function visibleTicketAreas(user: AreaScopedUser | null | undefined) {
-  if (!user) return [];
-  if (user.isAdmin === true) return [...TICKET_AREAS];
-  return TICKET_AREAS.filter((area) => canWorkOnTicketArea(user, area));
+  return user?.id ? [...TICKET_AREAS] : [];
 }
 
 export function canViewTicket(

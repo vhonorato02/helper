@@ -110,7 +110,7 @@ CREATE INDEX IF NOT EXISTS area_primary_assignees_user_idx
   ON area_primary_assignees (primary_user_id);
 
 INSERT INTO area_primary_assignees (area, primary_user_id)
-SELECT area, max(id)
+SELECT area, (array_agg(id))[1]
 FROM users
 WHERE
   is_active = true

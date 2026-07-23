@@ -37,24 +37,24 @@ const users: AreaAssigneeCandidate[] = [
 ];
 
 describe('area assignment rules', () => {
-  it('usa habilitação operacional, não cargo, para TI', () => {
+  it('permite que qualquer usuário ativo trabalhe em qualquer área', () => {
     assert.equal(isUserEnabledForArea(users[0], 'TI'), true);
-    assert.equal(isUserEnabledForArea(users[1], 'TI'), false);
+    assert.equal(isUserEnabledForArea(users[1], 'TI'), true);
     assert.equal(isUserEnabledForArea(users[2], 'TI'), true);
-    assert.equal(isUserEnabledForArea(users[5], 'TI'), false);
-    assert.equal(isUserEnabledForArea(users[6], 'TI'), false);
+    assert.equal(isUserEnabledForArea(users[5], 'TI'), true);
+    assert.equal(isUserEnabledForArea(users[6], 'TI'), true);
     assert.equal(isUserEnabledForArea(users[7], 'TI'), true);
-    assert.equal(isUserEnabledForArea(users[8], 'TI'), false);
+    assert.equal(isUserEnabledForArea(users[8], 'TI'), true);
   });
 
-  it('aceita usuário habilitado em múltiplas áreas', () => {
+  it('usa áreas como organização sem restringir colaboração', () => {
     assert.equal(isUserEnabledForArea(users[1], 'MKT'), true);
     assert.equal(isUserEnabledForArea(users[1], 'PF'), true);
     assert.equal(isUserEnabledForArea(users[2], 'MKT'), true);
     assert.equal(isUserEnabledForArea(users[2], 'TI'), true);
     assert.equal(isUserEnabledForArea(users[3], 'PF'), true);
-    assert.equal(isUserEnabledForArea(users[0], 'MKT'), false);
-    assert.equal(isUserEnabledForArea(users[3], 'TI'), false);
+    assert.equal(isUserEnabledForArea(users[0], 'MKT'), true);
+    assert.equal(isUserEnabledForArea(users[3], 'TI'), true);
   });
 
   it('rejeita usuário inativo mesmo com cargo e área corretos', () => {
@@ -67,20 +67,26 @@ describe('area assignment rules', () => {
     assert.equal(resolveExplicitPrimaryAssignee('PF', 'pf-primary', users)?.id, 'pf-primary');
   });
 
-  it('não usa fallback quando responsável primário está ausente ou inválido', () => {
+  it('não usa fallback quando responsável primário está ausente ou inativo', () => {
     assert.equal(resolveExplicitPrimaryAssignee('TI', undefined, users), null);
     assert.equal(resolveExplicitPrimaryAssignee('TI', 'missing', users), null);
-    assert.equal(resolveExplicitPrimaryAssignee('TI', 'mkt-primary', users), null);
+    assert.equal(resolveExplicitPrimaryAssignee('TI', 'mkt-primary', users)?.id, 'mkt-primary');
     assert.equal(resolveExplicitPrimaryAssignee('TI', 'inactive-ti', users), null);
-    assert.equal(resolveExplicitPrimaryAssignee('TI', 'legacy-contradictory', users), null);
+    assert.equal(
+      resolveExplicitPrimaryAssignee('TI', 'legacy-contradictory', users)?.id,
+      'legacy-contradictory',
+    );
   });
 
   it('valida seleção administrativa de responsável primário pela mesma regra de domínio', () => {
     assert.equal(selectEligibleAssigneeForArea('ti-primary', 'TI', users)?.id, 'ti-primary');
     assert.equal(selectEligibleAssigneeForArea('cross-trained', 'TI', users)?.id, 'cross-trained');
-    assert.equal(selectEligibleAssigneeForArea('mkt-primary', 'TI', users), null);
+    assert.equal(selectEligibleAssigneeForArea('mkt-primary', 'TI', users)?.id, 'mkt-primary');
     assert.equal(selectEligibleAssigneeForArea('inactive-ti', 'TI', users), null);
-    assert.equal(selectEligibleAssigneeForArea('legacy-contradictory', 'TI', users), null);
+    assert.equal(
+      selectEligibleAssigneeForArea('legacy-contradictory', 'TI', users)?.id,
+      'legacy-contradictory',
+    );
     assert.equal(selectEligibleAssigneeForArea('missing', 'TI', users), null);
   });
 
@@ -103,7 +109,7 @@ describe('area assignment rules', () => {
     );
     assert.deepEqual(
       resolvePublicDefaultAssignment({ area: 'TI', assigneeId: null }, users[1]),
-      { ok: false, reason: 'ineligible_default' },
+      { ok: true, assignee: users[1], shouldUpdate: true },
     );
   });
 
@@ -135,7 +141,7 @@ describe('area assignment rules', () => {
     );
   });
 
-  it('substitui responsável público legado que não é elegível para a área', () => {
+  it('mantém responsável ativo mesmo quando pertence a outra área', () => {
     assert.deepEqual(
       resolvePublicStartAssignment(
         { area: 'TI', assigneeId: 'mkt-primary' },
@@ -144,27 +150,27 @@ describe('area assignment rules', () => {
       ),
       {
         ok: true,
-        assignee: users[2],
-        shouldUpdateAssignee: true,
-        replacedAssignee: users[1],
+        assignee: users[1],
+        shouldUpdateAssignee: false,
+        replacedAssignee: null,
       },
     );
   });
 
-  it('bloqueia triagem pública quando não há responsável elegível possível', () => {
+  it('bloqueia triagem pública somente para usuários inativos', () => {
     assert.deepEqual(
       resolvePublicStartAssignment(
-        { area: 'TI', assigneeId: 'mkt-primary' },
-        users[1],
-        users[1],
+        { area: 'TI', assigneeId: 'inactive-ti' },
+        users[4],
+        users[4],
       ),
       {
         ok: false,
         reason: 'ineligible_existing_assignee',
-        replacedAssignee: users[1],
+        replacedAssignee: users[4],
       },
     );
-    assert.deepEqual(resolvePublicStartAssignment({ area: 'TI', assigneeId: null }, users[1], null), {
+    assert.deepEqual(resolvePublicStartAssignment({ area: 'TI', assigneeId: null }, users[4], null), {
       ok: false,
       reason: 'ineligible_current_user',
       replacedAssignee: null,
@@ -194,7 +200,7 @@ describe('area assignment rules', () => {
     });
   });
 
-  it('identifica demandas ativas que ficam inválidas após mudança de áreas', () => {
+  it('preserva atribuições entre áreas e remove apenas as de usuário inativo', () => {
     const user: AreaAssigneeCandidate = {
       id: 'mkt-primary',
       role: 'marketing',
@@ -208,10 +214,7 @@ describe('area assignment rules', () => {
       { id: 'pf-ticket', area: 'PF' as const },
     ];
 
-    assert.deepEqual(filterInvalidAssignmentsForUser(user, assignments), [
-      { id: 'ti-ticket', area: 'TI' },
-      { id: 'pf-ticket', area: 'PF' },
-    ]);
+    assert.deepEqual(filterInvalidAssignmentsForUser(user, assignments), []);
     assert.deepEqual(filterInvalidAssignmentsForUser({ ...user, isActive: false }, assignments), assignments);
   });
 

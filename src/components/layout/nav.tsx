@@ -17,6 +17,7 @@ import {
   Megaphone,
   Menu,
   MessageSquareQuote,
+  MoreHorizontal,
   Plus,
   Search,
   Settings,
@@ -47,13 +48,16 @@ import { KeyboardCheatSheet } from '@/components/keyboard-cheatsheet';
 import { NotificationBell } from '@/components/notifications/notification-bell';
 import type { User } from '@/db/schema';
 
-const NAV_LINKS = [
+const PRIMARY_NAV_LINKS = [
   { href: '/', label: copy.nav.links.dashboard, icon: LayoutDashboard },
   { href: '/kanban', label: copy.nav.links.kanban, icon: Kanban },
   { href: '/tickets', label: copy.nav.links.tickets, icon: List },
+  { href: '/agendamentos', label: copy.nav.links.schedules, icon: CalendarDays },
+] as const;
+
+const TOOL_NAV_LINKS = [
   { href: '/respostas-rapidas', label: copy.nav.links.quickResponses, icon: MessageSquareQuote },
   { href: '/equipe', label: copy.nav.links.team, icon: UsersRound },
-  { href: '/agendamentos', label: copy.nav.links.schedules, icon: CalendarDays },
   { href: '/marketing', label: copy.nav.links.marketing, icon: Megaphone },
   { href: '/solicitacoes-publicas', label: copy.nav.links.publicRequests, icon: FileInput },
   { href: '/chromebooks', label: copy.nav.links.chromebooks, icon: Laptop2 },
@@ -168,7 +172,7 @@ export function Nav({ user, users }: NavProps) {
           </Link>
 
           <nav className="ml-3 hidden min-w-0 flex-1 items-center gap-0.5 overflow-x-auto rounded-lg border border-border/70 bg-card/80 p-1 shadow-xs xl:flex">
-            {NAV_LINKS.map(({ href, label, icon: Icon }) => {
+            {PRIMARY_NAV_LINKS.map(({ href, label, icon: Icon }) => {
               const active = isActiveLink(href);
               return (
                 <Link
@@ -187,6 +191,33 @@ export function Nav({ user, users }: NavProps) {
                 </Link>
               );
             })}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    'flex h-8 shrink-0 items-center gap-1.5 rounded-md px-3 text-sm font-medium transition-all',
+                    TOOL_NAV_LINKS.some(({ href }) => isActiveLink(href))
+                      ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
+                      : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                  )}
+                >
+                  <MoreHorizontal className="size-3.5" />
+                  Mais
+                  <ChevronDown className="size-3" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-60">
+                {TOOL_NAV_LINKS.map(({ href, label, icon: Icon }) => (
+                  <DropdownMenuItem key={href} asChild>
+                    <Link href={href}>
+                      <Icon className="size-4" />
+                      {label}
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </nav>
 
           <div className="ml-auto flex items-center gap-1.5">
@@ -324,7 +355,7 @@ export function Nav({ user, users }: NavProps) {
               <Search className="size-4" />
               {copy.nav.search}
             </button>
-            {NAV_LINKS.map(({ href, label, icon: Icon }) => (
+            {[...PRIMARY_NAV_LINKS, ...TOOL_NAV_LINKS].map(({ href, label, icon: Icon }) => (
               <Link
                 key={href}
                 href={href}

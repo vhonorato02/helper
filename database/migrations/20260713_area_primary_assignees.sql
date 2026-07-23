@@ -23,7 +23,7 @@ END $$;
 -- Safe bootstrap only when an area has exactly one active user already tagged for it.
 -- Ambiguous areas remain unconfigured so admins must choose explicitly.
 INSERT INTO area_primary_assignees (area, primary_user_id)
-SELECT area, max(id)
+SELECT area, (array_agg(id))[1]
 FROM users
 WHERE
   is_active = true

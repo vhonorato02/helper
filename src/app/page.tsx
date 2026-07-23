@@ -10,7 +10,6 @@ import {
   Inbox,
   Megaphone,
   Monitor,
-  Plus,
   Truck,
   UserCheck,
   Zap,
@@ -467,12 +466,6 @@ export default async function DashboardPage() {
           </h1>
         </div>
         <div className="page-actions sm:items-center">
-          <Button asChild className="flex-1 sm:flex-none">
-            <Link href="/tickets?novo=1">
-              <Plus className="size-4" />
-              {copy.nav.newTicket}
-            </Link>
-          </Button>
           <Link
             href="/tickets?attention=true"
             className="flex-1 sm:flex-none inline-flex justify-center items-center gap-2 rounded-md border bg-card px-3.5 py-2 text-sm font-semibold text-muted-foreground shadow-xs transition-all hover:bg-accent hover:text-foreground hover:border-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"

@@ -77,14 +77,9 @@ export function normalizeOperationalProfile({
   };
 }
 
-export function isUserEnabledForArea(user: AreaAssigneeCandidate, area: Area) {
+export function isUserEnabledForArea(user: AreaAssigneeCandidate, _area: Area) {
   if (user.isActive === false) return false;
-  const operationalAreas = user.operationalAreas ?? (user.area ? [user.area] : []);
-  const requiredArea = roleDefaultArea(user.role);
-
-  if (requiredArea && !operationalAreas.includes(requiredArea)) return false;
-
-  return operationalAreas.includes(area);
+  return Boolean(user.id);
 }
 
 export const isEligibleAssigneeForArea = isUserEnabledForArea;
