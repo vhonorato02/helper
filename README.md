@@ -58,6 +58,27 @@ Regras de trabalho:
 - Vercel para deploy e crons.
 - Neon PostgreSQL para dados.
 
+## Hub de integrações
+
+O Helper é a fonte de verdade operacional. Integrações externas usam uma API autenticada,
+vínculos idempotentes em `external_links` e uma fila auditável em `integration_events`.
+
+- Todoist: tickets ativos viram tarefas-pai e checklists viram subtarefas. Concluir a tarefa-pai
+  move a demanda para `aguardando`; nunca resolve automaticamente um ticket institucional.
+- Marketing: `/marketing/publicacoes` aplica o fluxo rascunho → revisão → aprovação → agendamento
+  → publicação. n8n pode criar rascunhos e ler a fila; Postiz somente confirma agendamento,
+  publicação, falha, URLs e métricas.
+- Segredos: use valores diferentes para `INTEGRATION_API_SECRET`, `TODOIST_CLIENT_SECRET`,
+  `TODOIST_API_TOKEN`, `POSTIZ_WEBHOOK_SECRET` e `CRON_SECRET`.
+
+Endpoints principais:
+
+- `POST /api/integrations/todoist/sync` — sincronização Helper → Todoist.
+- `POST /api/integrations/todoist/webhook` — eventos Todoist assinados por HMAC.
+- `POST /api/integrations/process` — reprocessa a fila pendente.
+- `GET|POST /api/integrations/v1/marketing/publications` — consumo pelo n8n.
+- `POST /api/integrations/postiz/webhook` — retorno autenticado do publicador.
+
 O runtime é estritamente Node 24.x LTS. O projeto usa `.node-version`, `.nvmrc`, `engines` e `engine-strict=true` para evitar builds em Node Current.
 
 Tailwind 4 usa tema CSS-first em `src/app/globals.css`; não há mais `tailwind.config.js`. A variante `dark` é baseada na classe `.dark`, pois o Helper usa alternância manual de tema.
