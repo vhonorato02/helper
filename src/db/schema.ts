@@ -8,6 +8,7 @@ import {
   integer,
   index,
   primaryKey,
+  jsonb,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
@@ -407,6 +408,86 @@ export const authEvents = pgTable(
   ],
 );
 
+export const externalLinks = pgTable(
+  'external_links',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    provider: text('provider').notNull(),
+    resourceType: text('resource_type').notNull(),
+    localId: text('local_id').notNull(),
+    externalId: text('external_id').notNull(),
+    metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}).notNull(),
+    lastSyncedAt: timestamp('last_synced_at'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex('external_links_local_idx').on(t.provider, t.resourceType, t.localId),
+    uniqueIndex('external_links_external_idx').on(t.provider, t.resourceType, t.externalId),
+    index('external_links_provider_idx').on(t.provider, t.resourceType),
+  ],
+);
+
+export const integrationEvents = pgTable(
+  'integration_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    provider: text('provider').notNull(),
+    direction: text('direction').notNull(),
+    eventType: text('event_type').notNull(),
+    deliveryId: text('delivery_id'),
+    entityType: text('entity_type'),
+    entityId: text('entity_id'),
+    payload: jsonb('payload').$type<Record<string, unknown>>().default({}).notNull(),
+    status: text('status').default('pending').notNull(),
+    attempts: integer('attempts').default(0).notNull(),
+    lastError: text('last_error'),
+    availableAt: timestamp('available_at').defaultNow().notNull(),
+    processedAt: timestamp('processed_at'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex('integration_events_delivery_idx')
+      .on(t.provider, t.deliveryId)
+      .where(sql`${t.deliveryId} IS NOT NULL`),
+    index('integration_events_queue_idx').on(t.status, t.availableAt, t.createdAt),
+    index('integration_events_entity_idx').on(t.provider, t.entityType, t.entityId),
+  ],
+);
+
+export const marketingPublications = pgTable(
+  'marketing_publications',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    title: text('title').notNull(),
+    caption: text('caption'),
+    channels: jsonb('channels').$type<string[]>().default([]).notNull(),
+    assetUrls: jsonb('asset_urls').$type<string[]>().default([]).notNull(),
+    status: text('status').default('draft').notNull(),
+    scheduledFor: timestamp('scheduled_for'),
+    ticketId: uuid('ticket_id').references(() => tickets.id, { onDelete: 'set null' }),
+    recordingId: uuid('recording_id').references(() => recordings.id, { onDelete: 'set null' }),
+    createdById: uuid('created_by_id').references(() => users.id, { onDelete: 'set null' }),
+    postizId: text('postiz_id'),
+    publishedUrls: jsonb('published_urls').$type<Record<string, string>>().default({}).notNull(),
+    metrics: jsonb('metrics').$type<Record<string, number>>().default({}).notNull(),
+    failureReason: text('failure_reason'),
+    approvedAt: timestamp('approved_at'),
+    publishedAt: timestamp('published_at'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (t) => [
+    index('marketing_publications_status_idx').on(t.status, t.scheduledFor),
+    index('marketing_publications_ticket_idx').on(t.ticketId),
+    index('marketing_publications_recording_idx').on(t.recordingId),
+    uniqueIndex('marketing_publications_postiz_idx')
+      .on(t.postizId)
+      .where(sql`${t.postizId} IS NOT NULL`),
+  ],
+);
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   authoredTickets: many(tickets, { relationName: 'author' }),
@@ -545,3 +626,9 @@ export type Recording = typeof recordings.$inferSelect;
 export type NewRecording = typeof recordings.$inferInsert;
 export type MarketingEvent = typeof marketingEvents.$inferSelect;
 export type NewMarketingEvent = typeof marketingEvents.$inferInsert;
+export type ExternalLink = typeof externalLinks.$inferSelect;
+export type NewExternalLink = typeof externalLinks.$inferInsert;
+export type IntegrationEvent = typeof integrationEvents.$inferSelect;
+export type NewIntegrationEvent = typeof integrationEvents.$inferInsert;
+export type MarketingPublication = typeof marketingPublications.$inferSelect;
+export type NewMarketingPublication = typeof marketingPublications.$inferInsert;

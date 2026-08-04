@@ -498,6 +498,78 @@ CREATE TABLE IF NOT EXISTS auth_events (
 CREATE INDEX IF NOT EXISTS auth_events_user_idx ON auth_events (user_id, created_at);
 CREATE INDEX IF NOT EXISTS auth_events_type_idx ON auth_events (type, created_at);
 
+CREATE TABLE IF NOT EXISTS external_links (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  provider text NOT NULL,
+  resource_type text NOT NULL,
+  local_id text NOT NULL,
+  external_id text NOT NULL,
+  metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+  last_synced_at timestamp,
+  created_at timestamp NOT NULL DEFAULT now(),
+  updated_at timestamp NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS external_links_local_idx
+  ON external_links (provider, resource_type, local_id);
+CREATE UNIQUE INDEX IF NOT EXISTS external_links_external_idx
+  ON external_links (provider, resource_type, external_id);
+CREATE INDEX IF NOT EXISTS external_links_provider_idx
+  ON external_links (provider, resource_type);
+
+CREATE TABLE IF NOT EXISTS integration_events (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  provider text NOT NULL,
+  direction text NOT NULL,
+  event_type text NOT NULL,
+  delivery_id text,
+  entity_type text,
+  entity_id text,
+  payload jsonb NOT NULL DEFAULT '{}'::jsonb,
+  status text NOT NULL DEFAULT 'pending',
+  attempts integer NOT NULL DEFAULT 0,
+  last_error text,
+  available_at timestamp NOT NULL DEFAULT now(),
+  processed_at timestamp,
+  created_at timestamp NOT NULL DEFAULT now(),
+  updated_at timestamp NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS integration_events_delivery_idx
+  ON integration_events (provider, delivery_id)
+  WHERE delivery_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS integration_events_queue_idx
+  ON integration_events (status, available_at, created_at);
+CREATE INDEX IF NOT EXISTS integration_events_entity_idx
+  ON integration_events (provider, entity_type, entity_id);
+
+CREATE TABLE IF NOT EXISTS marketing_publications (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  title text NOT NULL,
+  caption text,
+  channels jsonb NOT NULL DEFAULT '[]'::jsonb,
+  asset_urls jsonb NOT NULL DEFAULT '[]'::jsonb,
+  status text NOT NULL DEFAULT 'draft',
+  scheduled_for timestamp,
+  ticket_id uuid REFERENCES tickets(id) ON DELETE SET NULL,
+  recording_id uuid REFERENCES recordings(id) ON DELETE SET NULL,
+  created_by_id uuid REFERENCES users(id) ON DELETE SET NULL,
+  postiz_id text,
+  published_urls jsonb NOT NULL DEFAULT '{}'::jsonb,
+  metrics jsonb NOT NULL DEFAULT '{}'::jsonb,
+  failure_reason text,
+  approved_at timestamp,
+  published_at timestamp,
+  created_at timestamp NOT NULL DEFAULT now(),
+  updated_at timestamp NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS marketing_publications_status_idx
+  ON marketing_publications (status, scheduled_for);
+CREATE INDEX IF NOT EXISTS marketing_publications_ticket_idx
+  ON marketing_publications (ticket_id);
+CREATE INDEX IF NOT EXISTS marketing_publications_recording_idx
+  ON marketing_publications (recording_id);
+CREATE UNIQUE INDEX IF NOT EXISTS marketing_publications_postiz_idx
+  ON marketing_publications (postiz_id) WHERE postiz_id IS NOT NULL;
+
 INSERT INTO marketing_events (name, description, month, day, category, lead_days, sort_order) VALUES
   ('Confraternização Universal', 'Início do ano letivo se aproxima — comunicação de volta às aulas.', 1, 1, 'civica', 14, 10),
   ('Dia Internacional da Mulher', 'Homenagem a mulheres da comunidade escolar.', 3, 8, 'comemorativa', 10, 20),

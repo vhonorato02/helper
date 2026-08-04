@@ -190,6 +190,12 @@ export default async function MarketingHubPage() {
               {copy.marketing.tabs.recordings}
             </Link>
           </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/marketing/publicacoes">
+              <Megaphone className="size-4" />
+              Publicações
+            </Link>
+          </Button>
           <NewRecordingButton users={activeUsers} size="sm" />
         </div>
       </div>
