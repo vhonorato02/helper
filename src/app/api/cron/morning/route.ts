@@ -11,7 +11,7 @@ import {
 import { logger } from '@/lib/logger';
 import { toZonedTime } from 'date-fns-tz';
 import { APP_TIMEZONE } from '@/lib/timezone';
-import { pruneReadNotifications } from '@/actions/notifications';
+import { pruneReadNotifications } from '@/lib/notification-maintenance';
 import { runCronTasks, type CronTask } from '@/lib/cron-runner';
 
 export const dynamic = 'force-dynamic';
