@@ -24,10 +24,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # setup-node's pnpm cache probes the binary before Corepack is enabled.
       - uses: actions/setup-node@v4
         with:
           node-version-file: .node-version
-          cache: pnpm
 
       - name: Enable Corepack
         run: corepack enable

@@ -40,8 +40,3 @@ export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as { area?: string };
   return handle(parseArea(body.area));
 }
-
-export async function GET(req: Request) {
-  const url = new URL(req.url);
-  return handle(parseArea(url.searchParams.get('area')));
-}

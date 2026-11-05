@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
-import { and, count, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/db';
 import { notificationPreferences, notifications } from '@/db/schema';
@@ -203,14 +203,4 @@ export async function updateNotificationPreferences(formData: FormData) {
   revalidatePath('/minha-conta');
   revalidatePath('/notificacoes');
   return { ok: true };
-}
-
-export async function pruneReadNotifications(days = 90) {
-  const cutoff = boundedInteger(days, { min: 30, max: 365, fallback: 90 });
-  const deleted = await db
-    .delete(notifications)
-    .where(sql`${notifications.readAt} IS NOT NULL AND ${notifications.readAt} < now() - make_interval(days => ${cutoff})`)
-    .returning({ id: notifications.id });
-
-  return { ok: true, deleted: deleted.length };
 }
