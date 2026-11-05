@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
+import { and, eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { users } from '@/db/schema';
 import { hasValidBearerToken } from '@/lib/bearer-token';
@@ -48,6 +49,16 @@ export async function POST(req: Request) {
   const admin = getBootstrapAdmin();
   if (!admin) {
     return NextResponse.json({ error: copy.api.missingBootstrapConfig }, { status: 503 });
+  }
+
+  // Bootstrap is strictly a first-time/recovery operation, never an admin password reset API.
+  const [activeAdmin] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(and(eq(users.isAdmin, true), eq(users.isActive, true)))
+    .limit(1);
+  if (activeAdmin) {
+    return NextResponse.json({ error: 'bootstrap_already_completed' }, { status: 409 });
   }
 
   const passwordHash = await bcrypt.hash(admin.password, 12);
